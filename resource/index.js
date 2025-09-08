@@ -1137,11 +1137,26 @@ const invertAspectRatio = 2/3.1; //@see CSS
         //requestDocumentFlushTime(() => screen.forEach((rp) => prefetchOverlay(rp.page)));
     }
 
+
+    function reportHover() {
+        if (window.matchMedia) {
+            const hover  = window.matchMedia('(hover: hover)').matches;
+            const notHover  = window.matchMedia('(hover: none)').matches;
+            if (hover && !notHover) {
+                notificator.addNotification("device is capable of hover", "hover", "info");
+            } else if (!hover && notHover) {
+                notificator.addNotification("device is not capable of hover", "hover", "info");
+            } else {
+                notificator.addNotification("hover, conflicting result", "hover", "info");
+            }
+        }
+    }
+
     function reportDeviceScreen() {
         if (window.matchMedia) {
             notificator.removeNotification("screen");
-            const mediaQueryWidth  = window.matchMedia('(max-width:  24rem').matches;
-            const mediaQueryHeight = window.matchMedia('(max-height: 12rem').matches;
+            const mediaQueryWidth  = window.matchMedia('(max-width:  24rem)').matches;
+            const mediaQueryHeight = window.matchMedia('(max-height: 12rem)').matches;
             if (mediaQueryWidth || mediaQueryHeight) {
                 notificator.addNotification("Device screen too small, try different orientation or app will work incorrectly", "screen", "warning", 30000);
             } else {

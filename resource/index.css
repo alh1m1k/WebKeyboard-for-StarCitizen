@@ -388,6 +388,9 @@ ul.breadcrumb a.static {
         cursor: auto;
     }
     ul.breadcrumb a:hover {
+        /*
+        * some version of chrome able to media (hover: hover) for device not capable of hover, (hover: none) will not work
+        */
         color: rgb(158,208,250);
     }
 }
@@ -925,6 +928,7 @@ ul.pager {
         animation-timing-function: linear;
     }
 }
+
 
 .control.limiter, .control.scanning-limiter, .control.mine-limiter, .control.salvage-limiter  {
     grid-template-rows: 1.5em auto;
