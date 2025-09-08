@@ -1,0 +1,34 @@
+Color differentiation:
+modes -> gold
+hostile+security -> red
+gear -> chestnut 
+pwr -> green
+shield+counter -> white
+scaner+com -> blue
+action -> purpure
+
+
+1 additional axis (probably not needed)
+2 add server session
+3 additional joystick
+4 implement delta invalidate and redraw for header
+5 implement staticRenderer in buffer draw bypass for animating backgrounds(direct draw if possible)
+6 implement better handling of binary protocols on client
+7 full binary protocol for joystick + separate handler for joystick state
+8 handle multi client update of joystick (probably delta update with same base (sign))
+9 implement mapping between kb task and kb symbol stream (allowing to reject or confirm succession of task execution)
+10 for fun implement Attribute.createVersion and Registry.createVersion allowing to create versioned slice of data
+11 configuration wnd bool widget must be refactor to take only actual size;
+12 implement reset attribute ownership feature for ctrl-configuration window
+13 improve Probe.move with variable precision
+14 allow ping to disable echo(questionable)
+15 make main settings are joint element (icon + title are all clickable)
+16bajust color for overlay
+
+
+RC1 BUGS
+1 move element to trash broke overlay aligment
+2 chrome57 fix worker startup crash(missing feature)
+3 change submit btn decouple size of button and line-height, set line-height = 2.5rem
+4 check that when multipixel line in use border clip work correctly, most likely it is not.
+5 check widget head at higth dpi

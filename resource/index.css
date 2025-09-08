@@ -1,0 +1,1994 @@
+/* Style the list */
+
+:root {
+    --title-font-family: "univia-pro", arial, sans-serif;
+    --text-font-family:  "Bai Jamjuree", arial, sans-serif;
+    --icon-font-family:   system-ui;
+    --mono-font-family:   monospace;
+    --header-height:      2.5rem;
+}
+
+
+body, html {
+    margin:           0px;
+    padding:          0px;
+    -moz-user-select: none;
+    user-select:      none;
+
+    width:            100vw;
+    height:           100vh;
+}
+
+body {
+    background-color: rgb(13, 38, 53)
+}
+
+* {
+    font-family: var(--text-font-family);
+}
+
+*:focus {
+    outline: none;
+}
+
+div, p, ul, input, select, fieldset{
+    box-sizing: border-box;
+}
+
+input, select {
+    padding: .2rem .5rem;
+    margin: 0px;
+}
+
+input[type=number] {
+    -moz-appearance:    textfield;
+    -webkit-appearance: textfield;
+    appearance:         textfield;
+}
+
+input:invalid, select:invalid {
+    background-color: rgba(220, 53, 69);
+}
+
+/*input:valid, select:valid {
+    border: .2rem solid rgb(40, 167, 69);
+}*/
+
+input[type=number] {
+    appearance: textfield;
+}
+
+ul, fieldset {
+    margin: 0px;
+}
+
+.hidden_block {
+    display: none !important;
+}
+
+.hidden_visible {
+    visibility: hidden !important;
+}
+
+.hidden_opacity {
+    opacity: 0 !important;
+}
+
+
+.compact {
+    display: none;
+}
+
+.full-size {
+    display: initial;
+}
+
+@media (max-width: 50rem) {
+    .viewport > .header .compact, .window > .header .compact {
+        display: initial;
+    }
+    .viewport > .header .full-size, .window > .header .full-size {
+        display: none;
+    }
+    .viewport > .header ul.toolbar {
+        position:   absolute;
+        right:      0px;
+        background: rgb(15,44,62);
+    }
+    .viewport > .header ul.toolbar > li.full-size {
+        display: none !important;
+    }
+    .viewport > .header ul.toolbar > li.compact {
+        display: block !important;
+    }
+    .viewport > .header ul.toolbar.forced {
+        padding: .1rem .1rem;
+        box-shadow: inset .1rem .1rem 0.1rem rgba(0, 0, 0, .3);
+    }
+    .viewport > .header ul.toolbar.forced > li {
+        display: block !important;
+    }
+    .viewport > .header .header {
+        position: relative;
+    }
+
+
+    .window .capture {
+        vertical-align: sub;
+        font-size:      80%;
+        line-height:    normal;
+    }
+    .window .capture:after {
+        content: unset !important;
+    }
+    .window .capture .full-size {
+        display: none;
+    }
+    .window .capture .compact {
+        display: initial;
+    }
+
+    .settings form input, .settings form select {
+        float: none !important;
+        width: 100% !important;
+    }
+    .settings form fieldset {
+        width: 100%;
+    }
+    .settings form label {
+        height: auto !important;
+        line-height: normal !important;
+        margin: .3rem 0px !important;
+    }
+    .settings .centred {
+        width: 100% !important;
+    }
+    .settings .slider-label.capture {
+        width: 100%;
+        text-align: center;
+    }
+
+    .layout-configuration form input {
+        float: none !important;
+        width: 100% !important;
+    }
+
+    .layout-configuration form label {
+        height: auto !important;
+        line-height: normal !important;
+    }
+
+    .layout-configuration form textarea {
+        margin-top: -.5rem;
+    }
+
+    .layout-configuration .layout-label .capture {
+        vertical-align: middle !important;
+    }
+
+    .configurator-control .title {
+        display: none;
+    }
+
+    .configurator-control form .capture {
+        width: auto !important;
+    }
+
+    .configurator-control form .value {
+        width: 100% !important;
+    }
+
+    .configurator-control form label {
+        position: relative;
+    }
+
+    .configurator-control form .ownership {
+        position: absolute;
+        right: 0px;
+    }
+
+    .cloud > span, .cloud > .value.readonly {
+        width: auto !important;
+    }
+
+    .configurator-control form label.wrapper .full-size {
+        display: none;
+    }
+
+    .configurator-control form label.wrapper .compact {
+        display: initial;
+    }
+
+    .configurator-control .name-ref-scope-notes .control-tip, .configurator-control .name-ctrl-scope-notes .control-tip {
+        color:      unset;
+        display:    unset;
+        text-decoration: none !important;
+    }
+
+    .configurator-control form .name-ref-scope-notes .control-tip:before, .configurator-control form .name-ctrl-scope-notes .control-tip:before {
+        content: unset;
+    }
+
+}
+
+@media (max-width: 24rem), (max-height: 12rem) {
+    body, html {
+        overflow: auto;
+    }
+}
+
+@media (max-aspect-ratio: 2/3.1) {
+
+    .control {
+        writing-mode: vertical-rl;
+        /*text-orientation: upright;*/
+    }
+    .search-result-item-wrapper .control {
+        writing-mode: initial;
+    }
+
+    .configurate-mode .control.disabled {
+        padding-top: calc(10% + .3rem + .3rem) !important;
+    }
+
+    .configurate-mode .control.disabled > * {
+        max-width: none     !important;
+        height: auto        !important;
+        align-self: auto    !important;
+    }
+
+    .configurate-mode .control.disabled::before {
+        top:    .3rem               !important;
+        width:  100%                !important;
+        left:   0px                 !important;
+        right:  0px                 !important;
+        max-width: none             !important;
+        background-size: auto 100%  !important;
+        max-height: 10%;
+    }
+
+}
+
+.viewport {
+    display:    grid;
+    height:     100%;
+    width:      100%;
+    grid-template-rows: var(--header-height) calc(100% - var(--header-height)) 0px;
+
+    min-width:  24rem;
+    min-height: 12rem;
+
+    position: relative; /* needed for abs el with floating ui browser or body.height will-be invalid */
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    background-color: rgb(15,44,62);
+    padding:    0px;
+    margin:     0px;
+}
+
+.header .title {
+    padding: 0px 1rem;
+    color: rgb(255,255,255);
+    font-family: var(--title-font-family);
+    font-size: 1rem;
+}
+
+.header .title a {
+    text-decoration: none;
+    color: inherit;
+    font-family: inherit;
+}
+
+.settings-icon {
+    position:       absolute;
+    height:         .7em;
+    width:          1em;
+    left:           -.7em;
+}
+
+.settings-icon > span {
+    display:    block;
+    position:   absolute;
+    width:      100%;
+    height:     .1em;
+    left:       0;
+    top:        50%;
+
+    border-radius: .1em;
+    background-color: #fff;
+    transform: translateY(-50%);
+}
+
+.settings-icon > span::before,
+.settings-icon > span::after {
+    content:    ''; /* Required for pseudo-elements */
+    display:    block;
+    position:   absolute;
+    width:      100%;
+    height:     .1em;
+    left:       0;
+    border-radius: .1em;
+    background-color:   #fff;
+}
+
+.settings-icon > span::before {
+    top:    -.3em;
+}
+
+.settings-icon > span::after {
+    bottom: -.3em;
+}
+
+ul.breadcrumb {
+    list-style: none;
+    display: flex; /*inline-block;*/
+    padding: 0px 0px 0px 1rem;
+    position: relative;
+
+    /* to proper sizing inline elements*/
+    font-family: var(--text-font-family);
+    font-weight: 400;
+    line-height: 1rem;
+    font-size: 0.75rem;
+}
+
+ul.breadcrumb::before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: calc(100% + 0.5rem);
+    background-color: rgb(25,73,103);
+    transform: translateY(-50%);
+    width: 1px; /*width: 0.0625rem;*/
+    min-width: 1px;
+}
+
+/* Display list items side by side */
+ul.breadcrumb > li {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(255,255,255);
+    margin-top: .1rem; /*temporal remove me*/
+}
+
+/* Add a slash symbol (/) before/behind each list item */
+ul.breadcrumb > li+li:before {
+    width: 0px;
+    height: 0px;
+    content: "";
+    margin: 0px 0.5em;
+    text-align: center;
+    border-top:     .24rem solid transparent;
+    border-bottom:  .24rem solid transparent;
+    border-left:    .24rem solid rgb(30,87,123);
+    display: inline-block;
+}
+
+/* Add a color to all links inside the list */
+ul.breadcrumb a {
+    color: rgb(84, 173, 247);
+    width: max-content;
+    text-decoration: none;
+}
+
+ul.breadcrumb a.static {
+    color: inherit;
+    cursor: auto;
+}
+
+@media (hover: hover) {
+     ul.breadcrumb a.static:hover {
+        color: inherit;
+        cursor: auto;
+    }
+    ul.breadcrumb a:hover {
+        color: rgb(158,208,250);
+    }
+}
+
+ul.breadcrumb li .breadcrumb-label{
+    font-family: var(--text-font-family);
+    font-weight: 400;
+    line-height: 1rem;
+    font-size:   1rem;
+}
+
+ul.toolbar {
+    display: flex;
+    margin-left: auto;
+    list-style: none;
+    margin-right: 1rem;
+    padding: 0px;
+    /*column-gap:   1rem;*/
+}
+
+ul.toolbar > li, ul.toolbar > li.full-size {
+    display: block;
+}
+
+ul.toolbar > li.compact {
+    display: none;
+}
+
+ul.toolbar > li:not(:last-child) {
+    margin-right: .3rem;
+}
+
+ul.toolbar .btn.pressed {
+   /* box-shadow: inset .1rem .1rem rgba(255, 255, 255, .3);*/
+    border: 1px solid;
+    border-radius: 15%;
+    background-color: rgb(36, 70, 90);
+}
+
+ul.toolbar .btn.text {
+    font-size: 70%;
+    line-height: 200%; /*190*/
+
+    /*
+     * is actualy ul.toolbar .btn.num, ul.toolbar .btn.caps, ul.toolbar .btn.scrl selector
+     *
+    */
+
+    color: gray;
+}
+
+ul.toolbar .btn.text.pressed {
+    color: rgb(84, 173, 247);
+}
+
+ul.toolbar .btn.scrl {
+    /**
+    * this is last of keyboard led it offsets more than other
+     */
+    margin-right: 1rem;
+}
+
+
+ul.toolbar .btn.submit {
+    width: auto;
+    padding: 0px .5rem;
+    font-size: 100%;
+    line-height: 180%;
+    /* do not touch line-height it control both size and font positioning change it in future */
+    clip-path: polygon(0% 0%, 75% 0%, 100% 25%, 100% 100%, 0% 100%);
+    background-color: rgb(84, 173, 247);
+    color: black;
+    border-radius: .2rem;
+}
+
+@media (hover: hover) {
+    ul.toolbar .btn.submit:hover {
+        border: 1px solid rgba(0,0,0,0);
+        border-radius: .2rem;
+        background-color: rgb(70, 163, 237);
+    }
+}
+
+ul.toolbar .btn.cancel, ul.toolbar .btn.scope, ul.toolbar .btn.reset  {
+    width: auto;
+    padding: 0px .5rem;
+    font-size: 100%;
+    line-height: 180%;
+}
+
+@media (hover: hover) {
+    ul.toolbar .btn.cancel:hover, ul.toolbar .btn.scope:hover, .btn.reset:hover {
+        border-radius: .2rem;
+    }
+}
+
+ul.toolbar .btn.submit:active, ul.toolbar .btn.cancel:active, ul.toolbar .btn.scope:active, ul.toolbar .btn.reset:active {
+    transform: scale(.9);
+}
+
+ul.toolbar .btn.scope:first-letter, ul.toolbar .btn.reset:first-letter {
+    text-decoration: underline;
+}
+
+ul.toolbar .btn {
+    display: block;
+    width: 2rem;
+    height: 100%;
+    font-size: 120%;
+    color: rgb(84, 173, 247);
+    border: 1px solid rgba(0,0,0,0);
+    line-height: 120%;
+    text-align: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.svg-icon.btn {
+    /*
+        unable to align svg inside btn any other way rather then flex
+    */
+    display:            flex !important;
+    justify-content:    center;
+    align-items:        center;
+}
+
+.unicode-icon {
+    font-family: var(--icon-font-family);
+}
+
+@media (hover: hover) {
+    ul.toolbar .btn:hover {
+        border: 1px solid;
+        border-radius: .20rem;
+    }
+}
+
+
+ul.toolbar .btn svg {
+    width: .8em;
+    height: .8em;
+}
+
+ul.toolbar .btn.numlock, ul.toolbar .btn.capslock {
+    width: auto;
+    padding: 0px .35rem;
+}
+
+.viewport .content {
+    max-width:  100%; /*100vw*/
+    height:     100%;
+    overflow:   hidden;
+}
+
+canvas {
+    /*border: 1px solid red;*/
+}
+
+.swiper {
+    display: flex;
+    align-items: center;
+    width:  100%;
+    height: 100%;
+    background-color: rgb(16, 50, 70);
+
+    transform: initial;
+    will-change: translate, transform;
+}
+
+.swiper-page {
+
+    height:     100%;
+    width:      100%;
+
+    content-visibility: auto;
+    contain: content;
+}
+
+.pager {
+    display: flex;
+    position: absolute;
+    transition: opacity ease-out .5s;
+    justify-content: center;
+    align-items:     center;
+    padding-inline-start: 0px;
+}
+
+.pager.vertical {
+    left: 1rem;
+    top: 50%;
+    transform: translate(0, -50%);
+    width: 2vh;
+    height: 10rem;
+}
+
+.pager.horizontal {
+    left:   50%;
+    bottom: 1rem;
+    transform: translate(-50%, 0);
+    width:  auto;
+    height: auto;
+}
+
+ul.pager {
+    list-style: none;
+}
+
+.pager a {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    border: 1px solid rgb(225,225,225);
+    display: inline-block;
+    margin: 0px 0.25rem;
+    position: relative;
+}
+
+.pager .active a {
+    cursor: auto;
+}
+
+.pager a:before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    border: rgb(225,225,225);
+    display: inline-block;
+    background-color: rgb(225,225,225);
+    position: absolute;
+    margin-left: -0.2rem;
+    margin-top: -0.2rem;
+    left: 50%;
+    top: 50%;
+    transform:  scale(0);
+    transition: transform ease-in 0.3s;
+}
+
+.pager .active a:before {
+    transform:  scale(1);
+}
+
+.controls {
+    grid-template-columns:  repeat(5, minmax(0, 1fr));
+    grid-template-rows:     repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    grid-gap: 1rem;
+    row-gap: 1rem;
+    column-gap: 1rem;
+    display: grid;
+    color: #444;
+    padding: 1rem;
+
+    touch-action: pan-x pan-y;
+}
+
+
+:root {
+
+    --control-border: 1px solid rgba(26, 27, 28, 0.48);
+    --control-border-radius: .4rem;
+    --control-background: linear-gradient(177deg, rgba(26,27,28,0.57) 0%, rgba(26,27,28,0.3) 100%);
+    --control-background-simplified: rgba(26, 27, 28, 0.57);
+    --control-boxshadow: .1rem .2rem .0rem rgba(0, 0, 0, 0.1);
+    --control-boxshadow-simplified: none;
+
+    --control-activated-border: 1px solid rgba(8, 104, 20, 0.48);
+    --control-activated-background: linear-gradient(177deg, rgba(8, 104, 20, 0.26) 0%, rgba(8, 104, 20, 0.15) 100%);
+    --control-activated-background-simplified: rgba(8, 104, 20, 0.26);
+
+    --control-disabled-border: 1px solid rgba(8, 104, 20, 0.48);
+    --control-disabled-background: rgba(15, 15, 15, .17);
+
+}
+
+.layout-highlight {
+    box-shadow: 0px 0px 0px 1px;
+    color:      white;
+    opacity:    0;
+    animation:  layout-highlight-appear .5s 100ms linear forwards;
+    position:   relative;
+    z-index:    10;
+}
+
+.layout-highlight.removed {
+    /*
+    must use different animation name or animation detection will fail
+    */
+    animation: layout-highlight-disappear .5s 0ms linear forwards;
+}
+
+.layout-highlight.selected:not(.removed) {
+    color:  rgb(255, 193, 7);
+}
+
+@keyframes layout-highlight-appear {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes layout-highlight-disappear {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.layout-highlight.locked {
+    /*background-color: red;*/
+}
+
+.layout-highlight:before {
+    content: "";
+    display: block;
+    z-index: 10;
+    opacity: 1.0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+    transform: scaleX(0.0);  /* no not use % */
+    background-color: gray;
+    pointer-events: none;
+}
+
+
+.layout-highlight.active:before { /* ::active emulation */
+    opacity:    0.2;
+    transition: transform 750ms linear 250ms;
+    transform:  scaleX(1.0); /* no not use % */
+}
+
+.control.removed {
+    transform: scale(.3) !important; /* .page.editmode .control < */
+    opacity: .3;
+}
+
+.page.editmode .control {
+    transform: scale(.8);
+}
+
+.control {
+
+    display: grid;
+    grid-auto-rows: max-content;
+    grid-template-columns: 1fr; /* chrome75 experimental fix */
+    justify-items: center;
+    align-content: center;
+
+    color: #fff;
+    padding: 0.7rem;
+    font-size: 120%;
+    cursor: pointer;
+    text-decoration: none;
+    user-select: none;
+    -moz-user-select: none;
+
+    text-align: center;
+    line-height: 110%;
+
+    background:     var(--control-background-simplified);
+    background:     var(--control-background);
+    border:         var(--control-border);
+    border-radius:  var(--control-border-radius);
+    box-shadow:     var(--control-boxshadow);
+    font-family:    var(--title-font-family);
+
+/*    container-type: scroll-state;
+    container-name: control;
+    overflow-y: auto;*/
+
+    /*    backdrop-filter: blur(5.6px);
+        -webkit-backdrop-filter: blur(5.6px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        */
+
+    transition: transform .5s linear, opacity .5s linear; /* .page.editmode .control */
+
+/*    contain:            content;
+    content-visibility: auto;*/
+
+    overflow: auto;
+}
+
+.control.overflow-y > p ~ span:not(.compact),
+.control.overflow-y > p ~ span:not(.full-size) {
+    display:    none;
+}
+
+.control.overflow-x .full-size, .control.overflow-y .full-size {
+    display:    none !important;
+}
+
+.control.overflow-x .compact, .control.overflow-y .compact {
+    display:    initial !important;
+}
+
+.control {
+    -ms-overflow-style: none;  /*!* Internet Explorer 10+ *!*/
+    scrollbar-width:    none;  /*!* Firefox, Safari 18.2+, Chromium 121+ *!*/
+}
+.control::-webkit-scrollbar {
+    display: none;  /*!* Older Safari and Chromium *!*/
+}
+
+/*@container control not scroll-state(scrollable: none)  {
+    .control > span:not(.compact), .control > span:not(.full-size) {
+        display: none;
+    }
+}*/
+
+.control.switched-on, .control.oneshot.click, .control.highlight {
+    background: var(--control-activated-background-simplified);
+    background: var(--control-activated-background);
+    border:     var(--control-activated-border);
+}
+
+.control.switched-on.highlight {
+    background: var(--control-background-simplified);
+    background: var(--control-background);
+    border:     var(--control-border);
+}
+
+.overlayed .control.switched-on, .overlayed .control.oneshot.click, .overlayed .control.highlight {
+    background-color: rgb(16, 50, 70);
+    background-image: linear-gradient(rgba(8, 104, 20, 0.36) 0%, rgba(8, 104, 20, 0.25));
+}
+
+.overlayed .control.switched-on.highlight {
+    background-color: rgb(16, 50, 70);
+    background-image: none;
+}
+
+.control.switched-on span.switched-off {
+    display: none;
+}
+
+.control.switched-off span.switched-on {
+    display: none;
+}
+
+.control.disabled {
+    background: var(--control-disabled-background);
+    cursor: auto;
+    position: relative;
+    box-shadow: none;
+}
+
+.configurate-mode .control.disabled {
+    cursor: pointer;
+}
+
+.configurate-mode .control.disabled > * {
+    /*transform: scale(.9) translateX(5.5%);*/ /* ~~ ((100% - 90%) / 90%) / 2 */
+    max-width:  calc(90% - .3rem - .3rem); /* -.3rem is one side margin of .configurate-mode .control.disabled::before */
+    height: auto !important; /* this one for canvas it sets its size in style (for scaling) */
+    align-self: center;
+}
+
+.configurate-mode .control.disabled::before {
+    content:    "";
+    display:    block;
+    position:   absolute;
+    left:       .3rem;
+    top:        calc(50% - .4em);
+    font-size:  200%;
+    background-image:       url('symbols.svg#gear');
+    background-size:        100%; /*to allow auto resize*/
+    background-repeat:      no-repeat;
+    background-position:    center;
+    width:      .8em;
+    height:     .8em;
+    filter:     invert(100%);
+    max-width:  10%; /*this one will scale down icon when size in not enough*/
+}
+
+.control * {
+    pointer-events: none;
+}
+
+.canvas-wrapper {
+    font-size:      0px;  /** fixing .canvas-wrapper oversize */
+    line-height:    0px;  /** fixing .canvas-wrapper oversize */
+    position:        relative;
+}
+
+.scanning-limiter wbr.canvas-wrapper, .mine-limiter wbr.canvas-wrapper, .salvage-limiter wbr.canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    /*todo move to .canvas-wrapper*/
+}
+
+.control.shields, .control.pds {
+    position: relative;
+}
+
+.control.shields canvas, .control.pds canvas, .control.limiter .canvas-wrapper, .control.limiter canvas, .control.scanning-limiter .canvas-wrapper, .control.scanning-limiter canvas, .control.mine-limiter .canvas-wrapper, .control.mine-limiter canvas, .control.salvage-limiter .canvas-wrapper, .control.salvage-limiter canvas {
+    pointer-events: auto;
+    display:        block; /** fixing .canvas-wrapper oversize */
+    max-height:     100%;  /*fix chrome57 bug with container always offset from canvas*/
+ }
+
+.control.pds, .control.limiter canvas,  .control.scanning-limiter canvas, .control.mine-limiter canvas, .control.salvage-limiter canvas {
+    cursor: unset;
+}
+
+.control.shields p, .control.pds p {
+    display: none;
+}
+
+.control p {
+    margin: 0px;
+}
+
+.control span {
+    font-size: 70%;
+}
+
+@media (hover: hover) {
+    /*speed up a little replace .control:hover:not(.disabled) > p {*/
+    .control:hover > p {
+        animation: ctrl-hover-animation forwards 1s;
+        animation-timing-function: linear;
+    }
+
+    .control.disabled:hover > p {
+        animation: none;
+        animation-timing-function: linear;
+    }
+}
+
+.control.limiter, .control.scanning-limiter, .control.mine-limiter, .control.salvage-limiter  {
+    grid-template-rows: 1.5em auto;
+    grid-auto-rows: max-content;
+    justify-items: initial;
+    align-content: initial;
+}
+
+@keyframes ctrl-hover-animation{
+    0%{
+        font-size: 110%;
+        font-weight: bold;
+    }
+    99%{
+        font-size: 110%;
+        font-weight: bold;
+    }
+    100%{
+        font-size: 100%;
+        font-weight: normal;
+    }
+}
+
+.control kbd, .control .description {
+    display: none;
+}
+
+.simplified .control {
+    background: var(--control-background-simplified);
+    box-shadow: var(--control-boxshadow-simplified);
+}
+
+.simplified .control.switched-on, .simplified .control.click {
+    background: var(--control-activated-background-simplified);
+}
+
+.simplified .control.disabled, .simplified .control.switched-on.disabled, .simplified .control.click.disabled {
+    background: var(--control-disabled-background);
+}
+
+.modal-bg-wrapper {
+    display:    flex;
+    position:   absolute;
+    z-index:    99999;
+    background-color:   rgba(27, 27, 27, .5);
+    left:   0px;
+    top:    0px;
+
+    width: 100vw;
+    height: 100vh;
+
+    width: 100dvw;
+    height: 100dvh;
+}
+
+.window {
+    display: none;
+    grid-template-rows: var(--header-height) 1fr 0px;
+}
+
+.window.showing {
+    display: grid;
+    transition: opacity ease .3s;
+    opacity: 1;
+    align-self: center;
+    margin: auto;
+    max-width:  90%;
+    max-height: 90%;
+}
+
+.window.showing.before, .window.showing.after {
+    opacity: 0;
+}
+
+.window.active {
+    display: grid;
+}
+
+.window .content {
+    padding: 1rem;
+    background-color: rgb(16, 50, 70);
+    overflow-y: auto;
+}
+
+/*todo move to .window ns*/
+.window .capture:after {
+    content: ":";
+}
+
+.layout-configuration {
+    border: 1px solid;
+    width: 35rem;
+    height: 28rem;
+    align-self: center;
+    margin: auto;
+}
+
+.layout-configuration.has-errors {
+    height: 30rem;
+}
+
+.layout-configuration.has-errors .errors-label {
+    display: initial;
+}
+
+.layout-configuration form {
+    display: grid;
+    grid-gap: 1rem;
+    color: rgb(225,225,225);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto 1fr auto;
+    grid-template-areas:
+        "a b"
+        "c d"
+        "e e"
+        "label reset"
+        "text text"
+        "errors errors";
+}
+
+.layout-configuration form input {
+    float: right;
+    width: 4.5rem;
+    height: 1.93rem;
+}
+
+.layout-configuration form label {
+    line-height: 1.93rem;
+}
+
+.layout-configuration .layout-label {
+    grid-area: label;
+}
+
+.layout-configuration .layout-reset {
+    display: block;
+    color: rgb(84, 173, 247);
+    width: max-content;
+    text-decoration: none;
+    font-family: var(--text-font-family);
+    font-weight: 400;
+    align-self: center;
+    cursor: pointer;
+    grid-area: reset;
+    position: relative;
+}
+
+.layout-configuration  .layout-reset:before {
+    content: "";
+    border-bottom: 1px solid;
+    display: block;
+    position: absolute;
+    bottom: 0px;
+    width: 0px;
+    transition: width ease .3s;
+}
+
+@media (hover: hover) {
+    .layout-configuration  .layout-reset:hover:before {
+        width: 100%;
+    }
+}
+
+.layout-configuration form textarea {
+    grid-area: text;
+    resize: none;
+    font-family: var(--mono-font-family);
+    white-space: pre;
+    font-size:  160%;
+    min-height: 10rem;
+}
+
+.layout-configuration form .errors-label {
+    grid-area: errors;
+    font-size: 80%;
+    display: none;
+    line-height: 150%;
+}
+
+.settings {
+    border: 1px solid;
+    width: 33rem;
+    align-self: center;
+    margin: auto;
+}
+
+.settings form {
+    color: rgb(225,225,225);
+    height: 100%;
+}
+
+.settings form fieldset{
+    border-color: rgba(15,44,62, .8);
+    border-radius: .4rem;
+}
+
+.settings form input, .settings form select {
+    float:  right;
+    width:  20rem;
+    height: 1.93rem;
+}
+
+.settings form label  {
+    height:         1.93rem;
+    line-height:    1.93rem;
+    display:        inline-block;
+    width:          100%;
+    margin:         .5rem 0px;
+}
+
+.settings form label:after {
+    float: none;
+}
+
+.settings form select {
+    padding-right: 1.5em;
+
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    background-image:       url("symbols.svg#arrow-cl-main");
+    background-position:    right .4em center;
+    background-size:        .7em .7em;
+    background-repeat:      no-repeat;
+}
+
+.settings fieldset.local {
+    border: 0px;
+}
+
+.settings fieldset.local legend {
+    display: none;
+}
+
+.settings form .errors-label {
+    font-size: 80%;
+    display: none;
+}
+
+.settings.has-errors .errors-label {
+    display: initial;
+}
+
+.settings .centred {
+    width: 20rem;
+    display: inline-block;
+    float: right;
+    font-size: 0px;
+}
+
+.settings .slider-label {
+    display: inline-block;
+}
+
+.settings .slider-wrapper {
+    transform: scale(.85); /* todo change to variable parameter size for slider widget */
+    vertical-align: middle;
+}
+
+.configurator-control {
+    width:      45rem;
+    font-size:  120%;
+    color:      #fff;
+    text-decoration:    none;
+    -moz-user-select:   none;
+    text-align:         left;
+    background:         rgba(26, 27, 28, .65);
+    border-radius:      1rem;
+    box-shadow:         0 .25rem .65rem rgba(0, 0, 0, 0.2); /*transit opt*/
+    backdrop-filter:            blur(.4rem);
+    -webkit-backdrop-filter:    blur(.4rem);
+    line-height:        110%;
+    padding:            1rem;
+}
+
+.configurator-control .content {
+    max-height: calc(100vh - var(--header-height, 2.5rem));
+    overflow-y: auto;
+}
+
+.configurator-control .title {
+    text-transform: uppercase;
+}
+
+.configurator-control .header, .configurator-control .content, .configurator-control .footer {
+    background: none;
+}
+
+.configurator-control form {
+    display: grid;
+    color: rgb(225,225,225);
+    grid-template-columns: 1fr;
+    /*height: 100%;*/
+    grid-gap: 2rem;
+}
+
+.configurator-control form label {
+    width: 100%;
+}
+
+.configurator-control form .capture {
+    width:          15rem;
+    display:        inline-block;
+    vertical-align: middle;
+    line-height:    140%;
+    font-family: var(--text-font-family);
+    padding-right:  1rem;
+    box-sizing:     border-box;
+}
+
+.configurator-control form .value {
+    width:              calc(100% - 15rem);
+    display:            inline-block;
+    vertical-align:     middle;
+    font-size:          140%;
+    text-align:         center;
+    font-kerning:       auto;
+    color:              #fff;
+    background-color:   rgba(50, 50, 50, .8);
+    font-family: var(--text-font-family);
+}
+
+.configurator-control form input.value, .configurator-control form .value input, .configurator-control form select.value {
+    border: 0px;
+    box-shadow: 0 0 .2rem;
+}
+
+.configurator-control form input.value:focus, .configurator-control form .value input:focus, .configurator-control form select:focus {
+     box-shadow: 0 0 .2rem rgba(23, 162, 184, .8) !important;
+}
+
+/*.configurator-control form input.value:valid, .configurator-control form .value input:valid, .configurator-control form select:valid {
+    box-shadow: 0 0 .2rem rgba(40, 167, 69, .8);
+}*/
+
+.configurator-control form input.value:invalid, .configurator-control form .value input:invalid, .configurator-control form select:invalid {
+    box-shadow: 0 0 .2rem rgba(220, 53, 69, .8);
+}
+
+.configurator-control form select.value {
+    /* todo wrap all input,select in div */
+    -webkit-appearance: none;
+    -moz-appearance:    none;
+    appearance:         none;
+
+    /* ::picker gradient */
+/*
+    padding-right: 1em;
+    background-image:       linear-gradient(45deg, transparent 50%, rgb(84, 173, 247) 50%),
+                            linear-gradient(135deg, rgb(84, 173, 247) 50%, transparent 50%),
+                            linear-gradient(to right, rgb(25,73,103), rgb(25,73,103));
+    background-position:    calc(100% - .73em) calc(.6em),
+                            calc(100% - .53em) calc(.6em),
+                            calc(100% - 1.5em) 0.2em;
+    background-size:        .2em .2em,
+                            .2em .2em,
+                             1px  1em;
+    background-repeat:      no-repeat;
+
+    */
+
+
+    /* ::picker svg */
+    background-image: url("symbols.svg#arrow-cl-main"),
+                      linear-gradient(to right, rgb(25,73,103), rgb(25,73,103));
+    background-position:    right .4em   center,
+                            right  1.5em center;
+    background-size: .7em .7em,
+                      1px   1em;
+
+    background-repeat: no-repeat;
+}
+
+
+
+
+.configurator-control form .value input {
+
+    padding-right:      2em;
+    text-align:         center;
+    vertical-align:     inherit;
+    font-kerning:       inherit;
+    background-color:   inherit;
+    font-size:          inherit;
+    color:              inherit;
+    width:              100%;
+
+}
+
+.configurator-control form .value.type-bool {
+    font-size:          2rem;
+    text-align:         center;
+    background-color:   initial;
+}
+
+.configurator-control form .description, .configurator-control form .ownership  {
+    font-size: 60%;
+}
+
+.configurator-control form .description::before {
+    content: "* ";
+}
+
+.configurator-control form .ownership {
+    display: block;
+    text-align: right;
+}
+
+.ownership.owned {
+    color: rgb(40, 167, 69)
+}
+
+.ownership.inherited {
+    color: rgb(255, 193, 7)
+}
+
+.ownership.not-inheritable {
+    color: rgb(220, 53, 69)
+}
+
+.configurator-control form .capture.readonly {
+    font-size: 100%;
+}
+
+.configurator-control form :not(.cloud) .value.readonly {
+    font-size: 100%;
+    text-align: left;
+    background-color: initial;
+}
+
+.wrapper.empty {
+    text-align:     center;
+    vertical-align: middle;
+}
+
+.errors > .error {
+    font-family: var(--text-font-family);
+    margin-left: .3em;
+}
+
+.errors > .error:first-child {
+    margin-left: .1em;
+}
+
+.errors > .error:not(:last-child)::after {
+    content: ", ";
+}
+
+.configurator-control .capture {
+    text-transform: capitalize;
+}
+
+.configurator-control.scope-ctrl form.ctrl {
+    display: grid;
+}
+
+.configurator-control.scope-ctrl form.view {
+    display: none;
+}
+
+.configurator-control.scope-view form.ctrl {
+    display: none;
+}
+
+.configurator-control.scope-view form.view {
+    display: grid;
+}
+
+.configurator-control .capture.name-description {
+    display: none;
+}
+
+.configurator-control .capture.name-ctrl-scope-notes, .configurator-control .capture.name-ref-scope-notes {
+    display: none;
+}
+
+.configurator-control .name-ctrl-scope-notes .compact, .configurator-control .name-ref-scope-notes .compact {
+    display: none;
+}
+
+.configurator-control .value.name-ctrl-scope-notes {
+    width: auto;
+    color: #FFDC73;
+    font-size: 70% !important;
+
+    background-color: gray !important;
+    padding: .2rem;
+    box-shadow: inset 0 0 .2rem black;
+}
+
+.configurator-control .value.name-ref-scope-notes {
+    width: auto;
+    color: aqua;
+    font-size: 80% !important;
+
+    background-color: gray !important;
+    padding: .2rem;
+    box-shadow: inset 0 0 .2rem black;
+}
+
+.configurator-control .value.name-description {
+    width: auto;
+}
+
+/*.configurator-control .value.name-description br:first-child {
+    display: none; //see similar in search wnd
+}*/
+
+.configurator-control .layer.switcher {
+    display: flex;
+    list-style: none;
+}
+
+.configurator-control .layer.switcher > li {
+    display: flex;
+    list-style: none;
+}
+
+
+.selector-control {
+    width:      45rem;
+    font-size:  120%;
+    color:      #fff;
+    text-decoration:    none;
+    -moz-user-select:   none;
+    text-align:         left;
+    background:         rgba(26, 27, 28, .65);
+    border-radius:      1rem;
+    box-shadow: 0 .25rem .65rem rgba(0, 0, 0, 0.2); /* transit optimization */
+    backdrop-filter:            blur(.4rem);
+    -webkit-backdrop-filter:    blur(.4rem);
+    line-height:    110%;
+    padding:        1rem;
+}
+
+.selector-control .content {
+    overflow-y: auto;
+    padding: 1rem 1rem 1rem 0px;
+}
+
+.selector-control .title {
+    display: none;
+}
+
+.selector-control .toolbar, .selector-control .toolbar li:first-child {
+    width: 100%;
+}
+
+.selector-control .search-label {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.selector-control .search-icon {
+    display:    inline-block;
+    position:   absolute;
+    top:        calc(50% - .5em);
+    cursor: pointer;
+    width:  1em;
+    height: 1em;
+    left:  .45em;
+}
+
+.selector-control .search-icon svg {
+    width:  1em;
+    height: 1em;
+}
+
+.selector-control input[type=search] {
+    width:  100%;
+    height: 100%;
+    padding-left: 1.43em; /* transitive normalization em->px->em dE~.05px*/
+    font-size: 140%;
+    font-kerning: auto;
+    color: #fff;
+    background-color: rgba(50, 50, 50, .8);
+
+    border: 0px;
+    box-shadow: 0 0 .2rem;
+}
+
+.selector-control input[type=search]:focus {
+    box-shadow: 0 0 .2rem rgba(23, 162, 184, .8);
+}
+
+.selector-control .header, .selector-control .content, .selector-control .footer {
+    background: none;
+}
+
+.selector-control .footer {
+    padding: .5rem .5rem .0px .5rem;
+}
+
+.search-result-item-wrapper {
+    display:                grid;
+    grid-template-columns:  1fr 2fr;
+    grid-template-rows:     1.5em 3fr auto;
+    grid-gap:               .5rem;
+    gap:                    .5rem;
+    grid-template-areas:    "a b"
+                            "a c"
+                            "d d";
+    margin-bottom:          .5rem;
+    padding:                .5rem;
+    position:               relative;
+}
+
+.search-result-item-wrapper:before {
+    content: "";
+    display: block;
+    z-index: 10;
+    opacity: 1.0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transform-origin: 0 0;
+    transform: scaleX(0.0);  /* do not use % */
+    background-color: gray;
+}
+
+.search-result-item-wrapper.active:before {
+    opacity: 0.2;
+    transition: transform 750ms linear 250ms;
+    transform: scaleX(1.0); /* do not use % */
+}
+
+.search-result-item-wrapper.active {
+    box-shadow: inset 1px 1px 10px -1px black;
+}
+
+.search-result-item-wrapper:hover {
+    box-shadow: inset 1px 1px 10px -1px black;
+}
+
+
+@media (hover: hover) {
+    .search-result-item-wrapper:hover {
+        box-shadow: inset 1px 1px 10px -1px black;
+    }
+}
+
+.search-result-item-wrapper:last-child {
+    margin-bottom: 0px;
+}
+
+.search-result-item-wrapper .preview {
+    background-color:   rgb(16, 50, 70);
+    padding:            .5rem;
+    display:            flex;
+    justify-content:    start;
+    align-items:        center;
+    grid-area:          a;
+    pointer-events: none;
+}
+
+.search-result-item-wrapper.widget {
+    min-height: 18rem;
+}
+
+.search-result-item-wrapper.widget .control canvas {
+    max-height: initial !important; /*chrome57 workaround*/
+}
+
+.search-result-item-wrapper .control {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.search-result-item-wrapper .identifier {
+    margin: 0px;
+    grid-area: b;
+    pointer-events: none;
+}
+
+.search-result-item-wrapper .description {
+    grid-area: c;
+    pointer-events: none;
+}
+
+/*.search-result-item-wrapper .description br:first-child {
+    display: none; //not work properly as text node is not el so every br after text is first-child
+}*/
+
+.search-result-item-wrapper .groups {
+    grid-area: d;
+    pointer-events: none;
+}
+
+.empty-container {
+    display: table;
+    width: 100%;
+
+    /* for old browser that not support min() max()*/
+    height: 23rem;
+    max-height: calc(90vh - var(--header-height) - 4rem);
+}
+
+.empty-container .empty-msg {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.cloud {
+    --cloud-item-index:  -1;
+/*    overflow-x: hidden;
+    overflow: clip;*/
+    height: 100%;
+}
+
+ .cloud > span, .cloud > .value.readonly {
+    position: relative;
+    width: auto;
+    font-size: 80%;
+    display: inline-block;
+    border-radius: .1rem;
+    clip-path: polygon(0% 0%, calc(100% - .5rem) 0%, 100% .4rem, 100% 100%, 0% 100%);
+    z-index:   var(--cloud-item-index, 0);
+    text-transform: initial;
+    margin-bottom: .2rem;
+    padding: .1rem;
+    margin-right: .2rem;
+    background-color: white;
+}
+
+.cloud > span:before {
+    width:  auto;
+    display: inline-block;
+    padding: .15rem .5rem;
+    border-radius: .1rem;
+    clip-path: polygon(0% 0%, calc(100% - .5rem) 0%, 100% .4rem, 100% 100%, 0% 100%);
+    min-width: 3rem;
+    text-align: center;
+    vertical-align: middle;
+    text-transform: capitalize;
+    text-shadow: 1px 1px rgba(var(--cloud-item-invert-color, "white"), 0.3), -1px 1px rgba(var(--cloud-item-invert-color, "white"), 0.3), 1px -1px rgba(var(--cloud-item-invert-color, "white"), 0.3), -1px -1px rgba(var(--cloud-item-invert-color, "white"), 0.3);
+    font-weight: bold;
+    content:            var(--cloud-item-content);
+    background-color:   var(--cloud-item-bg,    "black");
+    color:              rgb(var(--cloud-item-color, "white"));
+}
+
+.kbk-wrapper {
+    position: relative;
+}
+
+.btn.kbk-switcher {
+    display: block;
+    position: absolute;
+    top: 7%;
+    right: 0.3rem;
+    border: 1px solid;
+    background: rgb(84, 173, 247);
+    height: 80%;
+    width: 1.3em;
+    line-height: 115%;
+    text-align: center;
+    text-decoration: none;
+    clip-path: polygon(0% 0%, 75% 0%, 100% 25%, 100% 100%, 0% 100%);
+    border-radius: .3rem;
+    color: #000;
+}
+
+.notifications {
+    display: grid;
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    grid-template-rows: 1fr;
+    grid-gap: .5rem;
+
+    pointer-events: none;
+}
+
+.notifications .notification {
+    padding: .7rem 2rem .7rem 2rem;
+    font-size: 130%;
+    font-weight: bold;
+    text-align: left;
+    pointer-events: none;
+
+    border-radius: .7rem 0px 0px .7rem;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    min-width: 20rem;
+
+    color: #fff;
+
+    background-image: linear-gradient(to right, var(--notification-bg-color, rgb(23, 162, 184)),
+        var(--notification-bg-color, rgb(23, 162, 184))), linear-gradient(to right, #164561, #164561);
+    background-size: 0.9rem 100%, auto; /* 0.9rem auto, auto is invalid for chrome57 */
+    background-repeat: no-repeat;
+
+    position: relative;
+
+    transition: transform linear .5s, opacity linear .5s;
+
+    opacity: 1;
+
+    border: 1px solid rgb(15,44,62);
+}
+
+.notifications .notification.before {
+    transform: translate(100%);
+    opacity: 0;
+}
+
+.notifications .notification.after {
+    transform: translate(100%);
+    opacity: 0;
+}
+
+.notifications .notification p {
+    margin: 0px;
+}
+
+.notification.timed:before {
+    content: " ";
+    display: block;
+    position: absolute;
+    border-bottom: .2rem solid var(--notification-timed-border-color, "black");
+    bottom: .3rem;
+    border-radius: .15rem;
+    width: calc(100% - 4rem);
+    left: 2rem;
+    transition: width linear var(--time, 1);
+}
+
+.notification.timed.started:before {
+    width: 0px;
+}
+
+.notification.info {
+    background-color: rgb(23, 162, 184, .3);
+    --notification-bg-color: rgb(23, 162, 184);
+    --notification-timed-border-color: rgb(23, 162, 184);
+}
+
+.notification.success {
+    background-color: rgb(40, 167, 69, .3);
+    --notification-bg-color: rgb(40, 167, 69);
+    --notification-timed-border-color: rgb(0, 167, 69);
+}
+
+.notification.error {
+    background-color: rgba(220, 53, 69, .3);
+    --notification-bg-color: rgb(220, 53, 69);
+    --notification-timed-border-color: rgb(220, 53, 69);
+}
+
+.notification.warning {
+    background-color: rgba(255, 193, 7, .3);
+    --notification-bg-color: rgb(255, 193, 7);
+    --notification-timed-border-color: rgb(255, 193, 7);
+}
+
+/* The switch - the box around the slider */
+.slider-wrapper {
+    position: relative;
+    display: inline-block;
+    width:  3.5rem;
+    height: 2rem;
+    border-radius: .1rem;
+}
+
+/* Hide default HTML checkbox */
+.slider-wrapper input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    left:   .25rem;
+    bottom: .25rem;
+    top:    .25rem;
+    right:  .25rem;
+
+    height: 1.5rem;
+    width:  1.5rem;
+
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: rgb(84, 173, 247);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px rgb(84, 173, 247);
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(1.5rem);
+    -ms-transform: translateX(1.5rem);
+    transform: translateX(1.5rem);
+}
+
+#overlay {
+    display: block;
+    position: absolute;
+    z-index: -1;
+    top:     0px;
+    left:    0px;
+}
+
+.overlayed .controls {
+    position: relative;
+}
+
+
+.overlayed .control.group-canvas {
+    background-color: rgb(16, 50, 70);
+    background-image: var(--control-background);
+}
+
+.overlayed .control.group-canvas.disabled {
+    background-color: #102c3d;
+    background-image: none;
+}
+
+/*.overlayed .control {
+    background-color: rgb(16, 50, 70);
+    background-image: linear-gradient(rgba(26, 27, 28, 0.57), rgba(26, 27, 28, 0.57));
+}*/
+
+
+
+.not-found-msg {
+    color: #fff;
+    font-size: 300%;
+    font-weight: bold;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10em;
+    height: 2em;
+    text-align: center;
+    margin-top: -1em;
+    margin-left: -5em;
+    display: block;
+
+    animation: blur-animation forwards 5s infinite;
+    animation-timing-function: linear;
+}
+
+.centred {
+    text-align: center;
+}
+
+.control-tip {
+    font-size: 110%;
+    font-style: inherit;
+    color: inherit;
+    display: inline-block;
+}
+
+.control-tip {
+    color:      inherit;
+    display:    inline-block;
+    position:   relative;
+    text-decoration: none;
+    cursor: auto;
+}
+
+.control-tip[title]:not([title=""]) {
+    text-decoration:    underline;
+    cursor:             pointer;
+}
+
+.control-tip::before {
+    content: 'game';
+    display: inline-block;
+    width: 3.2em;
+    height: 1em;
+    border-radius: .3rem;
+    background-color: rgb(84, 173, 247);
+    color: black;
+    vertical-align: middle;
+    line-height: .8em;
+    text-align: center;
+    margin-right: .2rem;
+    font-size: 70%;
+}
+
+.control-tip .action {
+}
+
+.control-tip .action:not(.unset):after {
+    content: " - ";
+}
+
+.control-tip .shortcut {
+
+}
+
+.stretch {
+    width: 100%;
+    height: 100%;
+}
+
+.debug-shield-widget, .debug-power-widget {
+    grid-area: a;
+    position: relative;
+}
+
+.debug-shield-cone, .debug-power-cone {
+    /*border: solid 2.5rem;*/
+    border-top-color: currentcolor;
+    border-right-color: currentcolor;
+    border-bottom-color: currentcolor;
+    border-left-color: currentcolor;
+    /*border-radius: 50%;*/
+    border-color: lightskyblue;
+    text-align: center;
+    max-width: 100%;
+    max-height: 100%;
+    position: relative;
+    box-sizing: content-box;
+}
+
+.debug-shield-widget svg, .debug-power-widget svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.debug-shield-widget canvas, .debug-power-widget canvas {
+    position: absolute;
+}
+
+@keyframes blur-animation{
+    0%{
+        filter: blur(0px);
+    }
+    25%{
+        filter: blur(0px);
+    }
+    50%{
+        filter: blur(10px);
+        opacity: .8;
+    }
+    100%{
+        filter: blur(0px);
+        opacity: 1;
+    }
+}
+

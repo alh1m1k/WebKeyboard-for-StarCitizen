@@ -1,0 +1,13 @@
+build
+managed_components
+.settings
+.cproject
+.project
+.idea
+*.png
+*.bin
+*.elf
+test
+!promo/*.png
+promo/ref
+resource/ref

@@ -1,0 +1,4096 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=overlays-content">
+  <title>WebKeyboard project for star citizen</title>
+
+  <style>
+    .group-decl, .controls-decl, .pages-decl, .router-decl {
+        display: none;
+    }
+  </style>
+  <!--<link rel="stylesheet" href="font.css?v=1.0">-->
+  <!--<link rel="stylesheet" href="dhw3beb.css?v=1.0">-->
+  <link rel="stylesheet" href="index.css?v=1.0">
+
+  <script src="lib.js"></script>
+  <script src="widget.js"></script>
+
+</head>
+
+<body>
+
+  <div style="display: none" class="group-decl">
+
+    <div class="group" data-group-id="not-impl">
+      <div class="attribute" data-attribute-id="logic"></div>
+    </div>
+
+    <div class="group" data-group-id="observe">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#8A2BE2</div>
+    </div>
+
+    <div class="group" data-group-id="doors">
+      <div class="attribute" data-attribute-id="control"></div>
+    </div>
+
+    <div class="group" data-group-id="need-reset">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">red</div>
+    </div>
+
+    <div class="group" data-group-id="port">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">#7b647c</div>
+    </div>
+
+    <div class="group" data-group-id="modes">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#daa520</div>
+    </div>
+
+    <div class="group" data-group-id="op-mode">
+      <div class="attribute" data-attribute-id="control"></div>
+    </div>
+
+    <div class="group" data-group-id="master-mode">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="turret">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">#7f5624</div>
+    </div>
+
+    <div class="group" data-group-id="quantum">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">black</div>
+    </div>
+
+    <div class="group" data-group-id="pleace-ignore">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="target">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#5588cc</div>
+    </div>
+
+    <div class="group" data-group-id="countermeasures">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">white</div>
+    </div>
+
+    <div class="group" data-group-id="countermeasures-seq">
+      <div class="attribute" data-attribute-id="logic"></div>
+    </div>
+
+    <div class="group" data-group-id="missile-pack">
+      <div class="attribute" data-attribute-id="logic"></div>
+    </div>
+
+    <div class="group" data-group-id="missile-pack-arm-cnt">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">#dec3af</div>
+    </div>
+
+    <div class="group" data-group-id="moby">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">#0000c8</div>
+    </div>
+
+    <div class="group" data-group-id="ming-gadget">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="control"></div>
+      <div class="attribute" data-attribute-id="data.color">#a74722</div>
+    </div>
+
+    <div class="group" data-group-id="ming-op">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#ddc445</div>
+    </div>
+
+    <div class="group" data-group-id="salvage-focus">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#5fda9e</div>
+    </div>
+
+    <div class="group" data-group-id="salvage-cycle">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#533ac9</div>
+    </div>
+
+    <div class="group" data-group-id="ping">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#412a89</div>
+    </div>
+
+    <div class="group" data-group-id="echo">
+      <div class="attribute" data-attribute-id="control"></div>
+    </div>
+
+    <div class="group" data-group-id="memo">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#cfb578</div>
+    </div>
+
+    <div class="group" data-group-id="gear">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#e37b2c</div>
+    </div>
+
+    <div class="group" data-group-id="sequence">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="convergence">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#8b2f89</div>
+    </div>
+
+    <div class="group" data-group-id="jammers">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#d94352</div>
+    </div>
+
+    <div class="group" data-group-id="esp">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#506400</div>
+    </div>
+
+    <div class="group" data-group-id="personal-gear">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#bfdf86</div>
+    </div>
+
+    <div class="group" data-group-id="core-power">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#808429</div>
+    </div>
+
+    <div class="group" data-group-id="request">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#6A5ACD</div>
+    </div>
+
+    <div class="group" data-group-id="helm">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#8B00FF</div>
+    </div>
+
+    <div class="group" data-group-id="locker">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#862a2d</div>
+    </div>
+
+    <div class="group" data-group-id="not-set">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">red</div>
+    </div>
+
+    <div class="group" data-group-id="shields">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#e8d9f9</div>
+    </div>
+
+    <div class="group" data-group-id="power-grid">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#ca9233</div>
+    </div>
+
+    <div class="group" data-group-id="limiter">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#de8a67</div>
+    </div>
+
+    <div class="group" data-group-id="leave">
+      <div class="attribute" data-attribute-id="control"></div>
+    </div>
+
+    <div class="group" data-group-id="canvas">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="axial">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="pds">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#7f5624</div>
+    </div>
+
+    <div class="group" data-group-id="itemop">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#de8a67</div>
+    </div>
+
+    <div class="group" data-group-id="left">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="right">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="disintegration">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="all">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="focused">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="fracture">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="misc">
+      <div class="attribute" data-attribute-id="info"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#de8a67</div>-->
+    </div>
+
+    <div class="group" data-group-id="on-foot">
+      <div class="attribute" data-attribute-id="info"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#2c4b54</div>-->
+    </div>
+
+    <div class="group" data-group-id="vehicle">
+      <div class="attribute" data-attribute-id="info"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#2c4b54</div>-->
+    </div>
+
+    <div class="group" data-group-id="flight">
+      <div class="attribute" data-attribute-id="info"></div>
+      <!--<div class="attribute" data-attribute-id="data.color">#2c4b54</div>-->
+    </div>
+
+    <div class="group" data-group-id="emotion">
+      <div class="attribute" data-attribute-id="info"></div>
+    </div>
+
+    <div class="group" data-group-id="displayInfo">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#d94352</div>
+    </div>
+
+    <div class="group" data-group-id="pref">
+      <div class="attribute" data-attribute-id="logic"></div>
+    </div>
+
+  </div>
+
+  <div style="display: none" class="controls-decl">
+    <!-- LANDING OP BEGIN -->
+    <div class="control" data-control-id="landing-gear" data-control-type="switch" data-control-groups="gear">
+      <p class="full-size">Landing Gear</p>
+      <p class="compact">Gear</p>
+      <span class="switched-on">deployed</span>
+      <span class="switched-off">retracted</span>
+      <kbd>n</kbd>
+      <span class="description">
+          Landing gear control. Use game settings to configure separate deploy and retract, then do same for this control.
+          Hint: separate gear control, landing mode and landing req for better control of landing, this one crucial for snub docking(ships like merlin/constellation)
+          #switch#N#/settings/Flight - Movement/Landing System (Toggle)#
+          #deploy#not set#/settings/Flight - Movement/Landing System (Deploy)#
+          #retract#not set#/settings/Flight - Movement/Landing System (Retract)#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="ext-lighting" data-control-type="switch" data-control-groups="gear">
+      <p class="full-size">Ext. Lighting</p>
+      <p class="compact">Light</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>l</kbd>
+      <span class="description">
+          External lighting control. Separate on/off may not work.
+          #switch#L#/settings/Lights/Headlights (Toggle)#
+          #on#not set#/settings/Lights/Headlights#
+          #off#not set#/settings/Lights/Headlights#
+      </span>
+    </div>
+    <div class="control" data-control-id="land-req" data-control-type="oneshot" data-control-groups="request">
+      <p class="full-size">Landing Req.</p>
+      <p class="compact">LndRq</p>
+      <span></span>
+      <kbd>+lalt+n</kbd>
+      <span class="description">
+          Landing Request. Cargo request implement as different control.
+          Hint: separate gear control, landing mode and landing req for better control of landing, this one crucial for snub docking(ships like merlin/constellation)
+          Hint: this combination seems not changeable.
+          #activate#lAlt+N##
+      </span>
+    </div>
+    <div class="control" data-control-id="land-req-cargo" data-control-type="oneshot" data-control-groups="request">
+      <p class="full-size">Landing Req. (Cargo)</p>
+      <p class="compact">LndRqC</p>
+      <span></span>
+      <kbd>+ralt+n</kbd>
+      <span class="description">
+          Landing Req. (Cargo) control, separate request implement as different controls.
+          Hint: separate gear control, landing mode and landing req for better control of landing, this one crucial for snub docking(ships like merlin/constellation)
+          Hint: this combination seems not changeable.
+          #activate#rAlt+N##
+      </span>
+    </div>
+    <div class="control" data-control-id="vtol" data-control-type="switch" data-control-groups="gear">
+      <p>VTOL</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>k</kbd>
+      <span class="description">
+          VTOL control. Separate on/off not available.
+          #switch#L#/settings/Lights/Toggle VTOL#
+      </span>
+    </div>
+
+    <div class="control" data-control-id="helm-remove" data-control-type="oneshot" data-control-groups="helm">
+      <p>Helmet</p>
+      <span></span>
+      <kbd>+alt+h</kbd>
+      <span class="description">
+          Helmet remove/attach. Separate put on/take off not available.
+          #activate#lAlt+H#/settings/On Foot - All/Helmet#
+      </span>
+    </div>
+    <div class="control" data-control-id="helm-wipe" data-control-type="oneshot" data-control-groups="helm">
+      <p class="full-size">Wipe Visor</p>
+      <p class="compact">Visor</p>
+      <span></span>
+      <kbd>+alt+x</kbd>
+      <span class="description">
+          Clear helmet visor.
+          #activate#lAlt+X#/settings/Flight - HUD/Wipe Helmet Visor#
+      </span>
+    </div>
+    <div class="control" data-control-id="free-look" data-control-type="switch" data-control-groups="observe">
+      <p class="full-size">Free Look</p>
+      <p class="compact">Look</p>
+      <span></span>
+      <kbd>z</kbd>
+      <span class="description">
+          Look around. Separate on/off not available.
+          Hint: default button (z) work both in hold and switch mode.
+          #switch#Z#/settings/Vehicles - View/Freelook (Hold)#
+      </span>
+    </div>
+
+    <div class="control" data-control-id="refuel" data-control-type="oneshot" data-control-groups="not-impl">
+      <p>Refuel</p>
+      <span></span>
+      <kbd></kbd>
+      <span class="description">
+          Refuel control. No longer available in the game.
+          #activate#not exist##
+      </span>
+    </div>
+    <div class="control" data-control-id="repair" data-control-type="oneshot" data-control-groups="not-impl">
+      <p>Repair</p>
+      <span></span>
+      <kbd></kbd>
+      <span class="description">
+          Repair control. No longer available in the game.
+          #activate#not exist##
+      </span>
+    </div>
+
+    <div class="control" data-control-id="doors-open" data-control-type="switch" data-control-groups="doors,locker">
+      <p class="full-size">Doors O/C</p>
+      <p class="compact">Drs O/C</p>
+      <span class="switched-on">opened</span>
+      <span class="switched-off">closed</span>
+      <kbd class="switched-on"></kbd>
+      <kbd class="switched-off"></kbd>
+      <span class="description">
+          Control of all doors state in the ship, Use game settings to configure separate open and close actions, then do same for this control.
+          #switch#not set#/settings/Vehicles - Cockpit/Open/Close Doors (Toggle)#
+          #open#not set#/settings/Vehicles - Cockpit/Open All Doors#
+          #close#not set#/settings/Vehicles - Cockpit/Close All Doors#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="doors-lock" data-control-type="switch" data-control-groups="doors,locker">
+      <p class="full-size">Doors locker</p>
+      <p class="compact">Drs Lok</p>
+      <span class="switched-on">locked</span>
+      <span class="switched-off">unlocked</span>
+      <kbd class="switched-on"></kbd>
+      <kbd class="switched-off"></kbd>
+      <span class="description">
+          Control of all doors locker in the ship, Use game settings to configure separate lock and unlock actions, then do same for this control.
+          #switch#not set#/settings/Vehicles - Cockpit/Lock/Unlock Doors (Toggle)#
+          #lock#not set#/settings/Vehicles - Cockpit/Lock All Doors#
+          #unlock#not set#/settings/Vehicles - Cockpit/Unlock All Doors#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="port-lock" data-control-type="switch" data-control-groups="port,locker">
+      <p class="full-size">Port locker</p>
+      <p class="compact">Port Lok</p>
+      <span class="switched-on">unlocked</span>
+      <span class="switched-off">locked</span>
+      <kbd class="switched-on"></kbd>
+      <kbd class="switched-off"></kbd>
+      <span class="description">
+          Control of all port locker in the ship, Use game settings to configure separate lock and unlock actions, then do same for this control.
+          #switch#not set#/settings/Vehicles - Cockpit/Port Lock Toggle All#
+          #lock#not set#/settings/Vehicles - Cockpit/Port Lock All#
+          #unlock#not set#/settings/Vehicles - Cockpit/Port Unlock All#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+
+    <div class="control" data-control-id="leave" data-control-type="oneshot" data-control-groups="leave">
+      <p>Leave</p>
+      <span></span>
+      <kbd>+y:long+</kbd>
+      <span class="description">
+        Leave current station/ship.
+        #activate#Y(long)#/settings/Social - General/Exit seat#
+      </span>
+    </div>
+
+    <!-- LANDING OP END -->
+
+    <!-- MODES BEGIN -->
+
+    <div class="control" data-control-id="quantum-mode" data-control-type="switch" data-control-groups="modes,quantum,master-mode">
+      <p class="full-size">Quantum engine</p>
+      <p class="compact">Quant</p>
+      <span class="switched-on">nav mode</span>
+      <span class="switched-off">scm mode</span>
+      <kbd>+b:long+</kbd>
+      <span class="description">
+        Quantum engine and IFCS mode. Use game settings to configure separate "on" and "off", then do same for this control.
+        Hint: Do not use #Qt. operator##/settings/Vehicles - Seats and Operator Modes/Set Quantum Operator Mode# setting for this control, It will not work
+
+        #switch#B(long)#/settings/Flight - Movement/Cycle Master mode (Long Press)#
+        #on#not set#/settings/Flight - Movement/Set Master mode to Nav#
+        #off#not set#/settings/Flight - Movement/Set Master mode to SCM#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="scan-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Scan mode</p>
+      <p class="compact">Scan</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>v</kbd>
+      <span class="description">
+        Scan op mode. Activate "scan op mode" and then transfer to "scan op mode" screen.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #switch#V#/settings/Vehicles - Seats and Operator Modes/Toggle Scanning Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Scanning Operator Mode#
+        off option does not exist use #Flight Op.##/settings/Vehicles - Seats and Operator Modes/Set Flight Operator Mode# or #Guns Op.##/settings/Vehicles - Seats and Operator Modes/Set Guns Operator Mode# instead
+      </span>
+      <div class="attributes">
+        <!--<div class="attribute" data-attribute-id="simple"></div>-->
+        <div class="attribute" data-attribute-id="href-switched-off">/flight/scanning</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/flight</div>
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Missile mode</p>
+      <p class="compact">MSL</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="attributes">
+        <div class="attribute" data-attribute-id="href-switched-off">/flight/missile</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/flight</div>
+      </div>
+      <div class="description">
+        Missile op mode. Activate "missile op mode" and then transfer to "missile op mode" screen.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #switch#not set#/settings/Vehicles - Seats and Operator Modes/Toggle Missile Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Missile Operator Mode#
+        off option does not exist use #Flight Op.##/settings/Vehicles - Seats and Operator Modes/Set Flight Operator Mode# or #Guns Op.##/settings/Vehicles - Seats and Operator Modes/Set Guns Operator Mode# instead
+      </div>
+    </div>
+    <div class="control" data-control-id="mine-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Mining mode</p>
+      <p class="compact">Mine</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>m</kbd>
+      <div class="description">
+        Mining op mode. Activate "mining op mode" and then transfer to "mining op mode" screen.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #switch#M#/settings/Vehicles - Seats and Operator Modes/Toggle Mining Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Mining Operator Mode#
+        off option does not exist use #Flight Op.##/settings/Vehicles - Seats and Operator Modes/Set Flight Operator Mode# or #Guns Op.##/settings/Vehicles - Seats and Operator Modes/Set Guns Operator Mode# instead
+      </div>
+      <div class="attributes">
+        <div class="attribute" data-attribute-id="href-switched-off">/flight/mining</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/flight</div>
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Salvage mode</p>
+      <p class="compact">Salvage</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>m</kbd>
+      <div class="description">
+        Salvage op mode. Activate "salvage op mode" and then transfer to "salvage op mode" screen.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #switch#M#/settings/Vehicles - Seats and Operator Modes/Toggle Salvage Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Salvage Operator Mode#
+        off option does not exist use #Flight Op.##/settings/Vehicles - Seats and Operator Modes/Set Flight Operator Mode# or #Guns Op.##/settings/Vehicles - Seats and Operator Modes/Set Guns Operator Mode# instead
+      </div>
+      <div class="attributes">
+        <div class="attribute" data-attribute-id="href-switched-off">/flight/salvaging</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/flight</div>
+      </div>
+    </div>
+    <div class="control" data-control-id="nav-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Nav mode</p>
+      <p class="compact">Nav</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        Nav(Flight) op mode. This mode may use as default op mode.
+
+        #switch#not set#/settings/Vehicles - Seats and Operator Modes/Toggle Flight Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Flight Operator Mode#
+        off option does not exist, and this one uses as default so to "off" it, switch to other mode.
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="gun-mode" data-control-type="switch" data-control-groups="modes,op-mode">
+      <p class="full-size">Gun mode</p>
+      <p class="compact">Gun</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        Gun op mode.  This mode may use as default op mode.
+
+        #switch#not set#/settings/Vehicles - Seats and Operator Modes/Toggle Guns Operator Mode#
+        #on#not set#/settings/Vehicles - Seats and Operator Modes/Set Guns Operator Mode#
+        off option does not exist, and this one uses as default so to "off" it, switch to other mode.
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+
+    <!-- DONE DESC -->
+
+    <!-- MODES END -->
+
+    <!-- REMOTE TURRETS BEGIN -->
+
+    <div class="control" data-control-id="turret-1" data-control-type="switch" data-control-groups="turret, leave">
+      <p class="full-size">Rem. Turret 1</p>
+      <p class="compact">Turret 1</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">y</kbd>
+      <kbd class="switched-off"></kbd>
+      <div class="description">
+        Enter remote Turret-1.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #enter#not set#/settings/Vehicles - Seats and Operator Modes/Enter Remote Turret 1#
+        #leave#Y#/settings/Social - General/Exit seat#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-2" data-control-type="switch" data-control-groups="turret, leave">
+      <p class="full-size">Rem. Turret 2</p>
+      <p class="compact">Turret 2</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">y</kbd>
+      <kbd class="switched-off"></kbd>
+      <div class="description">
+        Enter remote Turret-2.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #enter#not set#/settings/Vehicles - Seats and Operator Modes/Enter Remote Turret 2#
+        #leave#Y#/settings/Social - General/Exit seat#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-3" data-control-type="switch" data-control-groups="turret, leave">
+      <p class="full-size">Rem. Turret 3</p>
+      <p class="compact">Turret 3</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">y</kbd>
+      <kbd class="switched-off"></kbd>
+      <div class="description">
+        Enter remote Turret-3.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #enter#not set#/settings/Vehicles - Seats and Operator Modes/Enter Remote Turret 3#
+        #leave#Y#/settings/Social - General/Exit seat#
+      </div>
+    </div>
+
+    <!-- REMOTE TURRETS END -->
+
+    <!-- HOSTILITY BEGIN -->
+
+      <!-- TARGET BEGIN -->
+
+    <div class="control" data-control-id="next-atck" data-control-type="oneshot" data-control-groups="target">
+      <p class="full-size">Next Attck.</p>
+      <p class="compact">Attck.</p>
+      <span></span>
+      <kbd>4</kbd>
+      <div class="description">
+        Select next attacker.
+        #activate#4#/settings/Vehicles - Target Cycling/Cycle Lock - Attackers - Reset to Closest#
+      </div>
+    </div>
+    <div class="control" data-control-id="next-hostl" data-control-type="oneshot" data-control-groups="target">
+      <p class="full-size">Next Hostl.</p>
+      <p class="compact">Hostl.</p>
+      <span></span>
+      <kbd>5</kbd>
+      <div class="description">
+        Select next hostile.
+        #activate#5#/settings/Vehicles - Target Cycling/Cycle Lock - Hostiles - Reset to Closest#
+      </div>
+    </div>
+    <div class="control" data-control-id="next-frnd" data-control-type="oneshot" data-control-groups="target">
+      <p class="full-size">Next Frnd.</p>
+      <p class="compact">Frnd.</p>
+      <span></span>
+      <kbd>6</kbd>
+      <div class="description">
+        Select next friendly.
+        #activate#6#/settings/Vehicles - Target Cycling/Cycle Lock - Friendlies - Reset to Closest#
+      </div>
+    </div>
+    <div class="control" data-control-id="next-any" data-control-type="oneshot" data-control-groups="target">
+      <p class="full-size">Next Any</p>
+      <p class="compact">Any</p>
+      <span></span>
+      <kbd>7</kbd>
+      <div class="description">
+        Select next any.
+        #activate#7#/settings/Vehicles - Target Cycling/Cycle Lock - All - Reset to Closest#
+      </div>
+    </div>
+
+      <!-- TARGET END -->
+
+      <!-- TARGET COUNTERMEASURES BEGIN -->
+
+    <div class="control" data-control-id="decoy" data-control-type="oneshot" data-control-groups="countermeasures">
+      <p>Decoy</p>
+      <span></span>
+      <kbd>h</kbd>
+      <div class="description">
+        Drop single decoy. Control named decoy-seq allow to drop decoy in sequence.
+        #activate#H#/settings/Vehicles - Shields and Countermeasures/Decoy - Launch Burst (tap), Set and Launch Burst (hold)#
+      </div>
+    </div>
+    <div class="control" data-control-id="chaf" data-control-type="oneshot" data-control-groups="countermeasures">
+      <p>Chaf</p>
+      <span></span>
+      <kbd>j</kbd>
+      <div class="description">
+        Drop single chaf.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #activate#J#/settings/Vehicles - Shields and Countermeasures/Noise - Deploy (Tap)#
+      </div>
+    </div>
+    <div class="control" data-control-id="decoy-seq" data-control-type="repeat" data-control-groups="countermeasures,sequence">
+      <p>Decoy</p>
+      <span></span>
+      <kbd>call:decoy</kbd>
+      <div class="description">
+        Drop single decoy in sequence. Interval and count available to setup.
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #activate#H#/settings/Vehicles - Shields and Countermeasures/Decoy - Launch Burst (tap), Set and Launch Burst (hold)#
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">200</div>
+        <div class="param" data-attribute-param-id="min">50</div>
+        <div class="param" data-attribute-param-id="max">5000</div>
+      </div>
+      <div class="attribute" data-attribute-id="repeatCount">4</div>
+    </div>
+
+      <!-- TARGET COUNTERMEASURES END -->
+
+    <div class="control" data-control-id="gimbal" data-control-type="switch" data-control-groups="gear">
+      <p>Gimbal</p>
+      <span class="switched-on">unlocked</span>
+      <span class="switched-off">locked</span>
+      <kbd>g</kbd>
+      <div class="description">
+        Gimbal mode control. Separate on/off not available.
+        #activate#G#/settings/Vehicles - Weapons/Cycle Gimbal Assist/Standard Gimbal/Gimbal Lock models#
+      </div>
+    </div>
+    <div class="control" data-control-id="pin-1" data-control-type="memo" data-control-groups="memo">
+      <p>Pin-1</p>
+      <span class="switched-on">assigned</span>
+      <span class="switched-off">free</span>
+      <kbd>1</kbd>
+      <kbd class="set">+lalt+1</kbd>
+      <kbd class="clear">+lalt+1</kbd>
+      <div class="description">
+        Store, select, clear for pin slot-1.
+        Double tap or tap with 2 fingers to store or for override.
+        Long tap to clear stored.
+        Tap to select stored.
+        #activate#1#/settings/Vehicles - Targeting/Pin Index 1 - Lock/Unlock Pinned Target#
+        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 1 - Lock/Unlock Pinned Target#
+        #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
+      </div>
+    </div>
+    <div class="control" data-control-id="pin-2" data-control-type="memo" data-control-groups="memo">
+      <p>Pin-2</p>
+      <span class="switched-on">assigned</span>
+      <span class="switched-off">free</span>
+      <kbd>2</kbd>
+      <kbd class="set">+lalt+2</kbd>
+      <kbd class="clear">+lalt+2</kbd>
+      <div class="description">
+        Store, select, clear for pin slot-2.
+        Double tap or tap with 2 fingers to store or for override.
+        Long tap to clear stored.
+        Tap to select stored.
+        #activate#1#/settings/Vehicles - Targeting/Pin Index 2 - Lock/Unlock Pinned Target#
+        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 2 - Lock/Unlock Pinned Target#
+        #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
+      </div>
+    </div>
+    <div class="control" data-control-id="pin-3" data-control-type="memo" data-control-groups="memo">
+      <p>Pin-3</p>
+      <span class="switched-on">assigned</span>
+      <span class="switched-off">free</span>
+      <kbd>3</kbd>
+      <kbd class="set">+lalt+3</kbd>
+      <kbd class="clear">+lalt+3</kbd>
+      <div class="description">
+        Store, select, clear for pin slot-3.
+        Double tap or tap with 2 fingers to store or for override.
+        Long tap to clear stored.
+        Tap to select stored.
+        #activate#1#/settings/Vehicles - Targeting/Pin Index 3 - Lock/Unlock Pinned Target#
+        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 3 - Lock/Unlock Pinned Target#
+        #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-unpin" data-control-type="oneshot" data-control-groups="missile-pack,removeme">
+      <p>Missile Unpin</p>
+      <span></span>
+      <kbd>+rctr+g</kbd>
+      <div class="description">
+        !Remove control!
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-inc" data-control-type="oneshot" data-control-groups="missile-pack">
+      <p class="full-size">Missile Inc.</p>
+      <p class="compact">Inc.</p>
+      <span></span>
+      <kbd>g</kbd>
+      <div class="description">
+        Increase count of armed missile.
+        #activate#G#/settings/Vehicles - Missiles/Increase Number of Armed Missiles#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-decr" data-control-type="oneshot" data-control-groups="missile-pack">
+      <p class="full-size">Missile Decr.</p>
+      <p class="compact">Decr.</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Decrease count of armed missile.
+        #activate#not set#/settings/Vehicles - Missiles/Decrease Number of Armed Missiles#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-reset" data-control-type="oneshot" data-control-groups="missile-pack">
+      <p class="full-size">Missile Reset</p>
+      <p class="compact">Reset</p>
+      <span></span>
+      <kbd>+lalt+g</kbd>
+      <div class="description">
+        Reset count of armed missile.
+        #activate#lAlt+G#/settings/Vehicles - Missiles/Reset Number of Armed Missiles#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-next-type" data-control-type="oneshot" data-control-groups="missile-pack">
+      <p class="full-size">Next Type</p>
+      <p class="compact">Next T.</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Select next missile type control.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#Mouse wheel down#/settings/Vehicles - Missiles/Cycle Next Missile Type#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-prev-type" data-control-type="oneshot" data-control-groups="missile-pack">
+      <p class="full-size">Prev Type</p>
+      <p class="compact">Prev T.</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Select prev missile type control.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#Mouse wheel up#/settings/Vehicles - Missiles/Cycle Previous Missile Type#
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-launch" data-control-type="oneshot" data-control-groups="missile-pack,removeme">
+      <p>Launch</p>
+      <span></span>
+      <kbd>+rctr+g</kbd>
+      <div class="description">
+        !Remove control!
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-1" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>1</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm one missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-2" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>2</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm two missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-3" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>3</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm three missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-4" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>4</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm four missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-5" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>5</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm five missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+    <div class="control" data-control-id="missile-pack-arm-6" data-control-type="oneshot" data-control-groups="missile-pack-arm-cnt">
+      <p>6</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Arm six missile control. Not implemented properly.
+        #activate#n/a##
+      </div>
+    </div>
+
+
+
+    <!-- HOSTILITY END -->
+
+    <!-- MOBIGLASS OP BEGIN -->
+
+    <div class="control" data-control-id="moby" data-control-type="oneshot" data-control-groups="moby">
+      <p>Moby</p><span></span><kbd>+f1+</kbd>
+      <div class="description">
+        Call Mobyglass.
+        #activate#F1#/settings/Ground Vehicle - General/mobyGlass (Toggle)#
+      </div>
+    </div>
+    <div class="control" data-control-id="map"  data-control-type="oneshot" data-control-groups="moby">
+      <p>Map</p><span></span><kbd>+f2+</kbd>
+      <div class="description">
+        Call Mobyglass map application.
+        #activate#F2#/settings/Ground Vehicle - General/Map#
+      </div>
+    </div>
+    <div class="control" data-control-id="commlink" data-control-type="oneshot" data-control-groups="moby">
+      <p>Commlink</p><span></span><kbd>+f11+</kbd>
+      <div class="description">
+        Call Mobyglass commlink application.
+        #activate#F11#/settings/Social - General/CommLink App (Toggle)#
+      </div>
+    </div>
+    <div class="control" data-control-id="chat" data-control-type="oneshot" data-control-groups="moby">
+      <p>Chat</p><span></span><kbd>+f12+</kbd>
+      <div class="description">
+        Call chat window.
+        #activate#F12#/settings/Social - General/Chat Window (Toggle)#
+      </div>
+    </div>
+
+    <!-- MOBIGLASS OP END -->
+
+    <!-- MINING OP BEGIN -->
+
+    <div class="control" data-control-id="gadget-1" data-control-type="oneshot" data-control-groups="ming-gadget">
+      <p class="full-size">Gadget-1</p>
+      <p class="compact">Gdt-1</p>
+      <span></span><kbd>+alt+1</kbd>
+      <div class="description">
+        Use mining gadget-1.
+        #activate#lAlt+1#/settings/Vehicles - Mining/Activate Mining Module (Slot 1)#
+      </div>
+    </div>
+    <div class="control" data-control-id="gadget-2" data-control-type="oneshot" data-control-groups="ming-gadget">
+      <p class="full-size">Gadget-2</p>
+      <p class="compact">Gdt-2</p>
+      <span></span><kbd>+alt+2</kbd>
+      <div class="description">
+        Use mining gadget-2.
+        #activate#lAlt+2#/settings/Vehicles - Mining/Activate Mining Module (Slot 2)#
+      </div>
+    </div>
+    <div class="control" data-control-id="gadget-3" data-control-type="oneshot" data-control-groups="ming-gadget">
+      <p class="full-size">Gadget-3</p>
+      <p class="compact">Gdt-3</p>
+      <span></span><kbd>+alt+3</kbd>
+      <div class="description">
+        Use mining gadget-3.
+        #activate#lAlt+3#/settings/Vehicles - Mining/Activate Mining Module (Slot 3)#
+      </div>
+    </div>
+    <div class="control" data-control-id="gadget-4" data-control-type="oneshot" data-control-groups="ming-gadget">
+      <p class="full-size">Gadget-4</p>
+      <p class="compact">Gdt-4</p>
+      <span></span><kbd>+alt+4</kbd>
+      <div class="description">
+        Use mining gadget-4.
+        Note: in game version 4.2.1 included this option named with typo: "Activate Mining Module (Slot 1)"
+        #activate#lAlt+4#/settings/Vehicles - Mining/Activate Mining Module (Slot 4)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="mine-laser-pwr-inc" data-control-type="oneshot" data-control-groups="ming-op">
+      <p class="full-size">Laser Power Inc.</p>
+      <p class="compact">LP+</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Increase mine laser pwr.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#MouseWheel#/settings/Vehicles - Mining/Increase Mining Laser Power#
+      </div>
+    </div>
+    <div class="control" data-control-id="mine-laser-pwr-decr" data-control-type="oneshot" data-control-groups="ming-op">
+      <p class="full-size">Laser Power Decr.</p>
+      <p class="compact">LP-</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Decrease mine laser pwr.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#MouseWheel#/settings/Vehicles - Mining/Decrease Mining Laser Power#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="laser-switch" data-control-type="oneshot" data-control-groups="ming-op">
+      <p class="full-size">Switch Laser</p>
+      <p class="compact">L. Sw.</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Switch mining laser.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#lAlt+Mouse1#/settings/Vehicles - Mining/Switch Mining Laser (Toggle)#
+      </div>
+    </div>
+    <div class="control" data-control-id="cargo-jettison" data-control-type="oneshot" data-control-groups="ming-op">
+      <p class="full-size">Jettison Cargo</p>
+      <p class="compact">eJct Crg.</p>
+      <span></span><kbd>+alt+j</kbd>
+      <div class="description">
+        Eject cargo (mining context).
+        #activate#lAlt+J#/settings/Vehicles - Mining/Jettison Cargo#
+      </div>
+    </div>
+
+    <!-- MINING OP END -->
+
+
+    <!-- SALVAGE OP BEGIN -->
+
+    <div class="control" data-control-id="salvage-beam-mode" data-control-type="switch" data-control-groups="">
+      <p class="full-size">Salvage Mode</p>
+      <p class="compact">B. Mode</p>
+      <span class="switched-on">disintegrate</span>
+      <span class="switched-off">fracture</span>
+      <kbd class="switched-on">+ralt+s</kbd>
+      <kbd class="switched-off">+ralt+w</kbd>
+      <div class="description">
+        Change salvage beam mode. Separate on/off not available.
+        #fracture#rAlt+w#/settings/Vehicles - Salvage/Toggle Fire Fracture#
+        #disintegrate#rAlt+S#/settings/Vehicles - Salvage/Toggle Fire Disintegrate#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-focus-left" data-control-type="oneshot" data-control-groups="salvage-focus,left">
+      <p class="full-size">Focus Left H.</p>
+      <p class="compact">Fcs LH.</p>
+      <span></span><kbd>+alt+a</kbd>
+      <div class="description">
+        Focus on left mining head.
+        #activate#lAlt+A#/settings/Vehicles/Focus left salvage head#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-focus-right" data-control-type="oneshot" data-control-groups="salvage-focus,right">
+      <p class="full-size">Focus Right H.</p>
+      <p class="compact">Fcs RH.</p>
+      <span></span><kbd>+alt+d</kbd>
+      <div class="description">
+        Focus on right mining head.
+        #activate#lAlt+D#/settings/Vehicles/Focus right salvage head#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-focus-fracture" data-control-type="oneshot" data-control-groups="salvage-focus,fracture">
+      <p class="full-size">Focus Fracture</p>
+      <p class="compact">Fcs Fract.</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Focus on Fracture.
+        #activate#not set#/settings/Vehicles/Focus fracture tool#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-focus-disintegration" data-control-type="oneshot" data-control-groups="salvage-focus,disintegration">
+      <p class="full-size">Focus Disintegration</p>
+      <p class="compact">Fcs Dis.</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Focus on Disintegration.
+        #activate#not set#/settings/Vehicles/Focus Disintegration tool#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-focus-all" data-control-type="oneshot" data-control-groups="salvage-focus,all">
+      <p class="full-size">Focus All H.</p>
+      <p class="compact">Fcs All</p>
+      <span></span><kbd>+lalt+s</kbd>
+      <div class="description">
+        Focus all head.
+        #activate#lAlt+S#/settings/Vehicles/Focus all salvage heads#
+      </div>
+    </div>
+
+
+    <div class="control" data-control-id="salvage-cycle-focused-mod"  data-control-type="oneshot" data-control-groups="salvage-cycle,focused">
+      <p class="full-size">Cycle Focused Modifiers</p>
+      <p class="compact">CFM</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Cycle focused modifiers.
+        #activate#not set#/settings/Vehicles/Cycle Focused Salvage Modifiers#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-cycle-left-mod"  data-control-type="oneshot" data-control-groups="salvage-cycle,left">
+      <p class="full-size">Cycle Left Modifiers</p>
+      <p class="compact">CLM</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Cycle left modifiers.
+        #activate#not set#/settings/Vehicles/Cycle Left Salvage Modifiers#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-cycle-right-mod" data-control-type="oneshot" data-control-groups="salvage-cycle,right">
+      <p class="full-size">Cycle Right Modifiers</p>
+      <p class="compact">CRM</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Cycle right modifiers.
+        #activate#not set#/settings/Vehicles/Cycle Right Salvage Modifiers#
+      </div>
+    </div>
+    <div class="control" data-control-id="salvage-cycle-structural-mod" data-control-type="oneshot" data-control-groups="salvage-cycle,disintegration">
+      <p class="full-size">Cycle Structural Modes</p>
+      <p class="compact">CSM</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Cycle structural mode.
+        #activate#not set#/settings/Vehicles/Cycle Structural Salvage Modes#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="salvage-switch-axis" data-control-type="oneshot" data-control-groups="">
+      <p class="full-size">Switch Axis</p>
+      <p class="compact">Axi Sw.</p>
+      <span></span><kbd></kbd>
+      <div class="description">
+        Switch Axis(salvage context).
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#lAlt+Mouse2#/settings/Vehicles/Salvage Beam Axis (Toggle)#
+      </div>
+    </div>
+
+    <!-- SALVAGE OP END -->
+
+    <!-- NAV OP BEGIN -->
+
+    <div class="control" data-control-id="horn" data-control-type="oneshot" data-control-groups="gear">
+      <p>Horn</p>
+      <span></span>
+      <kbd>+ +</kbd>
+      <div class="description">
+        Activate Horn. This one for ground (There is no sound in space (с)).
+
+        #activate#Spacebar#/settings/Ground Vehicle - General/Horn#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="space-brake" data-control-type="switch" data-control-groups="gear">
+      <p class="full-size">Space Brake</p>
+      <p class="compact">Brake</p>
+      <span class="switched-on">anchored</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+x:up+</kbd>
+      <kbd class="switched-off">+x:down+</kbd>
+      <div class="description">
+        Activate space break. This control (by default) will hold "space break" button when active and release it when deactivate.
+        To work properly this control require that "switched-on" and "switched-off" attribute are in form: "button":up, "button":down respectively.
+
+        Because of the way how the dangling keys are implemented, this control will be internally "switched-off" every time there is keyboard input (caused by another control) for the duration of the input.
+
+        #hold#X#/settings/Flight - Movement/Spacebrake#
+      </div>
+    </div>
+    <div class="control" data-control-id="ping" data-control-type="oneshot" data-control-groups="ping">
+      <p>Ping</p>
+      <span></span>
+      <kbd>+tab+</kbd>
+      <div class="description">
+        Short scanner burst (ping).
+
+        Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
+
+        #activate#TAB#/settings/Flight - Radar/Activate Ping (Hold & Release)#
+      </div>
+    </div>
+    <div class="control" data-control-id="ping-angle-inc" data-control-type="oneshot" data-control-groups="ping">
+      <p class="full-size">Ping angle Inc.</p>
+      <p class="compact">Angl Inc.</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Increase scanning angle.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#MouseWheelUp#/settings/Flight - Radar/Increase Scanning Angle#
+      </div>
+    </div>
+    <div class="control" data-control-id="ping-angle-decr" data-control-type="oneshot" data-control-groups="ping">
+      <p class="full-size">Ping angle Decr.</p>
+      <p class="compact">Angl Decr.</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Decrease scanning angle.
+        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
+        #activate#MouseWheelDown#/settings/Flight - Radar/Decrease Scanning Angle#
+      </div>
+    </div>
+    <div class="control" data-control-id="echo-1" data-control-type="repeat" data-control-groups="ping,echo">
+      <p class="full-size">Echo Short</p>
+      <p class="compact">EchoS</p>
+      <span class="switched-on">active: 2s </span>
+      <span class="switched-off">inactive: 2s</span>
+      <kbd>call:ping</kbd>
+      <div class="description">
+        Repeated (short interval) ping call by scanner. Interval are available to setup.
+        #activate#n/a#/settings/Flight - Radar/Activate Ping (Hold & Release)#
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">2000</div>
+        <div class="param" data-attribute-param-id="min">1000</div>
+        <div class="param" data-attribute-param-id="max">10000</div>
+      </div>
+    </div>
+    <div class="control" data-control-id="echo-2" data-control-type="repeat" data-control-groups="ping,echo">
+      <p class="full-size">Echo Long</p>
+      <p class="compact">EchoL</p>
+      <span class="switched-on">active: 7s </span>
+      <span class="switched-off">inactive: 7s</span>
+      <kbd>call:ping</kbd>
+      <div class="description">
+        Repeated (long interval) ping call by scanner. Interval are available to setup.
+        #activate#n/a#/settings/Flight - Radar/Activate Ping (Hold & Release)#
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">7000</div>
+        <div class="param" data-attribute-param-id="min">1000</div>
+        <div class="param" data-attribute-param-id="max">10000</div>
+      </div>
+    </div>
+    <div class="control" data-control-id="change-view" data-control-type="oneshot" data-control-groups="observe">
+      <p class="full-size">Change View</p>
+      <p class="compact">View</p>
+      <span></span>
+      <kbd>+f4+</kbd>
+      <div class="description">
+        Change camera view.
+        #activate#F4#/settings/Vehicles - View/Cycle camera view#
+      </div>
+    </div>
+    <div class="control" data-control-id="convergence-inc" data-control-type="oneshot" data-control-groups="convergence">
+      <p class="full-size">Convergence Inc.</p>
+      <p class="compact">Conv+</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Increase the distance to the convergence point of the projectiles.
+        recommended to use the axial version of this control.
+        #activate#not set#/settings/Vehicles - Weapons/Manual Convergence Distance - Increase#
+      </div>
+    </div>
+    <div class="control" data-control-id="convergence-decr" data-control-type="oneshot" data-control-groups="convergence">
+      <p class="full-size">Convergence Decr.</p>
+      <p class="compact">Conv-</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Decrease the distance to the convergence point of the projectiles.
+        recommended to use the axial version of this control.
+        #activate#not set#/settings/Vehicles - Weapons/Manual Convergence Distance - Decrease#
+      </div>
+    </div>
+    <div class="control" data-control-id="convergence-reset" data-control-type="oneshot" data-control-groups="convergence">
+      <p class="full-size">Convergence reset</p>
+      <p class="compact">Conv0</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Reset convergence point of the projectiles.
+        #activate#not set#/settings/Vehicles - Weapons/Manual Convergence Distance - Reset#
+      </div>
+    </div>
+    <div class="control" data-control-id="emp" data-control-type="oneshot" data-control-groups="gear">
+      <p>EMP</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Activate Emp.
+        #activate#not set#/settings/Vehicles - Weapons/Weapon Presets - Set EMPs#
+      </div>
+    </div>
+    <div class="control" data-control-id="q-jammers-short" data-control-type="oneshot" data-control-groups="jammers">
+      <p class="full-size">Q. Jammers short</p>
+      <p class="compact">QJamS</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Activate quantum jammers at short range.
+        #activate#not set#/settings/Vehicles - Weapons/Weapon Presets - Set Quantum Jammers (short range)#
+      </div>
+    </div>
+    <div class="control" data-control-id="q-jammers-long" data-control-type="oneshot" data-control-groups="jammers">
+      <p class="full-size">Q. Jammers long</p>
+      <p class="compact">QJamL</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Activate quantum jammers at long range.
+        #activate#not set#/settings/Vehicles - Weapons/Weapon Presets - Set Quantum Snares/Pulse (long range)#
+      </div>
+    </div>
+    <div class="control" data-control-id="qid" data-control-type="oneshot" data-control-groups="jammers">
+      <p>QID</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Activate quantum interdiction device.
+        #activate#not set#/settings/Vehicles - Weapons/Weapon Presets - Set QIDs#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-gyro" data-control-type="oneshot" data-control-groups="turret,esp">
+      <p class="full-size">Turret Gyro</p>
+      <p class="compact">T. Gyro</p>
+      <span></span>
+      <kbd>e</kbd>
+      <div class="description">
+        Activate turret gyro. This once try cancel ship rotation at turret perspective.
+        #activate#E#/settings/Turret Movement/Turret Gyro Stabilization (Toggle)#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-esp" data-control-type="oneshot" data-control-groups="turret,esp">
+      <p class="full-size">Turret E.S.P</p>
+      <p class="compact">T.E.S.P</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Activate turret ESP. This once reduce turret overshot.
+        #activate#not set#/settings/Turret Advanced/Turret E.S.P. Toggle On/Off#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-fire-mode" data-control-type="oneshot" data-control-groups="turret">
+      <p class="full-size">Turret fire-mode</p>
+      <p class="compact">T.F-M</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Change turret fire mode.
+        #activate#not set#/settings/Turret Advanced/Cycle fire mode (staggered / combined)#
+      </div>
+    </div>
+    <div class="control" data-control-id="turret-position" data-control-type="oneshot" data-control-groups="turret">
+      <p class="full-size">Turret Position</p>
+      <p class="compact">T. Pos.</p>
+      <span></span>
+      <kbd>s</kbd>
+      <div class="description">
+        Move turret to different position. Rarely available at ship.
+        #activate#S#/settings/Turret Advanced/Change Turret Position#
+      </div>
+    </div>
+    <div class="control" data-control-id="g-safe" data-control-type="switch" data-control-groups="esp">
+      <p>G-Safe</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        G-safe (gravity-safe) switcher. Keep ship maneuver save for pilot.
+        #switch#not set#/settings/Flight - Movement/G-Force Safety On/Off (Toggle/Hold)#
+        #on#not set#/settings/Flight - Movement/G-Force Safety on#
+        #off#not set#/settings/Flight - Movement/G-Force Safety off#
+      </div>
+    </div>
+    <div class="control" data-control-id="esp" data-control-type="switch" data-control-groups="esp">
+      <p>E.S.P</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        Ship ESP switcher. When active reduce ship control overshot.
+        #activate#not set#/settings/Flight - Movement/E.S.P - Toggle On/Off (Press)#
+        #temporary#not set#/settings/Flight - Movement/E.S.P - Enable Temporarily (Hold)#
+      </div>
+    </div>
+
+    <!-- NAV OP END -->
+
+    <!-- POWER OP BEGIN -->
+
+    <div class="control" data-control-id="power-change" data-control-type="switch" data-control-groups="core-power">
+      <p>Power</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>u</kbd>
+      <div class="description">
+        Ship Power switcher.
+        #switch#U#/settings/Flight - Power/Toggle Power - All#
+        #on#not set#/settings/Flight - Power/Set Power On#
+        #off#not set#/settings/Flight - Power/Set Power Off#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="engine-change" data-control-type="switch" data-control-groups="core-power">
+      <p>Engine</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>i</kbd>
+      <div class="description">
+        Ship Engine switcher.
+        #switch#I#/settings/Flight - Power/Toggle Power - Thrusters#
+        #on#not set#/settings/Flight - Power/Set Thrusters Power On#
+        #off#not set#/settings/Flight - Power/Set Thrusters Power Off#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="weapon-change" data-control-type="switch" data-control-groups="core-power">
+      <p>Weapon</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>p</kbd>
+      <div class="description">
+        Ship Weapon switcher.
+        #switch#I#/settings/Flight - Power/Toggle Power - Weapons#
+        #on#not set#/settings/Flight - Power/Set Weapons Power On#
+        #off#not set#/settings/Flight - Power/Set Weapons Power Off#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="shield-change" data-control-type="switch" data-control-groups="core-power,shields">
+      <p>Shield</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>o</kbd>
+      <div class="description">
+        Ship Shield switcher.
+        #switch#O#/settings/Flight - Power/Toggle Power - Shields#
+        #on#not set#/settings/Flight - Power/Set Shields Power On#
+        #off#not set#/settings/Flight - Power/Set Shields Power Off#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+    <div class="control" data-control-id="flight-ready" data-control-type="switch" data-control-groups="core-power">
+      <p>Flight-Ready</p>
+      <span class="switched-on">ready</span>
+      <span class="switched-off">not ready</span>
+      <kbd>+alt+r</kbd>
+      <div class="description">
+        Flight / System Ready.
+        #activate#lAlt+R#/settings/Vehicles - Cockpit/Flight / System Ready#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+
+    <div class="control" data-control-id="shields-top" data-control-type="oneshot" data-control-groups="shields">
+      <p>Top</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield on top.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level top#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-bottom" data-control-type="oneshot" data-control-groups="shields">
+      <p>Bottom</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield at bottom.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level bottom#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-front" data-control-type="oneshot" data-control-groups="shields">
+      <p>Front</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield on front.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level front#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-back" data-control-type="oneshot" data-control-groups="shields">
+      <p>Back</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield at back.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level back#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-left" data-control-type="oneshot" data-control-groups="shields">
+      <p>Left</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield left.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level left#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-right" data-control-type="oneshot" data-control-groups="shields">
+      <p>Right</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Boost ship shield right.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level right#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields-reset" data-control-type="oneshot" data-control-groups="shields">
+      <p>Reset</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Reset shield distribution.
+        #activate#not set#/settings/Vehicles - Shields and Countermeasures/Shield reset levels#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="shields" data-control-type="shields" data-control-groups="shields,canvas">
+      <p>Shield</p>
+      <canvas width="0" height="0"></canvas>
+      <kbd class="top">call:shields-top</kbd>
+      <kbd class="bottom">call:shields-bottom</kbd>
+      <kbd class="front">call:shields-front</kbd>
+      <kbd class="back">call:shields-back</kbd>
+      <kbd class="left">call:shields-left</kbd>
+      <kbd class="right">call:shields-right</kbd>
+      <kbd class="reset">call:shields-reset</kbd>
+      <div class="attribute" data-attribute-id="formula">
+        <div class="value">5</div>
+        <div class="param" data-attribute-param-id="valueType">int</div>
+        <div class="param" data-attribute-param-id="options">
+          <div class="optgroup" data-attribute-option-label="Direction only">
+            <div class="option" data-attribute-option-value="1">Buble</div>
+            <div class="option" data-attribute-option-value="2">Front+Back</div>
+            <div class="option" data-attribute-option-value="4">Four direction</div>
+            <div class="option" data-attribute-option-value="6">Four direction+Top+Bottom</div>
+          </div>
+          <div class="optgroup" data-attribute-option-label="Direction+Reset opt">
+            <div class="option" data-attribute-option-value="3">Front+Back</div>
+            <div class="option" data-attribute-option-value="5">Four direction</div>
+            <div class="option" data-attribute-option-value="7">Four direction+Top+Bottom</div>
+            <div class="option" data-attribute-option-value="8">All</div>
+          </div>
+        </div>
+      </div>
+      <div class="attribute" data-attribute-id="size">
+        <div class="value">50</div>
+        <div class="param" data-attribute-param-id="min">20</div>
+        <div class="param" data-attribute-param-id="max">100</div>
+      </div>
+      <div class="description">
+        Composite widget represent all basic shield operation excluding on/off, by default it delegate buttons cfg to dedicated ctrl
+        #top#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level top#
+        #bottom#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level bottom#
+        #front#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level front#
+        #back#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level back#
+        #left#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level left#
+        #right#not set#/settings/Vehicles - Shields and Countermeasures/Shield raise level right#
+        #reset#not set#/settings/Vehicles - Shields and Countermeasures/Shield reset levels#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-weapon-up" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Weapons+</p>
+      <span></span>
+      <kbd>+f5+</kbd>
+      <div class="description">
+        Power distribution, increase Weapon.
+        #activate#F5#/settings/Flight - Power/Weapons - Increase (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-weapon-down" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Weapons-</p>
+      <span></span>
+      <kbd>+lalt+f5+</kbd>
+      <div class="description">
+        Power distribution, decrease Weapon.
+        #activate#F5+lAlt#/settings/Flight - Power/Weapons - Decrease (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-shield-up" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Shields+</p>
+      <span></span>
+      <kbd>+f7+</kbd>
+      <div class="description">
+        Power distribution, increase Shields.
+        #activate#F7#/settings/Flight - Power/Shields - Increase (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-shield-down" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Shields-</p>
+      <span></span>
+      <kbd>+lalt+f7+</kbd>
+      <div class="description">
+        Power distribution, decrease Shields.
+        #activate#F7+lAlt#/settings/Flight - Power/Shields - Decrease (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-engine-up" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Engines+</p>
+      <span></span>
+      <kbd>+f6+</kbd>
+      <div class="description">
+        Power distribution, increase Engines.
+        #activate#F6#/settings/Flight - Power/Engines - Increase (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-engine-down" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Engines-</p>
+      <span></span>
+      <kbd>+lalt+f6+</kbd>
+      <div class="description">
+        Power distribution, decrease Engines.
+        #activate#F6+lAlt#/settings/Flight - Power/Engines - Decrease (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="throttle-up" data-control-type="oneshot" data-control-groups="">
+      <p>Throttle+</p>
+      <span></span>
+      <kbd>+f9+</kbd>
+      <div class="description">
+        Power distribution, increase Throttle.
+        #activate#F9#/settings/Flight - Power/Throttle - Increase (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="throttle-down" data-control-type="oneshot" data-control-groups="">
+      <p>Throttle-</p>
+      <span></span>
+      <kbd>+f9+</kbd>
+      <div class="description">
+        Power distribution, decrease Throttle.
+        #activate#F9+lAlt#/settings/Flight - Power/Throttle - Decrease (Tap)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="cooler-up" data-control-type="oneshot" data-control-groups="">
+      <p>Cooler+</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Power distribution, increase cooler rate.
+        #activate#not set#/settings/Vehicles - Cockpit/Increase Cooler Rate#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="cooler-down" data-control-type="oneshot" data-control-groups="">
+      <p>Cooler-</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Power distribution, decrease cooler rate.
+        #activate#not set#/settings/Vehicles - Cockpit/Decrease Cooler Rate#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="power-reset" data-control-type="oneshot" data-control-groups="power-grid">
+      <p>Reset</p>
+      <span></span>
+      <kbd>+f8+</kbd>
+      <div class="description">
+        Power distribution, reset.
+        #activate#F9+lAlt#/settings/Flight - Power/Reset Assignments#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="limiter" data-control-type="limiter" data-control-groups="limiter,canvas,axial">
+      <p>Ship limiter</p>
+      <div class="canvas-wrapper"><canvas width="0" height="0"></canvas></div>
+      <kbd class="speed-limit">0</kbd>
+      <kbd class="acceleration-limit">1</kbd>
+      <kbd class="mine-laser-pwr">2</kbd>
+      <kbd class="turret-speed-limiter">3</kbd>
+      <kbd class="weap-intersect">4</kbd>
+      <kbd class="opt-1">5</kbd>
+      <kbd class="opt-2">6</kbd>
+      <kbd class="opt-3">7</kbd>
+      <div class="description">
+        Composite widget represent ship system limiters. Allow precise manage of ship characteristics.
+        Hint: acl. and spd. limit helpful at landing operations. Acl limit for example allow to land (with presence of gravity source)
+        by gentle change thrusters output without even touch directional control.
+
+        widget-1: #speed limiter#not set#/settings/Flight - Movement/Speed Limiter (abs)#
+        widget-2: #acl limiter#not set#/settings/Flight - Movement/Acceleration Limiter (abs)#
+        widget-3: #mining laser power#not set#/settings/Vehicle - Mining/Increase / Decrease Mining Laser Power#
+        widget-4: #turret speed limiter#not set#/settings/Turret - Advanced/Turret - Speed Limiter (abs)#
+        widget-5: #weap. intersect#not set#/settings/Vehicle - Weapons/Manual Convergence Distance (abs.)#
+        widget-6, widget-7, widget-8, optional.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="salvage-limiter" data-control-type="salvage-limiter" data-control-groups="limiter, canvas,axial">
+      <p>Beam</p>
+      <div class="canvas-wrapper"><canvas width="0" height="0"></canvas></div>
+      <kbd class="salvage-space">3</kbd>
+      <div class="description">
+        Composite widget represent basic salvage operations.
+        widget-1: #salvage-space#not set#/settings/Vehicle - Salvage/Absolute Beam Spacing#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="pds" data-control-type="pds" data-control-groups="pds,canvas">
+      <p>Power distribution system</p>
+      <canvas width="0" height="0"></canvas>
+      <kbd class="weapon-up">call:power-weapon-up</kbd>
+      <kbd class="weapon-down">call:power-weapon-down</kbd>
+      <kbd class="shield-up">call:power-shield-up</kbd>
+      <kbd class="shield-down">call:power-shield-down</kbd>
+      <kbd class="engine-up">call:power-engine-up</kbd>
+      <kbd class="engine-down">call:power-engine-down</kbd>
+      <kbd class="throttle-up">call:throttle-up</kbd>
+      <kbd class="throttle-down">call:throttle-down</kbd>
+      <kbd class="cooler-up">call:cooler-up</kbd>
+      <kbd class="cooler-down">call:cooler-down</kbd>
+      <div class="description">
+          Composite widget represent all basic power distribution operation excluding on/off, by default it delegate buttons cfg to dedicated ctrl.
+
+          #weapons+#F5#/settings/Flight - Power/Weapons - Increase (Tap)#
+          #weapons-#F5+lAlt#/settings/Flight - Power/Weapons - Decrease (Tap)#
+          #shields+#F7#/settings/Flight - Power/Shields - Increase (Tap)#
+          #shields-#F7+lAlt#/settings/Flight - Power/Shields - Decrease (Tap)#
+          #engines+#F6#/settings/Flight - Power/Engines - Increase (Tap)#
+          #engines-#F6+lAlt#/settings/Flight - Power/Engines - Decrease (Tap)#
+          #throttle+#F9#/settings/Flight - Power/Throttle - Increase (Tap)#
+          #throttle-#F9+lAlt#/settings/Flight - Power/Throttle - Decrease (Tap)#
+          #cooler+#not set#/settings/Vehicles - Cockpit/Increase Cooler Rate#
+          #cooler-#not set#/settings/Vehicles - Cockpit/Decrease Cooler Rate#
+          #reset#F9+lAlt#/settings/Flight - Power/Reset Assignments#
+      </div>
+    </div>
+
+    <!-- POWER OP END -->
+
+    <!-- ON FOOT BEGIN -->
+
+    <div class="control" data-control-id="flashlight" data-control-type="switch" data-control-groups="personal-gear">
+      <p class="full-size">Flashlight
+      <p class="compact">Light</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>t</kbd>
+      <div class="description">
+        Switch helmet flashlight.
+        #activate#T#/settings/On Foot - All/Flashlight (Toggle)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="drop-item" data-control-type="oneshot" data-control-groups="itemop">
+      <p class="full-size">Drop Item</p>
+      <p class="compact">Drop</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Drop item currently hold.
+        #activate#not set#/settings/On Foot - All/Drop Item#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="inspect-item" data-control-type="oneshot" data-control-groups="itemop">
+      <p class="full-size">Inspect Item</p>
+      <p class="compact">Inspect</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">
+        Inspect item currently hold.
+        #activate#not set#/settings/On Foot - All/Inspect Item#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="fire-mode" data-control-type="oneshot" data-control-groups="">
+      <p class="full-size">Fire Mode</p>
+      <p class="compact">FrMd</p>
+      <span></span>
+      <kbd>b</kbd>
+      <div class="description">
+        Change fire mode.
+        #activate#B#/settings/On Foot - All/Change Fire Mode#
+      </div>
+    </div>
+
+    <!-- ON FOOT END -->
+
+    <!-- ON LINK BEGIN -->
+
+    <div class="control" data-control-id="move-on-foot" data-control-type="link" data-route="/on-foot" data-control-groups="on-foot">
+      <p class="full-size">On Foot</p>
+      <p class="compact">Foot</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-on-emotion" data-control-type="link" data-route="/on-foot/emotion-positive" data-control-groups="on-foot">
+      <p>Emotions</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-ground-vehicle" data-control-type="link" data-route="/vehicle" data-control-groups="vehicle">
+      <p class="full-size">Ground vehicle</p>
+      <p class="compact">Vehicle</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-ground-vehicle-power" data-control-type="link" data-route="/vehicle/power" data-control-groups="vehicle">
+      <p>Power</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-on-flight" data-control-type="link" data-route="/flight" data-control-groups="flight">
+      <p>Flight</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-on-landing" data-control-type="link" data-route="/flight/landing" data-control-groups="flight">
+      <p>Landing</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-on-power" data-control-type="link" data-route="/flight/power" data-control-groups="flight">
+      <p>Power</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+    <div class="control" data-control-id="move-on-console" data-control-type="link" data-route="/console" data-control-groups="misc">
+      <p>Console</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">This is page link. used mostly internally</div>
+    </div>
+
+    <div class="control" data-control-id="move-back" data-control-type="back" data-route="" data-control-groups="">
+      <p>Back</p>
+      <span></span>
+      <kbd></kbd>
+      <div class="description">Move through browser navigation back</div>
+    </div>
+
+    <div class="control" data-control-id="limiter-mode" data-control-type="switch" data-control-groups="modes">
+      <p>Limiters</p>
+      <span class="switched-on"></span>
+      <span class="switched-off"></span>
+      <kbd class="switched-on"></kbd>
+      <kbd class="switched-off"></kbd>
+      <div class="attributes">
+        <div class="attribute" data-attribute-id="href-switched-off">/flight/limit</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/flight</div>
+      </div>
+      <div class="description">Limiter Page. No ref in game.</div>
+    </div>
+
+
+    <!-- ON LINK END -->
+
+    <!-- KEYBOARD BEGIN -->
+
+    <div class="control" data-control-id="numlock" data-control-type="switch">
+      <p class="full-size">Num Lock</p>
+      <p class="compact">Num</p>
+      <span class="switched-on">enable</span>
+      <span class="switched-off">disable</span>
+      <kbd>+numlock+</kbd>
+      <div class="description">Keyboard key numlock. Two way.</div>
+    </div>
+
+    <div class="control" data-control-id="capslock" data-control-type="switch">
+      <p class="full-size">Caps Lock</p>
+      <p class="compact">Caps</p>
+      <span class="switched-on">enable</span>
+      <span class="switched-off">disable</span>
+      <kbd>+capslock+</kbd>
+      <div class="description">Keyboard key capslock. Two way.</div>
+    </div>
+
+    <div class="control" data-control-id="scrolllock" data-control-type="switch">
+      <p class="full-size">Scroll Lock</p>
+      <p class="compact">Scroll</p>
+      <span class="switched-on">enable</span>
+      <span class="switched-off">disable</span>
+      <kbd>+scrolllock+</kbd>
+      <div class="description">Keyboard key scrolllock. Two way.</div>
+    </div>
+
+    <div class="control" data-control-id="compose" data-control-type="switch">
+      <p>Composition</p>
+      <span class="switched-on">enable</span>
+      <span class="switched-off">disable</span>
+      <kbd>+compose+</kbd>
+      <div class="description">Keyboard key compose. Two way.</div>
+    </div>
+
+    <div class="control" data-control-id="kana" data-control-type="switch">
+      <p>Kana</p>
+      <span class="switched-on">enable</span>
+      <span class="switched-off">disable</span>
+      <kbd>+kana+</kbd>
+      <div class="description">Keyboard key kana. Two way.</div>
+    </div>
+
+
+    <!-- SETTING END -->
+
+    <!-- EMOTIONS BEGIN -->
+
+    <div class="control" data-control-id="emotion-agree" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Agree</p>
+      <span></span>
+      <kbd>+enter+/agree:symbols-short+enter+</kbd>
+      <div class="description">Thumbs up</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-angry-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Angry-1</p>
+      <span></span>
+      <kbd>+enter+/angry1:symbols-short+enter+</kbd>
+      <div class="description">Slamming fist up and down near shoulders and pointing</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-angry-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Angry-2</p>
+      <span></span>
+      <kbd>+enter+/angry2:symbols-short+enter+</kbd>
+      <div class="description">Both hands in air, right fist slamming air</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-angry-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Angry-3</p>
+      <span></span>
+      <kbd>+enter+/angry3:symbols-short+enter+</kbd>
+      <div class="description">Stomping feet and waving arms</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-atease" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Atease</p>
+      <span></span>
+      <kbd>+enter+/atease:symbols-short+enter+</kbd>
+      <div class="description">Standing at ease</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-attention" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Attention</p>
+      <span></span>
+      <kbd>+enter+/attention:symbols-short+enter+</kbd>
+      <div class="description">Standing at attention</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-blah-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Blah-1</p>
+      <span></span>
+      <kbd>+enter+/blah1:symbols-short+enter+</kbd>
+      <div class="description">Right hand makes blah blah blah mouth flapping shape</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-blah-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Blah-2</p>
+      <span></span>
+      <kbd>+enter+/blah2:symbols-short+enter+</kbd>
+      <div class="description">Both hands make blah blah blah mouth flapping shape</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bored-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bored-1</p>
+      <span></span>
+      <kbd>+enter+/bored1:symbols-short+enter+</kbd>
+      <div class="description">Arms up then slap sides of thighs and looking around</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bored-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bored-2</p>
+      <span></span>
+      <kbd>+enter+/bored2:symbols-short+enter+</kbd>
+      <div class="description">Arms crossed, lean a bit, foot stomp</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-1</p>
+      <span></span>
+      <kbd>+enter+/bow1:symbols-short+enter+</kbd>
+      <div class="description">Curtsy</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-2</p>
+      <span></span>
+      <kbd>+enter+/bow2:symbols-short+enter+</kbd>
+      <div class="description">Slight bow, arm waves in a "you first" motion</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-3</p>
+      <span></span>
+      <kbd>+enter+/bow3:symbols-short+enter+</kbd>
+      <div class="description">Deep curtsy</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-4</p>
+      <span></span>
+      <kbd>+enter+/bow4:symbols-short+enter+</kbd>
+      <div class="description">Deep bow, arm wave in a "you first" motion</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-5" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-5</p>
+      <span></span>
+      <kbd>+enter+/bow5:symbols-short+enter+</kbd>
+      <div class="description">Really deep hurt your legs curtsy</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-bow-6" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Bow-6</p>
+      <span></span>
+      <kbd>+enter+/bow6:symbols-short+enter+</kbd>
+      <div class="description">Super exaggerated bow</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-burp" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Burp</p>
+      <span></span>
+      <kbd>+enter+/burp:symbols-short+enter+</kbd>
+      <div class="description">Burp, first hits chest</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-1</p>
+      <span></span>
+      <kbd>+enter+/cheer1:symbols-short+enter+</kbd>
+      <div class="description">Two arms wave in air with bull horns</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-2</p>
+      <span></span>
+      <kbd>+enter+/cheer2:symbols-short+enter+</kbd>
+      <div class="description">Both arms wave in air in fists</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-3</p>
+      <span></span>
+      <kbd>+enter+/cheer3:symbols-short+enter+</kbd>
+      <div class="description">Right arm fist pump</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-4</p>
+      <span></span>
+      <kbd>+enter+/cheer4:symbols-short+enter+</kbd>
+      <div class="description">Right arm multiple fist pump</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-5" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-5</p>
+      <span></span>
+      <kbd>+enter+/cheer5:symbols-short+enter+</kbd>
+      <div class="description">Left arm fist pumps</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-6" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-6</p>
+      <span></span>
+      <kbd>+enter+/cheer6:symbols-short+enter+</kbd>
+      <div class="description">Right arm fist high in air</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-7" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-7</p>
+      <span></span>
+      <kbd>+enter+/cheer7:symbols-short+enter+</kbd>
+      <div class="description">Right arm fist high in air, many fist pumps</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cheer-8" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cheer-8</p>
+      <span></span>
+      <kbd>+enter+/cheer8:symbols-short+enter+</kbd>
+      <div class="description">Right arm fist high in air, many fist pumps with a slight hop</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-chicken" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Chicken</p>
+      <span></span>
+      <kbd>+enter+/chicken:symbols-short+enter+</kbd>
+      <div class="description">Dismissive arm wave and then makes chicken wings with arms</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-1</p>
+      <span></span>
+      <kbd>+enter+/clap1:symbols-short+enter+</kbd>
+      <div class="description">Both hands above head clapping for a fairly long time</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-2</p>
+      <span></span>
+      <kbd>+enter+/clap2:symbols-short+enter+</kbd>
+      <div class="description">Both hands above head clapping</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-3</p>
+      <span></span>
+      <kbd>+enter+/clap3:symbols-short+enter+</kbd>
+      <div class="description">Slow clap in front of face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-4</p>
+      <span></span>
+      <kbd>+enter+/clap4:symbols-short+enter+</kbd>
+      <div class="description">Slow clap in front of chest</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-5" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-5</p>
+      <span></span>
+      <kbd>+enter+/clap5:symbols-short+enter+</kbd>
+      <div class="description">Fast clap in front of face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-6" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-6</p>
+      <span></span>
+      <kbd>+enter+/clap6:symbols-short+enter+</kbd>
+      <div class="description">Very delicate clap near top of head</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-clap-7" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Clap-7</p>
+      <span></span>
+      <kbd>+enter+/clap7:symbols-short+enter+</kbd>
+      <div class="description">Heavy clap in front of face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-come-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Come-1</p>
+      <span></span>
+      <kbd>+enter+/come1:symbols-short+enter+</kbd>
+      <div class="description">Left hand high beckons</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-come-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Come-2</p>
+      <span></span>
+      <kbd>+enter+/come2:symbols-short+enter+</kbd>
+      <div class="description">Right hand aggressive salute point to target then waves target to self</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-come-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Come-3</p>
+      <span></span>
+      <kbd>+enter+/come3:symbols-short+enter+</kbd>
+      <div class="description">Right hand point at target then down at floor, slightly angry</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-come-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Come-4</p>
+      <span></span>
+      <kbd>+enter+/come4:symbols-short+enter+</kbd>
+      <div class="description">Left hand single finger beckons towards</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-cry" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Cry</p>
+      <span></span>
+      <kbd>+enter+/cry:symbols-short+enter+</kbd>
+      <div class="description">Crying, both hands at face, big emotion</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-1</p>
+      <span></span>
+      <kbd>+enter+/dance1:symbols-short+enter+</kbd>
+      <div class="description">Little head bobbing, little hand thursting to sides, slight rocking back and forth on feet</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-2</p>
+      <span></span>
+      <kbd>+enter+/dance2:symbols-short+enter+</kbd>
+      <div class="description">More enthusiastic hand thrusting to the air and sides, rocking back and forth on feet.</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-3</p>
+      <span></span>
+      <kbd>+enter+/dance3:symbols-short+enter+</kbd>
+      <div class="description">Head bobbing and swaying back and forth, minimal arm moving</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-4</p>
+      <span></span>
+      <kbd>+enter+/dance4:symbols-short+enter+</kbd>
+      <div class="description">Head bobbing and swaying back and forth, minimal arm moving</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-5" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-5</p>
+      <span></span>
+      <kbd>+enter+/dance5:symbols-short+enter+</kbd>
+      <div class="description">Pumping chicken wings and legs</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-dance-6" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Dance-6</p>
+      <span></span>
+      <kbd>+enter+/dance6:symbols-short+enter+</kbd>
+      <div class="description">Short jig with a finger in the air</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-failure" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Failure</p>
+      <span></span>
+      <kbd>+enter+/failure:symbols-short+enter+</kbd>
+      <div class="description">Kick sand</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-flex-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Flex-1</p>
+      <span></span>
+      <kbd>+enter+/flex1:symbols-short+enter+</kbd>
+      <div class="description">Right arm flex</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-flex-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Flex-2</p>
+      <span></span>
+      <kbd>+enter+/flex2:symbols-short+enter+</kbd>
+      <div class="description">Both arms flex down and then flex with fists up</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-flex-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Flex-3</p>
+      <span></span>
+      <kbd>+enter+/flex3:symbols-short+enter+</kbd>
+      <div class="description">Both arms flex down and then a pointing flex and then flex with fists up</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-flirt" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Flirt</p>
+      <span></span>
+      <kbd>+enter+/flirt:symbols-short+enter+</kbd>
+      <div class="description">Blow a kiss</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gasp-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gasp-1</p>
+      <span></span>
+      <kbd>+enter+/gasp1:symbols-short+enter+</kbd>
+      <div class="description">Right hand to face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gasp-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gasp-2</p>
+      <span></span>
+      <kbd>+enter+/gasp2:symbols-short+enter+</kbd>
+      <div class="description">Right hand to face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gasp-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gasp-3</p>
+      <span></span>
+      <kbd>+enter+/gasp3:symbols-short+enter+</kbd>
+      <div class="description">Both hands to face</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gasp-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gasp-4</p>
+      <span></span>
+      <kbd>+enter+/gasp4:symbols-short+enter+</kbd>
+      <div class="description">Both hands to face and dip in legs</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gasp-5" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gasp-5</p>
+      <span></span>
+      <kbd>+enter+/gasp5:symbols-short+enter+</kbd>
+      <div class="description">Both ands to face in shock and step back</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gloat-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gloat-1</p>
+      <span></span>
+      <kbd>+enter+/gloat1:symbols-short+enter+</kbd>
+      <div class="description">Hands on side of hips and shoulder shake while looking around</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gloat-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gloat-2</p>
+      <span></span>
+      <kbd>+enter+/gloat2:symbols-short+enter+</kbd>
+      <div class="description">Hands on side and look around</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gloat-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gloat-3</p>
+      <span></span>
+      <kbd>+enter+/gloat3:symbols-short+enter+</kbd>
+      <div class="description">Thumbs tucked in belt and look around</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-gloat-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Gloat-4</p>
+      <span></span>
+      <kbd>+enter+/gloat4:symbols-short+enter+</kbd>
+      <div class="description">Thumbs tucked in belt and head shake, look around</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-greet-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Greet-1</p>
+      <span></span>
+      <kbd>+enter+/greet1:symbols-short+enter+</kbd>
+      <div class="description">Wave with left hand</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-greet-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Greet-2</p>
+      <span></span>
+      <kbd>+enter+/greet2:symbols-short+enter+</kbd>
+      <div class="description">Big hands low and then left hand high</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-laugh-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Laugh-1</p>
+      <span></span>
+      <kbd>+enter+/laugh1:symbols-short+enter+</kbd>
+      <div class="description">Big exaggerated laugh with hands up and down and on waist</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-laugh-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Laugh-2</p>
+      <span></span>
+      <kbd>+enter+/laugh2:symbols-short+enter+</kbd>
+      <div class="description">Hands up, then down, hands on hip and laugh and groan</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-laugh-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Laugh-3</p>
+      <span></span>
+      <kbd>+enter+/laugh3:symbols-short+enter+</kbd>
+      <div class="description">Big belly laugh and point, lots of bowing and hand motion</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-point-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Point-1</p>
+      <span></span>
+      <kbd>+enter+/point1:symbols-short+enter+</kbd>
+      <div class="description">Left hand point</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-point-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Point-2</p>
+      <span></span>
+      <kbd>+enter+/point2:symbols-short+enter+</kbd>
+      <div class="description">Right hand point</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-point-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Point-3</p>
+      <span></span>
+      <kbd>+enter+/point3:symbols-short+enter+</kbd>
+      <div class="description">Right hand shake and point</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-point-4" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Point-4</p>
+      <span></span>
+      <kbd>+enter+/point4:symbols-short+enter+</kbd>
+      <div class="description">Left hand shake and point</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-rude-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Rude-1</p>
+      <span></span>
+      <kbd>+enter+/rude1:symbols-short+enter+</kbd>
+      <div class="description">Right hand slides up along chin and out</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-rude-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Rude-2</p>
+      <span></span>
+      <kbd>+enter+/rude2:symbols-short+enter+</kbd>
+      <div class="description">double flip off</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-rude-3" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Rude-3</p>
+      <span></span>
+      <kbd>+enter+/rude3:symbols-short+enter+</kbd>
+      <div class="description">Crank middle finger flip off</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-salute-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Salute-1</p>
+      <span></span>
+      <kbd>+enter+/salute1:symbols-short+enter+</kbd>
+      <div class="description">Simple salute</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-salute-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Salute-2</p>
+      <span></span>
+      <kbd>+enter+/salute2:symbols-short+enter+</kbd>
+      <div class="description">Slow salute</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-sit" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Sit</p>
+      <span></span>
+      <kbd>+enter+/sit:symbols-short+enter+</kbd>
+      <div class="description">Sit with arms around knees</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-sleep" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Sleep</p>
+      <span></span>
+      <kbd>+enter+/sleep:symbols-short+enter+</kbd>
+      <div class="description">Lay down and sleep</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-smell-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Smell-1</p>
+      <span></span>
+      <kbd>+enter+/smell1:symbols-short+enter+</kbd>
+      <div class="description">Wave hand around nose</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-smell-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Smell-2</p>
+      <span></span>
+      <kbd>+enter+/smell2:symbols-short+enter+</kbd>
+      <div class="description">Both hands around nose in shock and big hand wave while covering mouth</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-stand" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Stand</p>
+      <span></span>
+      <kbd>+enter+/stand:symbols-short+enter+</kbd>
+      <div class="description">Stand up</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-threaten-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Threaten-1</p>
+      <span></span>
+      <kbd>+enter+/threaten1:symbols-short+enter+</kbd>
+      <div class="description">Finger across throat</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-threaten-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Threaten-2</p>
+      <span></span>
+      <kbd>+enter+/threaten2:symbols-short+enter+</kbd>
+      <div class="description">Knuckle snap</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-wait-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Wait-1</p>
+      <span></span>
+      <kbd>+enter+/wait1:symbols-short+enter+</kbd>
+      <div class="description">Right hand up to wait</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-wait-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Wait-2</p>
+      <span></span>
+      <kbd>+enter+/wait2:symbols-short+enter+</kbd>
+      <div class="description">Time out sign</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-wave-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Wave-1</p>
+      <span></span>
+      <kbd>+enter+/wave1:symbols-short+enter+</kbd>
+      <div class="description">Right hand wave</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-wave-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Wave-2</p>
+      <span></span>
+      <kbd>+enter+/wave2:symbols-short+enter+</kbd>
+      <div class="description">Right hand 2 finger saulte</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-whistle-1" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Whistle-1</p>
+      <span></span>
+      <kbd>+enter+/whistle1:symbols-short+enter+</kbd>
+      <div class="description">Both fingers of right hand on mouth whistle</div>
+    </div>
+
+    <div class="control" data-control-id="emotion-whistle-2" data-control-type="oneshot" data-control-groups="emotion">
+      <p>Whistle-2</p>
+      <span></span>
+      <kbd>+enter+/whistle2:symbols-short+enter+</kbd>
+      <div class="description">Both hands on each side of mouth whistle</div>
+    </div>
+
+
+    <!-- EMOTIONS END -->
+
+    <!-- CTRL IN TESTING -->
+
+    <div class="control" data-control-id="keep-alive" data-control-type="remote-repeat" data-control-groups="">
+      <p class="full-size">Keep Alive</p>
+      <p class="compact">Alive</p>
+      <span class="switched-on">keeping</span>
+      <span class="switched-off">rest</span>
+      <kbd>~~</kbd>
+      <div class="description">
+        Keeping game client from disconnect from server due timeout error.
+        Execute kbd operation on periodic bases.
+        This operation executes on server(board) itself to protect from mobile power saving behavior.
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">300000</div>
+        <div class="param" data-attribute-param-id="min">60000</div>
+        <div class="param" data-attribute-param-id="max">700000</div>
+      </div>
+    </div>
+
+    <div class="control" data-control-id="rrepeat-1" data-control-type="remote-repeat" data-control-groups="">
+      <p>RRepeat 1</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>abc</kbd>
+      <div class="description">
+        Test snippet for remote execute.
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">3000</div>
+        <div class="param" data-attribute-param-id="min">1000</div>
+        <div class="param" data-attribute-param-id="max">700000</div>
+      </div>
+    </div>
+
+    <div class="control" data-control-id="rrepeat-2" data-control-type="remote-repeat" data-control-groups="">
+      <p>RRepeat 2</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>+a:long+</kbd>
+      <div class="description">
+        Test snippet for remote execute.
+      </div>
+      <div class="attribute" data-attribute-id="repeatDelay">
+        <div class="value">5000</div>
+        <div class="param" data-attribute-param-id="min">1000</div>
+        <div class="param" data-attribute-param-id="max">700000</div>
+      </div>
+    </div>
+
+    <div class="control" data-control-id="console-displayInfo-1" data-control-type="switch" data-control-groups="displayInfo">
+      <p>DisplayInfo 1</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">+~+r_DisplayInfo 0:symbols-short+enter+~+</kbd>
+      <kbd class="switched-off">+~+r_DisplayInfo 1:symbols-short+enter+~+</kbd>
+      <div class="description">
+        Shows some basic information about game client.
+        Using console.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="console-displayInfo-3" data-control-type="switch" data-control-groups="displayInfo">
+      <p>DisplayInfo 3</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">+~+r_DisplayInfo 0:symbols-short+enter+~+</kbd>
+      <kbd class="switched-off">+~+r_DisplayInfo 3:symbols-short+enter+~+</kbd>
+      <div class="description">
+        Shows additional info (Session, Shard ID, CPU load, RAM, VRAM usage, etc.) about game client.
+        Using console.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="console-framegraph" data-control-type="switch">
+      <p>Framegraph</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd class="switched-on">+~+r_displayframegraph 0:symbols-short+enter+~+</kbd>
+      <kbd class="switched-off">+~+r_displayframegraph 1:symbols-short+enter+~+</kbd>
+      <div class="description">
+        Shows client frametime.
+        Using console.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="console-quit" data-control-type="oneshot">
+      <p>Quit</p>
+      <span></span>
+      <kbd>+~+quit:symbols-short+enter+~+</kbd>
+      <div class="description">
+        Exit from game.
+        Using console.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="console-maxfps40" data-control-type="oneshot">
+      <p>maxFps: 40</p>
+      <span></span>
+      <kbd>+~+sys_MaxFPS = 40:symbols-short+enter+~+</kbd>
+      <div class="description">
+        Limit max FPS buy value of 40.
+        Using console.
+      </div>
+    </div>
+
+
+
+    <div class="control" data-control-id="space-break-hold" data-control-type="direct">
+      <p class="full-size">Space Brake</p>
+      <p class="compact">Brake</p>
+      <span class="switched-on">anchored</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+x:up</kbd>
+      <kbd class="switched-off">+x:down+</kbd>
+      <div class="description">
+        This is direct impl of spacebrake.
+        Direct control hold kbd while the control is held by the user. Ie direct transfer of input.
+        #hold#X#/settings/Flight - Movement/Spacebrake#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="dangling-a" data-control-type="switch">
+      <p>Dangling A</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+a:up+</kbd>
+      <kbd class="switched-off">+a:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+    <div class="control" data-control-id="dangling-b" data-control-type="switch">
+      <p>Dangling B</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+b:up+</kbd>
+      <kbd class="switched-off">+b:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+    <div class="control" data-control-id="dangling-c" data-control-type="switch">
+      <p>Dangling C</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+c:up+</kbd>
+      <kbd class="switched-off">+c:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+    <div class="control" data-control-id="dangling-d" data-control-type="switch">
+      <p>Dangling D</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+d:up+</kbd>
+      <kbd class="switched-off">+d:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+    <div class="control" data-control-id="dangling-e" data-control-type="switch">
+      <p>Dangling E</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+e:up+</kbd>
+      <kbd class="switched-off">+e:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+    <div class="control" data-control-id="dangling-f" data-control-type="switch">
+      <p>Dangling F</p>
+      <span class="switched-on">dangling</span>
+      <span class="switched-off">released</span>
+      <kbd class="switched-on">+f:up+</kbd>
+      <kbd class="switched-off">+f:down+</kbd>
+      <div class="description">This testing impl of dangling keys (max to 6 without modifiers).</div>
+    </div>
+
+
+
+    <div class="control" data-control-id="cloudtest" data-control-type="switch" data-control-groups="turret, filler, xzy, gg, doubleDamage, congo-hit, fall, some, lorem-ipsum, xcvffs, turret, diff, entry">
+      <p>CloudTest</p>
+      <span></span>
+      <kbd>Test</kbd>
+      <div class="description">
+        Wat is Lorem Ipsum?
+        Lorem Ipsum is slechts een proeftekst uit het drukkerij- en zetterijwezen. Lorem Ipsum is de standaard proeftekst in deze bedrijfstak sinds de 16e eeuw, toen een onbekende drukker een zethaak met letters nam en ze door elkaar husselde om een font-catalogus te maken. Het heeft niet alleen vijf eeuwen overleefd maar is ook, vrijwel onveranderd, overgenomen in elektronische letterzetting. Het is in de jaren '60 populair geworden met de introductie van Letraset vellen met Lorem Ipsum passages en meer recentelijk door desktop publishing software zoals Aldus PageMaker die versies van Lorem Ipsum bevatten.
+      </div>
+    </div>
+
+    <div class="control" data-control-id="land-req-test-1" data-control-type="oneshot">
+      <p>Landing Req. Simple</p>
+      <span></span>
+      <kbd>+alt+n</kbd>
+      <div class="description">Some workaround</div>
+    </div>
+
+    <div class="control" data-control-id="special-1" data-control-type="oneshot">
+      <p>Special 1</p>
+      <span></span>
+      <kbd>+special-1+</kbd>
+      <div class="description">Some workaround</div>
+    </div>
+
+    <div class="control" data-control-id="special-2" data-control-type="oneshot">
+      <p>Special 2 Long</p>
+      <span></span>
+      <kbd>+special-2+</kbd>
+      <div class="description">Some workaround</div>
+    </div>
+
+    <div class="control" data-control-id="special-3" data-control-type="oneshot">
+      <p>Special 3 Short</p>
+      <span></span>
+      <kbd>+special-3+</kbd>
+      <div class="description">Some workaround</div>
+    </div>
+
+    <div class="control" data-control-id="special-4" data-control-type="oneshot">
+      <p>Special 4 Double Tap</p>
+      <span></span>
+      <kbd>+special-4+</kbd>
+      <div class="description">Some workaround</div>
+    </div>
+
+    <div class="control" data-control-id="pref-1" data-control-type="oneshot" data-control-groups="pref">
+      <p>Pref-1</p>
+      <span></span>
+      <kbd></kbd>
+    </div>
+
+    <div class="control" data-control-id="pref-2" data-control-type="oneshot" data-control-groups="pref">
+      <p>Pref-2</p>
+      <span></span>
+      <kbd></kbd>
+    </div>
+
+    <div class="control" data-control-id="pref-3" data-control-type="oneshot" data-control-groups="pref">
+      <p>Pref-3</p>
+      <span></span>
+      <kbd></kbd>
+    </div>
+
+    <!--  CTRL IN TESTING END -->
+
+  </div>
+
+  <div style="display: none" class="pages-decl">
+    <div class="page" data-page-id="home">
+
+      <div class="control" data-control-id="move-on-foot"></div>
+      <div class="control" data-control-id="move-on-emotion"></div>
+      <div class="control" data-control-id="move-ground-vehicle"></div>
+      <div class="control" data-control-id="move-ground-vehicle-power"></div>
+
+      <div class="control" data-control-id="move-on-flight"></div>
+      <div class="control" data-control-id="move-on-landing"></div>
+      <div class="control" data-control-id="move-on-power"></div>
+      <div class="control" data-control-id="move-on-console"></div>
+
+      <div class="control" data-control-id="keep-alive"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">8</div>
+        <div class="value" data-layout-value="fontSize">100%</div>
+        <div class="value" data-layout-value="areas">
+          ".  .  .  .  .  ."
+          ".  aa aa ab .  ah"
+          ".  aa aa .  .  ah"
+          ".  ac ac ad .  ai"
+          ".  ac ac .  .  ai"
+          ".  ae ae af ag aj"
+          ".  ae ae .  .  aj"
+          ".  .  .  .  .  ."
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="landing">
+
+      <div class="control" data-control-id="landing-gear"></div>
+      <div class="control" data-control-id="ext-lighting"></div>
+      <div class="control" data-control-id="vtol"></div>
+      <div class="control" data-control-id="land-req"></div>
+      <div class="control" data-control-id="land-req-cargo"></div>
+
+      <div class="control" data-control-id="doors-open"></div>
+      <div class="control" data-control-id="doors-lock"></div>
+
+      <div class="control" data-control-id="power-change"></div>
+      <div class="control" data-control-id="engine-change"></div>
+      <div class="control" data-control-id="shield-change"></div>
+      <div class="control" data-control-id="weapon-change"></div>
+
+<!--      <div class="control" data-control-id="refuel"></div>
+      <div class="control" data-control-id="repair"></div>-->
+
+      <div class="control" data-control-id="helm-remove"></div>
+      <div class="control" data-control-id="helm-wipe"></div>
+
+      <div class="control" data-control-id="change-view"></div>
+      <div class="control" data-control-id="free-look"></div>
+      <div class="control" data-control-id="leave"></div>
+
+      <div class="control" data-control-id="moby"></div>
+      <div class="control" data-control-id="map"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="port-lock"></div>
+
+      <div class="control" data-control-id="space-brake"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="cellGap">.5</div>
+        <div class="value" data-layout-value="incellPadding">.5</div>
+        <div class="value" data-layout-value="areas">
+          ".  ad ae af ag . "
+          "aa aq ar am av as"
+          "ab an ao al ap at"
+          "ac ax ay az ba au"
+          "aw bb bc bd be . "
+          ".  ah ai aj ak . "
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="flight">
+
+      <div class="control" data-control-id="quantum-mode"></div>
+      <div class="control" data-control-id="scan-mode"></div>
+      <div class="control" data-control-id="missile-mode"></div>
+      <div class="control" data-control-id="mine-mode"></div>
+      <div class="control" data-control-id="nav-mode"></div>
+
+      <div class="control" data-control-id="next-atck"></div>
+      <div class="control" data-control-id="next-hostl"></div>
+      <div class="control" data-control-id="next-frnd"></div>
+      <div class="control" data-control-id="next-any"></div>
+
+      <div class="control" data-control-id="gimbal"></div>
+      <div class="control" data-control-id="decoy-seq"></div>
+      <div class="control" data-control-id="chaf"></div>
+      <div class="control" data-control-id="missile-pack-inc"></div>
+      <div class="control" data-control-id="missile-pack-decr"></div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+      <div class="control" data-control-id="change-view"></div>
+      <div class="control" data-control-id="free-look"></div>
+      <div class="control" data-control-id="space-brake"></div>
+
+      <div class="control" data-control-id="limiter-mode"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+
+      <!--todo move me-->
+      <div class="control" data-control-id="salvage-mode"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="cellGap">.5</div>
+        <div class="value" data-layout-value="incellPadding">.5</div>
+        <div class="value" data-layout-value="areas">
+          ".  af ag ah ai ."
+          "aa ak al am an av"
+          "ab ap aq bi aj aw"
+          "ac ao au az at ax"
+          "ad ay bd be bf ."
+          "ae ar as bj bk ."
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="prefSpec">
+
+      <div class="control" data-control-id="convergence-inc"></div>
+      <div class="control" data-control-id="convergence-decr"></div>
+      <div class="control" data-control-id="convergence-reset"></div>
+      <!--<div class="control" data-control-id="convergence-rel"></div>-->
+      <div class="control" data-control-id="space-brake"></div>
+
+      <div class="control" data-control-id="emp"></div>
+      <div class="control" data-control-id="q-jammers-short"></div>
+      <div class="control" data-control-id="q-jammers-long"></div>
+      <div class="control" data-control-id="qid"></div>
+
+      <div class="control" data-control-id="turret-gyro"></div>
+      <div class="control" data-control-id="turret-esp"></div>
+      <div class="control" data-control-id="turret-fire-mode"></div>
+      <div class="control" data-control-id="turret-position"></div>
+
+      <div class="control" data-control-id="decoy-seq"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="esp"></div>
+      <div class="control" data-control-id="g-safe"></div>
+      <div class="control" data-control-id="change-view"></div>
+      <div class="control" data-control-id="free-look"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">7</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="cellGap">.5</div>
+        <div class="value" data-layout-value="incellPadding">.5</div>
+        <div class="value" data-layout-value="areas">
+          "aa ab .  ae af .  aq"
+          "ac ad .  ag ah .  ar"
+          ".  .  .  .  .  .  as"
+          "ai aj .  am an .  at"
+          "ak al .  ao ap .  au"
+          ".  .  .  .  .  .  av"
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="on-foot">
+
+      <div class="control" data-control-id="helm-remove"></div>
+      <div class="control" data-control-id="helm-wipe"></div>
+
+      <div class="control" data-control-id="flashlight"></div>
+
+      <div class="control" data-control-id="moby"></div>
+      <div class="control" data-control-id="map"></div>
+
+      <div class="control" data-control-id="drop-item"></div>
+      <div class="control" data-control-id="inspect-item"></div>
+      <div class="control" data-control-id="fire-mode"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">5</div>
+        <div class="value" data-layout-value="rowCnt">5</div>
+        <div class="value" data-layout-value="areas">
+          ". . . . ."
+          ". a b c ."
+          ". f g h ."
+          ". d d e ."
+          ". . . . ."
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="power-management">
+
+      <div class="control" data-control-id="shields"></div>
+
+      <div class="control" data-control-id="pds"></div>
+
+      <div class="control" data-control-id="power-change"></div>
+      <div class="control" data-control-id="engine-change"></div>
+      <div class="control" data-control-id="shield-change"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">7</div>
+        <div class="value" data-layout-value="rowCnt">8</div>
+        <div class="value" data-layout-value="areas">
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          ".  .  .  .  .  .  ."
+          "ac ad ae .  af ag ah"
+          "ac ad ae .  af ag ah"
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="vehicle-power-management">
+
+      <div class="control" data-control-id="shields"></div>
+
+      <div class="control" data-control-id="pds"></div>
+
+      <div class="control" data-control-id="power-change"></div>
+      <div class="control" data-control-id="engine-change"></div>
+      <div class="control" data-control-id="shield-change"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">7</div>
+        <div class="value" data-layout-value="rowCnt">8</div>
+        <div class="value" data-layout-value="areas">
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          "aa aa aa .  ab ab ab"
+          ".  .  .  .  .  .  ."
+          "ac ad ae .  af ag ah"
+          "ac ad ae .  af ag ah"
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="modes">
+    </div>
+
+    <div class="page" data-page-id="missile-op-mode">
+
+      <div class="control" data-control-id="missile-mode"></div>
+
+      <div class="control" data-control-id="next-atck"></div>
+      <div class="control" data-control-id="next-hostl"></div>
+      <div class="control" data-control-id="next-frnd"></div>
+      <div class="control" data-control-id="next-any"></div>
+
+
+      <div class="control" data-control-id="missile-pack-next-type"></div>
+      <div class="control" data-control-id="missile-pack-prev-type"></div>
+      <div class="control" data-control-id="missile-pack-inc"></div>
+      <div class="control" data-control-id="missile-pack-decr"></div>
+      <div class="control" data-control-id="missile-pack-reset"></div>
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="ping"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa ab ac ad ae ."
+          ".  af af ag .  ap"
+          "ak ah ai aj .  aq"
+          "al at au av .  ar"
+          "am aw ax ay .  ."
+          ".  an ao az .  as"
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="vehicle-missile-op-mode">
+
+      <div class="control" data-control-id="missile-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/missile</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+
+      <div class="control" data-control-id="next-atck"></div>
+      <div class="control" data-control-id="next-hostl"></div>
+      <div class="control" data-control-id="next-frnd"></div>
+      <div class="control" data-control-id="next-any"></div>
+
+
+      <div class="control" data-control-id="missile-pack-next-type"></div>
+      <div class="control" data-control-id="missile-pack-prev-type"></div>
+      <div class="control" data-control-id="missile-pack-inc"></div>
+      <div class="control" data-control-id="missile-pack-decr"></div>
+      <div class="control" data-control-id="missile-pack-reset"></div>
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="ping"></div>
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa ab ac ad ae ."
+          ".  af af ag .  ap"
+          "ak ah ai aj .  aq"
+          "al at au av .  ar"
+          "am aw ax ay .  ."
+          ".  an ao az .  as"
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="mine-op-mode">
+
+      <div class="control" data-control-id="mine-mode"></div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <!--<div class="control" data-control-id="mine-limiter"></div>-->
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="gadget-1"></div>
+      <div class="control" data-control-id="gadget-2"></div>
+      <div class="control" data-control-id="gadget-3"></div>
+      <div class="control" data-control-id="gadget-4"></div>
+
+      <div class="control" data-control-id="mine-laser-pwr-inc"></div>
+      <div class="control" data-control-id="mine-laser-pwr-decr"></div>
+
+      <div class="control" data-control-id="laser-switch"></div>
+      <div class="control" data-control-id="cargo-jettison"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa am an ao ap ah"
+          ".  au av aw ak ai"
+          "aq ax ay az al aj"
+          "as ba bb bc .  ."
+          "ar ab ac ad .  ."
+          ".  ae af ag .  at"
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="vehicle-mine-op-mode">
+
+      <div class="control" data-control-id="mine-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/mining</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <!--<div class="control" data-control-id="mine-limiter"></div>-->
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="gadget-1"></div>
+      <div class="control" data-control-id="gadget-2"></div>
+      <div class="control" data-control-id="gadget-3"></div>
+      <div class="control" data-control-id="gadget-4"></div>
+
+      <div class="control" data-control-id="mine-laser-pwr-inc"></div>
+      <div class="control" data-control-id="mine-laser-pwr-decr"></div>
+
+      <div class="control" data-control-id="laser-switch"></div>
+      <div class="control" data-control-id="cargo-jettison"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa am an ao ap ah"
+          ".  au av aw ak ai"
+          "aq ax ay az al aj"
+          "as ba bb bc .  ."
+          "ar ab ac ad .  ."
+          ".  ae af ag .  at"
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="page" data-page-id="salvage-op-mode">
+
+      <div class="control" data-control-id="salvage-mode"></div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="salvage-limiter"></div>
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="salvage-beam-mode">
+        <p class="full-size">Beam Mode</p>
+        <p class="compact">BMode</p>
+      </div>
+
+      <div class="control" data-control-id="salvage-focus-all">
+        <p class="full-size">Focus All</p>
+        <p class="compact">Fcs All</p>
+      </div>
+      <div class="control" data-control-id="salvage-focus-left">
+        <p class="full-size">Focus Left</p>
+        <p class="compact">Fcs L.</p>
+      </div>
+      <div class="control" data-control-id="salvage-focus-right">
+        <p class="full-size">Focus Right</p>
+        <p class="compact">Fcs R.</p>
+      </div>
+      <div class="control" data-control-id="salvage-focus-disintegration">
+        <p class="full-size">Focus Struct</p>
+        <p class="compact">Fcs Str.</p>
+      </div>
+      <div class="control" data-control-id="salvage-focus-fracture">
+        <p class="full-size">Focus Fracture</p>
+        <p class="compact">Fcs Frct.</p>
+      </div>
+
+      <div class="control" data-control-id="salvage-cycle-focused-mod">
+        <p class="full-size">Cycle Focused</p>
+        <p class="compact">CFM</p>
+      </div>
+      <div class="control" data-control-id="salvage-cycle-left-mod">
+        <p class="full-size">Cycle Left</p>
+        <p class="compact">CLM</p>
+      </div>
+      <div class="control" data-control-id="salvage-cycle-right-mod">
+        <p class="full-size">Cycle Right</p>
+        <p class="compact">CRM</p>
+      </div>
+      <div class="control" data-control-id="salvage-cycle-structural-mod">
+        <p class="full-size">Cycle Struct</p>
+        <p class="compact">CSM</p>
+      </div>
+
+      <div class="control" data-control-id="salvage-switch-axis"></div>
+
+      <div class="control" data-control-id="ext-lighting"></div>
+
+
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa ar as at aq ah"
+          ".  am an ao ap ah"
+          "al .  .  .  .  ah"
+          "ak aw ax ay az ah"
+          "av ab ac ad ai ah"
+          ".  ae af ag aj au"
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="scan-op-mode">
+
+      <div class="control" data-control-id="scan-mode"></div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="ping-angle-inc">
+        <p class="full-size">Angle Inc.</p>
+        <p class="compact">Angl+</p>
+      </div>
+      <div class="control" data-control-id="ping-angle-decr">
+        <p class="full-size">Angle Decr.</p>
+        <p class="compact">Angl-</p>
+      </div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+          <div class="value" data-layout-value="areas">
+            "aa .  .  .  .  ah"
+            ".  .  .  .  ak ai"
+            "ab .  .  .  al aj"
+            "ac am ao aq as ."
+            "ad an ap ar at ."
+            ".  ae af ag .  ."
+
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="vehicle-scan-op-mode">
+
+      <div class="control" data-control-id="scan-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/scanning</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+
+      <div class="control" data-control-id="pin-1"></div>
+      <div class="control" data-control-id="pin-2"></div>
+      <div class="control" data-control-id="pin-3"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="decoy"></div>
+      <div class="control" data-control-id="chaf"></div>
+
+      <div class="control" data-control-id="ping-angle-inc">
+        <p class="full-size">Angle Inc.</p>
+        <p class="compact">Angl+</p>
+      </div>
+      <div class="control" data-control-id="ping-angle-decr">
+        <p class="full-size">Angle Decr.</p>
+        <p class="compact">Angl-</p>
+      </div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa .  .  .  .  ah"
+          ".  .  .  .  ak ai"
+          "ab .  .  .  al aj"
+          "ac am ao aq as ."
+          "ad an ap ar at ."
+          ".  ae af ag .  ."
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="under-construction">
+      <p class="not-found-msg" >Under Construction</p>
+    </div>
+
+    <div class="page" data-page-id="vehicle">
+
+      <div class="control" data-control-id="scan-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/scanning</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+      <div class="control" data-control-id="missile-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/missile</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+      <div class="control" data-control-id="mine-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/mining</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+
+      <div class="control" data-control-id="power-change"></div>
+      <div class="control" data-control-id="engine-change"></div>
+      <div class="control" data-control-id="shield-change"></div>
+      <div class="control" data-control-id="weapon-change"></div>
+
+      <div class="control" data-control-id="turret-1"></div>
+      <div class="control" data-control-id="turret-2"></div>
+      <div class="control" data-control-id="turret-3"></div>
+
+      <div class="control" data-control-id="next-atck"></div>
+      <div class="control" data-control-id="next-hostl"></div>
+      <div class="control" data-control-id="next-frnd"></div>
+      <div class="control" data-control-id="next-any"></div>
+
+      <div class="control" data-control-id="ping"></div>
+      <div class="control" data-control-id="echo-1"></div>
+      <div class="control" data-control-id="echo-2"></div>
+
+      <div class="control" data-control-id="doors-open"></div>
+      <div class="control" data-control-id="doors-lock"></div>
+      <div class="control" data-control-id="port-lock"></div>
+
+      <div class="control" data-control-id="horn"></div>
+      <div class="control" data-control-id="gimbal"></div>
+      <div class="control" data-control-id="space-brake">
+        <p class="full-size">Brake</p>
+      </div>
+
+      <div class="control" data-control-id="change-view"></div>
+      <div class="control" data-control-id="free-look"></div>
+      <div class="control" data-control-id="limiter-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/limit</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+
+      <div class="control" data-control-id="moby"></div>
+      <div class="control" data-control-id="map"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="cellGap">.5</div>
+        <div class="value" data-layout-value="incellPadding">.5</div>
+        <div class="value" data-layout-value="areas">
+          ".  ak al am an  ."
+          "aa ao ap aq au ah"
+          "ab ar az ax av ai"
+          "ac as at ay aw aj"
+          "be bc ba bb bd bf"
+          ".  ad ae af ag  ."
+        </div>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="emotion-positive">
+
+      <div class="control" data-control-id="emotion-agree" ></div>
+
+      <div class="control" data-control-id="emotion-greet-1"></div>
+
+      <div class="control" data-control-id="emotion-greet-2"></div>
+
+
+
+      <div class="control" data-control-id="emotion-bow-1"></div>
+
+      <div class="control" data-control-id="emotion-bow-2"></div>
+
+      <div class="control" data-control-id="emotion-bow-3"></div>
+
+      <div class="control" data-control-id="emotion-bow-4"></div>
+
+      <div class="control" data-control-id="emotion-bow-5"></div>
+
+      <div class="control" data-control-id="emotion-bow-6"></div>
+
+
+
+
+      <div class="control" data-control-id="emotion-cheer-1"></div>
+
+      <div class="control" data-control-id="emotion-cheer-2"></div>
+
+      <div class="control" data-control-id="emotion-cheer-3"></div>
+
+      <div class="control" data-control-id="emotion-cheer-4"></div>
+
+      <div class="control" data-control-id="emotion-cheer-5"></div>
+
+      <div class="control" data-control-id="emotion-cheer-6"></div>
+
+      <div class="control" data-control-id="emotion-cheer-7"></div>
+
+      <div class="control" data-control-id="emotion-cheer-8"></div>
+
+
+
+      <div class="control" data-control-id="emotion-clap-1"></div>
+
+      <div class="control" data-control-id="emotion-clap-2"></div>
+
+      <div class="control" data-control-id="emotion-clap-3"></div>
+
+      <div class="control" data-control-id="emotion-clap-4"></div>
+
+      <div class="control" data-control-id="emotion-clap-5"></div>
+
+      <div class="control" data-control-id="emotion-clap-6"></div>
+
+      <div class="control" data-control-id="emotion-clap-7"></div>
+
+
+
+      <div class="control" data-control-id="emotion-dance-1"></div>
+
+      <div class="control" data-control-id="emotion-dance-2"></div>
+
+      <div class="control" data-control-id="emotion-dance-3"></div>
+
+      <div class="control" data-control-id="emotion-dance-4"></div>
+
+      <div class="control" data-control-id="emotion-dance-5"></div>
+
+      <div class="control" data-control-id="emotion-dance-6"></div>
+
+
+      <div class="control" data-control-id="emotion-laugh-1"></div>
+
+      <div class="control" data-control-id="emotion-laugh-2"></div>
+
+      <div class="control" data-control-id="emotion-laugh-3"></div>
+
+
+      <div class="control" data-control-id="emotion-flirt"></div>
+
+
+      <div class="control" data-control-id="emotion-salute-1"></div>
+
+      <div class="control" data-control-id="emotion-salute-2"></div>
+
+    </div>
+
+    <div class="page" data-page-id="emotion-negative">
+
+      <div class="control" data-control-id="emotion-angry-1"></div>
+
+      <div class="control" data-control-id="emotion-angry-2"></div>
+
+      <div class="control" data-control-id="emotion-angry-3"></div>
+
+
+
+      <div class="control" data-control-id="emotion-bored-1"></div>
+
+      <div class="control" data-control-id="emotion-bored-2"></div>
+
+
+
+      <div class="control" data-control-id="emotion-burp"></div>
+
+      <div class="control" data-control-id="emotion-cry"></div>
+
+
+      <div class="control" data-control-id="emotion-gasp-1"></div>
+
+      <div class="control" data-control-id="emotion-gasp-2"></div>
+
+      <div class="control" data-control-id="emotion-gasp-3"></div>
+
+      <div class="control" data-control-id="emotion-gasp-4"></div>
+
+      <div class="control" data-control-id="emotion-gasp-5"></div>
+
+
+
+      <div class="control" data-control-id="emotion-failure"></div>
+
+
+
+      <div class="control" data-control-id="emotion-gloat-1"></div>
+
+      <div class="control" data-control-id="emotion-gloat-2"></div>
+
+      <div class="control" data-control-id="emotion-gloat-3"></div>
+
+      <div class="control" data-control-id="emotion-gloat-4"></div>
+
+
+
+      <div class="control" data-control-id="emotion-rude-1"></div>
+
+      <div class="control" data-control-id="emotion-rude-2"></div>
+
+      <div class="control" data-control-id="emotion-rude-3"></div>
+
+
+
+      <div class="control" data-control-id="emotion-smell-1"></div>
+
+      <div class="control" data-control-id="emotion-smell-2"></div>
+
+
+      <div class="control" data-control-id="emotion-threaten-1"></div>
+
+      <div class="control" data-control-id="emotion-threaten-2"></div>
+
+    </div>
+
+    <div class="page" data-page-id="emotion-neutral">
+
+      <div class="control" data-control-id="emotion-atease"></div>
+
+      <div class="control" data-control-id="emotion-attention"></div>
+
+
+      <div class="control" data-control-id="emotion-blah-1"></div>
+
+      <div class="control" data-control-id="emotion-blah-2"></div>
+
+
+      <div class="control" data-control-id="emotion-chicken"></div>
+
+
+      <div class="control" data-control-id="emotion-come-1"></div>
+
+      <div class="control" data-control-id="emotion-come-2"></div>
+
+      <div class="control" data-control-id="emotion-come-3"></div>
+
+      <div class="control" data-control-id="emotion-come-4"></div>
+
+
+      <div class="control" data-control-id="emotion-flex-1"></div>
+
+      <div class="control" data-control-id="emotion-flex-2"></div>
+
+      <div class="control" data-control-id="emotion-flex-3"></div>
+
+
+      <div class="control" data-control-id="emotion-point-1"></div>
+
+      <div class="control" data-control-id="emotion-point-2"></div>
+
+      <div class="control" data-control-id="emotion-point-3"></div>
+
+      <div class="control" data-control-id="emotion-point-4"></div>
+
+
+      <div class="control" data-control-id="emotion-sit"></div>
+
+      <div class="control" data-control-id="emotion-sleep"></div>
+
+      <div class="control" data-control-id="emotion-stand"></div>
+
+
+      <div class="control" data-control-id="emotion-wait-1"></div>
+
+      <div class="control" data-control-id="emotion-wait-2"></div>
+
+
+      <div class="control" data-control-id="emotion-wave-1"></div>
+
+      <div class="control" data-control-id="emotion-wave-2"></div>
+
+
+      <div class="control" data-control-id="emotion-whistle-1"></div>
+
+      <div class="control" data-control-id="emotion-whistle-2"></div>
+
+    </div>
+
+    <div class="page" data-page-id="console">
+
+      <div class="control" data-control-id="console-displayInfo-1"></div>
+      <div class="control" data-control-id="console-displayInfo-3"></div>
+      <div class="control" data-control-id="console-framegraph"></div>
+      <div class="control" data-control-id="console-quit"></div>
+      <div class="control" data-control-id="console-maxfps40"></div>
+
+    </div>
+
+    <div class="page" data-page-id="debug-1">
+
+      <div class="control" data-control-id="land-req"></div>
+      <div class="control" data-control-id="land-req-cargo"></div>
+
+      <div class="control" data-control-id="special-1"></div>
+      <div class="control" data-control-id="special-2"></div>
+      <div class="control" data-control-id="special-3"></div>
+      <div class="control" data-control-id="special-4"></div>
+
+      <div class="control" data-control-id="cloudtest"></div>
+
+      <div class="control" data-control-id="keep-alive"></div>
+      <div class="control" data-control-id="rrepeat-1"></div>
+      <div class="control" data-control-id="rrepeat-2"></div>
+
+      <div class="control" data-control-id="console-displayInfo-1"></div>
+      <div class="control" data-control-id="console-displayInfo-3"></div>
+      <div class="control" data-control-id="console-framegraph"></div>
+      <div class="control" data-control-id="console-quit"></div>
+      <div class="control" data-control-id="console-maxfps40"></div>
+
+      <div class="control" data-control-id="space-break-hold"></div>
+
+      <div class="control" data-control-id="dangling-a"></div>
+      <div class="control" data-control-id="dangling-b"></div>
+      <div class="control" data-control-id="dangling-c"></div>
+      <div class="control" data-control-id="dangling-d"></div>
+      <div class="control" data-control-id="dangling-e"></div>
+      <div class="control" data-control-id="dangling-f"></div>
+
+
+    </div>
+
+    <div class="page" data-page-id="debug-2">
+
+      <div class="control" data-control-id="space-break-hold"></div>
+
+    </div>
+
+    <div class="page" data-page-id="debug-3">
+
+      <div class="debug-shield-widget">
+        <canvas class="cone"></canvas>
+      </div>
+
+    </div>
+
+    <div class="page" data-page-id="debug-4">
+
+      <div class="debug-power-widget">
+        <canvas class="cone"></canvas>
+      </div>
+
+    </div>
+
+
+    <div class="page" data-page-id="keyboard">
+      <div class="control" data-control-id="numlock"></div>
+      <div class="control" data-control-id="capslock"></div>
+      <div class="control" data-control-id="scrolllock"></div>
+      <div class="control" data-control-id="compose"></div>
+      <div class="control" data-control-id="kana"></div>
+    </div>
+
+    <div class="page" data-page-id="limit">
+      <div class="control" data-control-id="limiter-mode"></div>
+      <div class="control" data-control-id="limiter"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+        </div>
+      </div>
+    </div>
+    <div class="page" data-page-id="vehicle-limit">
+      <div class="control" data-control-id="limiter-mode">
+        <div class="attribute" data-attribute-id="href-switched-off">/vehicle/limit</div>
+        <div class="attribute" data-attribute-id="href-switched-on">/vehicle</div>
+      </div>
+      <div class="control" data-control-id="limiter"></div>
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">6</div>
+        <div class="value" data-layout-value="rowCnt">6</div>
+        <div class="value" data-layout-value="areas">
+          "aa ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+          ".  ab ab ab ab ab"
+        </div>
+      </div>
+    </div>
+
+    <div class="page" data-page-id="overlay-test">
+
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="ping" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+      <div class="control" data-control-id="moby" data-control-groups-add=""></div>
+
+
+
+      <div class="layout-decl">
+        <div class="value" data-layout-value="columnCnt">15</div>
+        <div class="value" data-layout-value="rowCnt">15</div>
+        <div class="value" data-layout-value="areas">
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  ac .  .  .  .  .  .  ."
+           ".  ag ah aa aa aa aa ac .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  ac .  .  .  .  .  .  ."
+           ".  af .  .  .  .  .  ac .  .  .  .  .  .  ."
+           ".  af .  .  ad ad ad ac .  .  .  .  .  .  ."
+           ".  ae ae ae ad ad ad ac .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+           ".  .  .  .  .  .  .  .  .  .  .  .  .  .  ."
+        </div>
+      </div>
+
+    </div>
+    <div class="page" data-page-id="not-found">
+      <p class="not-found-msg">Not Found</p>
+    </div>
+
+  </div>
+
+  <div style="display: none" class="router-decl">
+    <div class="routes">
+
+      <div class="route" data-page-id="home"      data-label="Home"         data-abs="/home" data-default-route ></div>
+      <div class="route" data-page-id="console"   data-label="Console"      data-abs="/console"></div>
+      <div class="route" data-page-id="keyboard"  data-label="Keyboard"     data-abs="/keyboard"></div>
+
+      <div class="screen">
+        <div class="route" data-page-id="on-foot"          data-label="On-foot"          data-abs="/on-foot"></div>
+        <div class="route" data-page-id="emotion-positive" data-label="Positive-emotion" data-abs="/on-foot/emotion-positive"></div>
+        <div class="route" data-page-id="emotion-negative" data-label="Negative-emotion" data-abs="/on-foot/emotion-negative"></div>
+        <div class="route" data-page-id="emotion-neutral"  data-label="Neutral-emotion"  data-abs="/on-foot/emotion-neutral"></div>
+      </div>
+
+      <div class="screen">
+        <div class="route" data-page-id="vehicle"                   data-label="Vehicle"      data-abs="/vehicle"></div>
+        <div class="route" data-page-id="vehicle-power-management"  data-label="Power"        data-abs="/vehicle/power"></div>
+        <div class="route" data-page-id="vehicle-missile-op-mode"   data-label="Missile op."  data-abs="/vehicle/missile"></div>
+      </div>
+      <div class="route" data-page-id="vehicle-limit"         data-label="Limiters"     data-abs="/vehicle/limit"></div>
+      <div class="route" data-page-id="vehicle-mine-op-mode"  data-label="Mining op."   data-abs="/vehicle/mining"></div>
+      <div class="route" data-page-id="vehicle-scan-op-mode"  data-label="Scanning op." data-abs="/vehicle/scanning"></div>
+
+      <div class="screen">
+        <div class="route" data-page-id="landing"          data-label="Landing"      data-abs="/flight/landing"></div>
+        <div class="route" data-page-id="flight"           data-label="Flight"       data-abs="/flight"></div>
+        <div class="route" data-page-id="power-management" data-label="Power"        data-abs="/flight/power"></div>
+        <div class="route" data-page-id="prefSpec"         data-label="Pref & Spec"  data-abs="/flight/pref"></div>
+        <div class="route" data-page-id="missile-op-mode"  data-label="Missile op."  data-abs="/flight/missile"></div>
+      </div>
+      <div class="route" data-page-id="limit"           data-label="Limiters"     data-abs="/flight/limit"></div>
+      <div class="route" data-page-id="mine-op-mode"    data-label="Mining op."   data-abs="/flight/mining"></div>
+      <div class="route" data-page-id="salvage-op-mode" data-label="Salvage op."  data-abs="/flight/salvaging"></div>
+      <div class="route" data-page-id="scan-op-mode"    data-label="Scanning op." data-abs="/flight/scanning"></div>
+
+      <div class="route" data-page-id="modes" data-label="Modes" data-abs="/modes"></div>
+      <div class="screen">
+        <div class="route" data-page-id="missile-op-mode" data-label="Missile op."  data-abs="/modes/missile"></div>
+        <div class="route" data-page-id="mine-op-mode"    data-label="Mining op."   data-abs="/modes/mining"></div>
+        <div class="route" data-page-id="salvage-op-mode" data-label="Salvage op."  data-abs="/modes/salvaging"></div>
+        <div class="route" data-page-id="scan-op-mode"    data-label="Scanning op." data-abs="/modes/scanning"></div>
+      </div>
+
+      <div class="screen">
+        <div class="route" data-page-id="debug-1" data-label="First"            data-abs="/debug/1"></div>
+        <div class="route" data-page-id="debug-2" data-label="Second"           data-abs="/debug/2"></div>
+        <div class="route" data-page-id="debug-3" data-label="ShieldWidget PG"  data-abs="/debug/3"></div>
+        <div class="route" data-page-id="debug-4" data-label="PowerWidget PG"   data-abs="/debug/4"></div>
+      </div>
+      <div class="route" data-page-id="debug-1" data-label="Debug" data-abs="/debug"></div>
+      <div class="route" data-page-id="overlay-test" data-label="Overlay test" data-abs="/test-overlay"></div>
+
+    </div>
+
+    <div class="route route-404" data-page-id="not-found" data-label="Not-found (404)"></div>
+
+  </div>
+
+  <div class="viewport" id="display">
+    <div class="header">
+      <span class="settings-icon"><span></span></span>
+      <span class="title"><a href="#" title="Application settings" class="settings-btn" data-action="settings"><span class="full-size">StarCitizen WebKeyboard</span><span class="compact">SC WKB</span></a></span>
+      <ul class="breadcrumb">
+        <li><a href="#"><span class="breadcrumb-label active">Home</span></a></li><li><a href="#"><span class="breadcrumb-label active">Vehicle</span></a></li><li><span class="breadcrumb-label static">Landing</span></li>
+      </ul>
+      <ul class="toolbar">
+        <li><a class="btn numlock    switch text" data-action="numlock" href="#">Num</a></li>
+        <li><a class="btn capslock   switch text" data-action="capslock" href="#">Caps</a></li>
+        <!--li><a class="btn scrolllock switch text" data-action="scrolllock" href="#">Scrl</a></li-->
+        <li class="full-size"><a class="btn lock     switch svg-icon" title="lock scroll" data-action="lock" href="#"><svg width="64" height="64"><use href="symbols.svg#lock-symbol"/></svg></a></li>
+        <li class="full-size"><a class="btn layout          svg-icon" title="page layout" data-action="layout" href="#"><svg width="64" height="64"><use href="symbols.svg#table-symbol"/></svg></a></li>
+        <li class="full-size"><a class="btn editmode switch svg-icon group-ui-edit" title="element positioning"   data-group-id="ui-edit"   data-action="editmode"    href="#"><svg width="64" height="64"><use href="symbols.svg#layer-symbol"/></svg></a></li>
+        <li class="full-size"><a class="btn gear     switch svg-icon group-ui-edit" title="element configuration" data-group-id="ui-edit"   data-action="configurate" href="#"><svg width="64" height="64"><use href="symbols.svg#gear-symbol"/></svg></a></li>
+        <li class="compact"><a   class="btn arrow    switch svg-icon" title="show/hide toolbar"  data-action="showhide" href="#"><svg width="64" height="64"><use href="symbols.svg#arrow-symbol"/></svg></a></li>
+        <!--li><a class="btn gear switch" data-action="configurate" href="#">&#x2699;&#xFE0E;</a></li-->
+      </ul>
+    </div>
+    <div class="content">
+      <div class="swiper">
+        <div class="swiper-page"></div>
+      </div>
+    </div>
+    <div class="footer">
+      <ul class="pager horizontal hidden_opacity">
+        <li class="active"><a href="#"></a></li>
+        <li><a href="#"></a></li>
+        <li><a href="#"></a></li>
+      </ul>
+      <ul class="pager vertical hidden_opacity">
+        <li class="active"><a></a></li>
+        <li><a></a></li>
+        <li><a></a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="window dialog modal layout-configuration" data-window-id="layout-configuration" tabindex="1">
+    <div class="header">
+      <span class="title"><span class="full-size">Layout Config</span><span class="compact">Layout</span></span>
+      <ul class="toolbar">
+        <li><a class="btn reset"  data-action="reset"  href="#">Default</a></li>
+        <li><a class="btn cancel" data-action="cancel" href="#">Cancel</a></li>
+        <li><a class="btn submit" data-action="submit" href="#">Done</a></li>
+      </ul>
+    </div>
+    <div class="content">
+      <form>
+        <label><span class="capture">Columns</span><input name="col" type="number" min="1" max="15" step="1"               required tabindex="2"></label>
+        <label><span class="capture">Rows</span><input name="row" type="number" min="1" max="15" step="1"                  required tabindex="3"></label>
+        <label><span class="capture">Cell Gap(rem)</span><input name="gap" type="number" min="0" max="5" step="0.1"        required tabindex="4"></label>
+        <label><span class="capture">
+          <span class="full-size">Incell Padding(rem)</span>
+          <span class="compact">Cell Padding(rem)</span>
+        </span><input name="pad" type="number" min="0" max="5" step="0.1"  required tabindex="5"></label>
+        <label><span class="capture">Font Size</span><input name="fontSize" pattern="^\d+(%|px|em|rem|pt)$" type="text"    required tabindex="6"></label>
+        <label class="layout-label" for="wnd-layout"><span class="capture">
+          <span class="full-size">Layout {.grid-template-areas}</span>
+          <span class="compact">Layout {.grd-tmpl-ars}</span>
+        </span></label>
+        <a class="layout-reset" href="#">Reset</a>
+        <textarea id="wnd-layout" name="layout" tabindex="7"></textarea>
+        <label class="errors-label">*<span class="errors"></span></label>
+      </form>
+    </div>
+    <div class="footer"></div>
+  </div>
+
+  <div class="window dialog modal settings" data-window-id="settings" tabindex="1">
+    <div class="header">
+      <span class="title"><span class="full-size">Application settings</span><span class="compact">Settings</span></span>
+      <ul class="toolbar">
+        <li><a class="btn cancel" data-action="cancel" href="#">Cancel</a></li>
+        <li><a class="btn submit" data-action="submit" href="#">Done</a></li>
+      </ul>
+    </div>
+    <div class="content">
+      <form>
+        <fieldset>
+          <legend class="fieldset wifi">Wifi</legend>
+          <label><span class="capture">Mode</span><select name="mode" required tabindex="2">
+            <option>Keep Current</option>
+          </select></label>
+          <label><span class="capture">SSID</span><input name="ssid" type="text" maxlength="31" minlength="7" pattern="^[a-zA-Z]+\w*$" required tabindex="3"></label>
+          <label><span class="capture">Password-1</span><input name="password1"  maxlength="63" minlength="7" placeholder="input  pass to change it" type="password" tabindex="4"></label>
+          <label><span class="capture">Password-2</span><input name="password2"  maxlength="63" minlength="7" placeholder="repeat pass to change it" type="password" tabindex="5"></label>
+        </fieldset>
+        <fieldset class="fieldset local">
+          <legend><span class="capture">Local</span></legend>
+          <label><span class="capture">ClientID</span><input name="clientId" type="text" placeholder="auto generated" tabindex="6"></label>
+          <label>
+            <span class="slider-label capture">Haptic Resp</span>
+            <span class="centred">
+              <span class="slider-wrapper"><input name="hapticResp" type="checkbox" ><span class="slider"></span></span>
+            </span>
+          </label>
+          <label>
+            <span class="slider-label capture">Overlay</span>
+            <span class="centred">
+              <span class="slider-wrapper"><input name="overlay" type="checkbox"><span class="slider"></span></span>
+            </span>
+          </label>
+        </fieldset>
+        <label class="errors-label">*<span class="errors"></span></label>
+      </form>
+    </div>
+    <div class="footer"></div>
+  </div>
+
+  <div class="window modal configurator-control" data-window-id="control-configuration" tabindex="1">
+    <div class="header">
+      <span class="title"></span>
+      <ul class="toolbar">
+        <li><a class="btn scope"  data-action="scope"  href="#">Scope</a></li>
+        <li><a class="btn cancel" data-action="cancel" href="#">Cancel</a></li>
+        <li><a class="btn submit" data-action="submit" href="#">Done</a></li>
+      </ul>
+    </div>
+    <div class="content">
+      <form class="ctrl" name="ctrl"></form>
+      <form class="view" name="view"></form>
+    </div>
+    <div class="footer"></div>
+  </div>
+
+  <div class="window modal selector-control" data-window-id="control-selection" tabindex="1">
+    <div class="header">
+      <span class="title"></span>
+      <ul class="toolbar">
+        <li>
+          <label class="search-label">
+            <span class="search-icon svg-icon">
+              <svg width="64" height="64">
+                <use href="symbols.svg#search-symbol"/>
+              </svg>
+            </span>
+            <input type="search" minlength="3" placeholder="text or /regexp/"></input>
+          </label>
+        </li>
+        <li><a class="btn cancel" data-action="cancel" href="#">Cancel</a></li>
+      </ul>
+    </div>
+    <div class="content">
+      <form class="compatibility"></form>
+      <div class="empty-container"><span class="empty-msg">no content</span></div>
+    </div>
+    <div class="footer"></div>
+  </div>
+
+  <div class="notifications"></div>
+
+  <script src="index.js"></script>
+</body>
+</html>

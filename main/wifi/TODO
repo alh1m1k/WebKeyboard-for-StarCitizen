@@ -1,0 +1,8 @@
+REFACTOR TO CLASS COMPOSITION
+
+WifiClass {
+	AP   Class{}
+	STA  Class{}
+	Scan Class{}
+	Phy  Class{}
+}
