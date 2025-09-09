@@ -195,7 +195,7 @@ shield collapse animation, and then move finger in direction of desired shield s
 Widget have configurable number of shield section [1-6] + 1 (reset) via configuration mode.
 
 > [!TIP]
-> In most modern browsers you can hide the address bar by dragging the page down (via the title or empty space on the page)
+> In most modern browsers you can hide the address bar by dragging the page up (via the title or empty space on the page)
 
 
 Most of the application configuration options are located in its header:
@@ -392,7 +392,7 @@ Not so modern, but still, state-of-the-art phone with chrome136.</br>
 Windows and Linux machines with latest chrome and firefox but also with chrome57.</br>
 
 ## Build
- - binary file not available yet.
+ - binary files are available under [Release](./releases) section. They may lag behind the version in the repository.
  - docker builder(container) not available.
 
 For manual build you need ESP-IDF toolchain version at least 5.1.3 with some modules:
