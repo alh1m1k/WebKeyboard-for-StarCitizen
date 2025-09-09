@@ -162,6 +162,7 @@ It use primitive text/binary protocol and rudimentary client authentication.</br
 > As precaution usb descriptors also can be changed in `config.h` do it if you know what you doing.<br/>
 
 ### Configuration
+Default wifi SSID and password defined in `config.h`. <br/>
 Most configuration are runtime, rest explained in `config.h`.
 
 ### UI
@@ -431,8 +432,8 @@ When after binary write is complete, it will be useful to check internal logs by
 
 The WKB in PREVIEW stage. <br/>
 Preview both to test app codebase and determine the need for such application. <br/>
-The app will have to compete with macro-keyboards, touch panels, voice-copilots, self-made cockpits and even some services. <br/>
-Given some limitations, security questions and the need for hardware, the question of the necessity of such an application is open. <br/>
+The app will have to compete with macro-keyboards, touch panels, voice-copilots, self-made cockpits and even some services.
+Given some limitations, security questions and the need for hardware, the question of the necessity of such an application is open.
 And I will leave it to its end users.
 
 ## Limitation
@@ -453,8 +454,9 @@ And I will leave it to its end users.
 - You will not see "factory reset" led indication if you board use addressable led as generic indicator led.
 - Host suffer from net problem that looks like socket pool depletion (it freezes on periodic bases at `select`). The more files need to be downloaded and the more clients, the higher the probability of appearing. It looks like a hang on download for 0-30 seconds. Eventually it fixes itself. This is definitely a bug, but at the moment it is not clear why the network stack behaves this way.
 - Some bugs exist here and there. Caused by the static nature of the memory management inside the LWIP, rudimentary server implementation and legacy partially textual protocol of client-server communication. These are extreme cases (enabling all possible switches, extremely long names) and will remain at least until the next major refactoring of the server.
-
+- Currently client setting belong to that client. While there are probably cases where this is convenient, it most often results in strange behavior from clients with different settings. In the future, there will probably be an explicit or implicit way to synchronize settings.
 
 ## Dependencies 
 - espIdf >= 5.1.4
 - nekipelov/httpparser 
+- main logo created with MockUPhone
