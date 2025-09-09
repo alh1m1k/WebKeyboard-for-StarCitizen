@@ -5,6 +5,13 @@
 The WebKeyboard (WKB) project utilize ESP32S series native USB (also mentions as OTG) interface to emulate custom keyboard 
 and joystick controllable by application web interface over wifi. 
 
+> [!NOTE]
+> This is an ***unofficial*** companion app for the Star Citizen.
+
+> [!NOTE]
+My English is bad, sometimes I also use automatic translation. Edits are welcome. <br/>
+All technical details about build, flash or toolchain setup are simplified because it wasn't subject for this page.
+
 - [Description](#description)<br/>
 - [Usage](#usage)<br/>
   - [Security](#security)
@@ -26,39 +33,40 @@ and joystick controllable by application web interface over wifi.
 - [Limitation](#limitation)<br/>
 - [Dependencies](#dependencies)<br/>
 
-## Note
-It's mostly machine translation. Edits are welcome.<br/>
-All technical details about build, flash or toolchain setup are simplified because it wasn't subject for this page.
-
 ## DESCRIPTION
 This is Multi-function display host for StarCitizen. <br/>
 Main goal to increase game immersion and bring new life for old devices
 
 Glossary:
 - host:       esp32 board
-- control:    trigger, game interaction like "deploy landing gear" associated with it state and one or mode keyboard combination. Own attributes.
+- control:    trigger, game interaction like "deploy landing gear" associated with it state and one or more keyboard combination. Own attributes.
 - widget:     axial or radial, associated with some virtual joystick axis or with keyboard combination
 - attributes: key/value storage, can be edited in configuration window
-- group:      of controls/widgets, behavior is determined by it's type. radiobutton, tag, overlaying
+- group:      of controls/widgets, behavior is determined by it's type. radiogroup, tag, overlay-group
 - page:       container for controls/widgets. 
 - layout:     page layout, grid based with (if defined) some number row and col.
 - screen:     container for pages, with ability to swipe between pages.
 - ref,view:   binding between page and control/widget. Own attributes that inherited from base control/widget attributes. It may have different configuration(from base control) but not different internal state.
 - cell:       intersection between grid row and col
 - slot:       one or more cell, Anchor for ref(view) at page. Must be rectangular in shape.
-- overlay:    more like underlay it highlight neighboring controls/widgets based on their common groups.
+- overlay:    more like underlay it highlight neighboring controls/widgets based on their common overlay-group.
 
 Features included: 
 - configurable page layout 
-- controls/widgets drag&drop placement inside page
+- controls/widgets drag&drop placement
 - controls/widgets state sync for multiple clients of same host
 - controls/widgets grouping
 - prebuild controls for many use cases
-- control support text typing, special key, "long" "short" "double" key press, dangling keys
-- control keyboard combination configuration
+- control supports the following types of actions upon activation:
+  - text typing
+  - special key press
+  - "long" "short" "double" key press
+  - dangling keys
+  - activation delegation
+- control actions are configurable
 - keypress timing randomization
 - virtual joystick with 8 axis and 32 buttons
-- dynamic color overlay for control grouping
+- color overlay for control/widget grouping
 - adaptive layout for small screen (to some limit)
 
 ## Usage
@@ -78,7 +86,7 @@ The application control implement two major control archetype:
     Most game actions have not dedicated switched-on, switched-off operations - they implemented via "oneshot" or not implemented at all.
     Other game action that have dedicated switcher almost always (or just always?) by default use key to rotate state, not set it.
     For that action, dedicated "on" and "off" must be set, and after, application control must-be updated `switched-on`: "off", `switched-off`: "on" yes, inverted.
-    Although this is annoying, it allows the state to sync itself while you use the app, despite using real joystick or keyboard.<br/>
+    Although this is annoying, it allows the state do not lost it sync while you use the app, despite using real joystick or keyboard.<br/>
 
 
   *Example game action "landing gear"* <br/>
@@ -90,14 +98,14 @@ The application control implement two major control archetype:
   | `Landing System (Deploy)`  |    *    | `ralt+n`  | no  |
   | `Landing System (Retract)` | `alt+n` |     *     | no  |
 
-  > [!NOTE]
-  > Switch configuration implement "simplified" mode: when its active and `switched-off` == `switched-on` it's behave like oneshot.
-  >       Mode disabled if any of its requirements not met. It is a way for switch to coexist with default game settings.
+> [!NOTE]
+> The controls type "switch" implement "simplified" mode: when its active and `switched-off` == `switched-on` it's behave like "oneshot" type.
+> Mode disabled if any of its requirements not met. It is a way for "switch" to coexist with default game settings.
 
-  > [!WARNING]
-  > Some switchers (like missile mode, salvage mode, limiters, turret) transfer control to different page or screen.
-  > Such feature not work in simplified mode. Set up the switches completely to use dedicated mode pages.
-  > Control within its configuration provide description with explanation tips and hints but also game setting path for every control state.
+> [!WARNING]
+> Some switch type controls (like missile mode, salvage mode, limiters, turret) transfer control to different page or screen.
+> Such feature not work in "simplified" mode. Set up the switches completely to use dedicated mode pages.
+> Control within its configuration provide description with explanation tips and hints but also game setting path for every control state.
 
 The application consists of several screens connected by transition buttons.<br/>
 Each screen consists of pages, the transition is provided by swiping.<br/>
@@ -125,15 +133,15 @@ client changed its id,
 system factory reset,
 host rebooted,
 local storage version change,
-system wide settings change,
+"system wide" settings change,
 page that has been overwritten by the user change(most likely after firmware update) it initial (compiled) state,
 client system error,
 invalid localStorage data,
 device screen too small or incorrectly oriented,
-...and more. Some of that event are just notification some requre user iteraction.
+...and more. Some of that event are just notification some require user interaction.
 
 > [!WARNING]
-> Invalid ssid, password or wifi type may fall host in trap state.
+> Invalid ssid, password or wifi type may force host to fall in trap state.
 > "factory reset" is only solution, but it will not help it invalid data provided by `config.h`
 
 ### Security
@@ -146,7 +154,7 @@ It use primitive text/binary protocol and rudimentary client authentication.</br
 > [!WARNING]
 > Do not use and do not provide internet connection of any kind to application wifi network.</br>
 > Do not share network with other device that internet connected, like phones with mobile internet.</br>
-> Host in hotspot mode more preferable than in STA(Station Mode). Don't connect to host net devices that not host client(display).</br>
+> Host in "hotspot mode" more preferable than in STA(Station Mode). Don't connect to host net devices that not host client(display).</br>
 > Change password for wifi (and optionally SSID) every factory reset and firmware update (every first enter).</br>
 > Remember: every device in network can access host, and host can control your keyboard and joystick, keyboard controls PC</br>
 > Host will notify every client about new client that connected.<br/>
@@ -154,7 +162,7 @@ It use primitive text/binary protocol and rudimentary client authentication.</br
 > As precaution usb descriptors also can be changed in `config.h` do it if you know what you doing.<br/>
 
 ### Configuration
-most configuration are runtime, rest explained in `config.h`.
+Most configuration are runtime, rest explained in `config.h`.
 
 ### UI
 
@@ -168,15 +176,15 @@ A typical control reacts as follows: <br/>
 `longtap`   - toggle state without activation <br/>
 `doubletap` - not used, in order to remove the activation delay <br/>
 
-There are exception from rule, control type "memo" it reacts differently:<br/>
+There are exception from rule, the control type "memo" it reacts differently:<br/>
 `tap`       - activate <br/>
 `longtap`   - clear <br/>
 `doubletap`/`twofingertap` - set, override <br/>
 
 The secondary control element is widget. This is canvas graphical element that supports multi-touch
 as it can handle more than one internal-control element. To interact with widget you must
-touch internal-control head and move to place with desired value. Value will be sync between all widget that bind to same
-virtual joystick axis across all client. 
+touch internal-control head and move to place with desired value inside internal-control boundaries. Value will be sync between all widget that bind to same
+virtual joystick axis across all clients. 
 
 There are exception from rule, control type "shields" it reacts differently:<br/>
 This is legacy widget and subject to change.
@@ -184,6 +192,9 @@ Doest not support multiple internal-controls, does not support multi-touch.
 Widget activates by tap at selected shield section. Or by hold finger at ship icon for time of
 shield collapse animation, and then move finger in direction of desired shield section.
 Widget have configurable number of shield section [1-6] + 1 (reset) via configuration mode.
+
+> [!TIP]
+> In most modern browsers you can hide the address bar by dragging the page down (via the title or empty space on the page)
 
 
 Most of the application configuration options are located in its header:
@@ -201,7 +212,7 @@ The application main settings (normal and compact view).
   - Password - Access point password, at least 7 symbols
 - ClientId - Short name for this client, it will be used to notify other about this client join in. If blank - random be used.
 - Haptic Resp. - Toggle vibration response to user interaction (with controls/widgets)
-- Overlay - Toggle controls and widgets group based color overlaing
+- Overlay - Toggle controls/widgets highlighting based on common overlay-groups
 
 > [!WARNING] 
 > Do not use same ClientId on different device, it will lead to undefined behavior. Leave it blank if you're not sure
@@ -215,18 +226,17 @@ Indicate current virtual keyboard led status.
 Also triggers, that trigger appropriate control.
 
 ####  Screen Locker
-> ![Locker symbol](./resource/symbols.svg#lock)
+> ![Locker symbol](./promo/symbols.svg#lock-cl-main)
 
 When active - Lock current screen at selected page, swipe will be unavailable.
 It exists to protect against accidental swipe out, allow precise panning.
 
-
 ####  Layout Settings
-> ![Table symbol](./resource/symbols.svg#table)
+> ![Table symbol](./promo/symbols.svg#table-cl-main)
 
 Current Page layout settings.
-- Columns count - of grid
-- Rows count - of grid
+- Columns - (count) of grid
+- Rows - (count) of grid
 - Cell Gap - spaces between any cell
 - In Cell Padding
 - Font Size
@@ -267,7 +277,7 @@ Current Page layout settings.
 - ***<ins>D</ins>efault*** - (button at window toolbar) reset all Layout setting to its prebuilded default, "factory-reset" for page.
 
 ####  Placement mode
-> ![Layout symbol](./resource/symbols.svg#layer)
+> ![Layout symbol](./promo/symbols.svg#layer-cl-main)
 
 The Placement mode switcher. Only one mode can be activated at same time.
 In this mode, all page controls/widgets are scaled down. All slots highlight their border and display their slots identifier. 
@@ -275,7 +285,7 @@ After transition completes, user can add,move,remove controls/widgets from page 
 
 - tap on slot with existing "control" and then to empty slot to move "control" to that slot.
 - tap on slot with existing "control" and then to slot with other "control" to swap it.
-- tap on slot with existing "control" and then longtap slot with other control to replace second with first one (second will-be removed).
+- tap on slot with existing "control" and then longtap slot with other "control" to replace second with first one (second will-be removed).
 - longtap on slot with existing "control", remove it.
 - longtap on empty slot to display [Select Control](#select-control) window.
 
@@ -288,7 +298,6 @@ After transition completes, user can add,move,remove controls/widgets from page 
 
 
 #####  Select Control
-> ![Search symbol](./resource/symbols.svg#search)
 
 The Window that appear to request from Placement mode. Allow select controls/widgets from prebuild library.
 Search by keywords is possible, regexp is supported with explicit syntax `/regExp/`
@@ -298,7 +307,7 @@ Search by keywords is possible, regexp is supported with explicit syntax `/regEx
 
 
 ####  Configuration mode
-> ![Configuration symbol](./resource/symbols.svg#gear)
+> ![Configuration symbol](./promo/symbols.svg#gear-cl-main)
 
 The Configuration mode switcher. Only one mode can be activated at same time.
 Mode move controls/widgets in configuration mode. Now when activated configuration window will appear.
@@ -329,11 +338,11 @@ Keybind value have special rules: <br/>
 - text after "call:", when is a valid ctrl-id, is control activation delegation
 
 Examples: <br/>
-- +ctrl+a -> press ctl+a
-- +alt+ctrl+del+ -> press alt+ctrl+del
-- +~+Quit+enter+~+ -> open console type Quit press enter close console
-- +x:down+, +b:long+ -> keydown key x, long press key b
-- call:ping -> when this control active, also activate control ping, any deep, but no recursion is allowed
+- `+ctrl+a` -> press ctl+a
+- `+alt+ctrl+del+` -> press alt+ctrl+del
+- `+~+Quit+enter+~+` -> open console type Quit press enter close console
+- `+x:down+`, `+b:long+` -> keydown key x, long press key b
+- `call:ping` -> when this control active, also activate control ping, any deep, but no recursion is allowed
 
 At end of form two special attribute placed: <br/>
 
@@ -343,7 +352,7 @@ It also have links that display in-game settings path for used game actions. <br
 Groups Tag: List of all groups the control is a member of. The Color are same for overlay color for such group (if it overlay group).
 
 ####  Compact/Normal toolbar switcher
-> ![Arrow symbol](./resource/symbols.svg#arrow-cl-main)
+> ![Arrow symbol](./promo/symbols.svg#arrow-cl-main)
 
 That item appears when applications transfer in compact mode by x-axis. 
 It's cover all other toolbar items except led indicators. 
@@ -421,7 +430,7 @@ When after binary write is complete, it will be useful to check internal logs by
 ## Status
 
 The WKB in PREVIEW stage. <br/>
-Preview booth to test app codebase and determine the need for such application. <br/>
+Preview both to test app codebase and determine the need for such application. <br/>
 The app will have to compete with macro-keyboards, touch panels, voice-copilots, self-made cockpits and even some services. <br/>
 Given some limitations, security questions and the need for hardware, the question of the necessity of such an application is open. <br/>
 And I will leave it to its end users.
@@ -434,10 +443,10 @@ And I will leave it to its end users.
 - Currently host doest not provide information to client about requested key combination completion, or error in usb stack.
 - Dangling(always pressed) keys will be unpresed before any other combination executed and then after, pressed again (space brake will be released before deploy gear command send and then deployed again ).
 - Currently only one virtual joystick with 8 axis and 32 buttons is implemented.
-- Most of social intreraction require chat window is enable. As it by default use ```/dance``` style command.
+- Most of social interaction require chat window is enable. As it by default use ```/dance``` style command.
 - Combination at maximum can contain 6 keys and 8 modificators, this not apply to textmode.
 - Combination that require specific keyboard mode is set, like ```Num``` for ```Num+``` will not resolve automatically, even if it technically possible, you must handle it manualy.
-- Any joystick value will not apply until first user interaction with widget that handle joystick. This it both bug and safety feature, that prevent incorrect default value apply without user note it.
+- Any joystick value will not apply until first user interaction with widget that handle joystick appear. This it both bug and safety feature, that prevent incorrect default value apply without user note it.
 - Decoy deploy and other client repeat-with-delay control may repeat incorrect number of times.  This one is difficult, it include net delays, keyboard key press timing randomization, and how game handle specific action.
 - Key handling native and on WINE may perform differently, for specific combination, why it is mystery for me.
 - Currently widget may look creepy. It is initial implementation, it lacking some feature and have some bugs too.

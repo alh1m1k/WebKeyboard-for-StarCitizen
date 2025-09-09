@@ -1,0 +1,43 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN"
+ "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="24px" height="24px" viewBox="0 0 24 24"
+ preserveAspectRatio="xMidYMid meet">
+<metadata>
+Created by potrace 1.15, written by Peter Selinger 2001-2017
+</metadata>
+<defs>
+    <style><![CDATA[
+      .symbol { display: none; }
+      .symbol:target { display: inline; }
+      .main-color { color: rgb(84, 173, 247); }
+    ]]></style>
+    <symbol id="gear-symbol" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3.269C14 2.568 13.432 2 12.731 2H11.27C10.568 2 10 2.568 10 3.269c0 .578-.396 1.074-.935 1.286c-.085.034-.17.07-.253.106c-.531.23-1.162.16-1.572-.249a1.269 1.269 0 0 0-1.794 0L4.412 5.446a1.269 1.269 0 0 0 0 1.794c.41.41.48 1.04.248 1.572a7.946 7.946 0 0 0-.105.253c-.212.539-.708.935-1.286.935C2.568 10 2 10.568 2 11.269v1.462C2 13.432 2.568 14 3.269 14c.578 0 1.074.396 1.286.935c.034.085.07.17.105.253c.231.531.161 1.162-.248 1.572a1.269 1.269 0 0 0 0 1.794l1.034 1.034a1.269 1.269 0 0 0 1.794 0c.41-.41 1.04-.48 1.572-.249c.083.037.168.072.253.106c.539.212.935.708.935 1.286c0 .701.568 1.269 1.269 1.269h1.462c.701 0 1.269-.568 1.269-1.269c0-.578.396-1.074.935-1.287c.085-.033.17-.068.253-.104c.531-.232 1.162-.161 1.571.248a1.269 1.269 0 0 0 1.795 0l1.034-1.034a1.269 1.269 0 0 0 0-1.794c-.41-.41-.48-1.04-.249-1.572c.037-.083.072-.168.106-.253c.212-.539.708-.935 1.286-.935c.701 0 1.269-.568 1.269-1.269V11.27c0-.701-.568-1.269-1.269-1.269c-.578 0-1.074-.396-1.287-.935a7.755 7.755 0 0 0-.105-.253c-.23-.531-.16-1.162.249-1.572a1.269 1.269 0 0 0 0-1.794l-1.034-1.034a1.269 1.269 0 0 0-1.794 0c-.41.41-1.04.48-1.572.249a7.913 7.913 0 0 0-.253-.106C14.396 4.343 14 3.847 14 3.27z"/>
+        <path d="M16 12a4 4 0 1 1-8 0a4 4 0 0 1 8 0Z"/></g>
+    </symbol>
+    <symbol id="lock-symbol" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" transform="matrix(1.047619,0,0,1.047619,-0.571238,-1.095238)"><rect width="18" height="12" x="3" y="10" rx="2"/><path d="M6 6a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v4H6z"/></g>
+    </symbol>
+    <symbol id="table-symbol" viewBox="0 0 24 24">
+        <path fill="currentColor" transform="matrix(1.1102647,0,0,1.1102647,-2.3307941,-1.9197941)"  d="M6.25 3A3.25 3.25 0 0 0 3 6.25v11.5A3.25 3.25 0 0 0 6.25 21h5.772a6.5 6.5 0 0 1-.709-1.5H6.25a1.75 1.75 0 0 1-1.75-1.75V15.5h6.813a6.5 6.5 0 0 1 .709-1.5H10v-4h9.5v1.313a6.5 6.5 0 0 1 1.5.709V6.25A3.25 3.25 0 0 0 17.75 3zM4.5 6.25c0-.966.784-1.75 1.75-1.75H14v4H4.5zm0 3.75h4v4h-4zm15-1.5h-4v-4h2.25c.966 0 1.75.784 1.75 1.75zm-5.223 5.476a2 2 0 0 1-1.441 2.496l-.584.145a5.7 5.7 0 0 0 .006 1.807l.54.13a2 2 0 0 1 1.45 2.51l-.187.631c.44.386.94.7 1.485.922l.493-.519a2 2 0 0 1 2.899 0l.499.526a5.3 5.3 0 0 0 1.482-.913l-.198-.686a2 2 0 0 1 1.442-2.496l.583-.145a5.7 5.7 0 0 0-.006-1.807l-.54-.13a2 2 0 0 1-1.449-2.51l.186-.631a5.3 5.3 0 0 0-1.484-.922l-.493.518a2 2 0 0 1-2.9 0l-.498-.525c-.544.22-1.044.53-1.483.913zM17.5 19c-.8 0-1.45-.671-1.45-1.5c0-.828.65-1.5 1.45-1.5s1.45.672 1.45 1.5c0 .829-.65 1.5-1.45 1.5"/>
+    </symbol>
+    <symbol id="layer-symbol" viewBox="0 0 24 24">
+        <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" transform="matrix(1.2222222,0,0,1.2222222,-2.6666666,-2.6666666)" d="M14 17h6m-3 3v-6M4.857 4h4.286c.473 0 .857.384.857.857v4.286a.857.857 0 0 1-.857.857H4.857A.857.857 0 0 1 4 9.143V4.857C4 4.384 4.384 4 4.857 4m10 0h4.286c.473 0 .857.384.857.857v4.286a.857.857 0 0 1-.857.857h-4.286A.857.857 0 0 1 14 9.143V4.857c0-.473.384-.857.857-.857m-10 10h4.286c.473 0 .857.384.857.857v4.286a.857.857 0 0 1-.857.857H4.857A.857.857 0 0 1 4 19.143v-4.286c0-.473.384-.857.857-.857"/>
+    </symbol>
+    <symbol id="search-symbol" viewBox="0 0 24 24">
+        <path fill="currentColor" fill-rule="evenodd" transform="matrix(1.2630495,0,0,1.2630495,-3.3215827,-3.3228458)" d="M14.385 15.446a6.75 6.75 0 1 1 1.06-1.06l5.156 5.155a.75.75 0 1 1-1.06 1.06zm-7.926-1.562a5.25 5.25 0 1 1 7.43-.005l-.005.005l-.005.004a5.25 5.25 0 0 1-7.42-.004" clip-rule="evenodd"/>
+    </symbol>
+    <symbol id="arrow-symbol" viewBox="0 0 24 24">
+        <path fill="currentColor" transform="matrix(1.5686833,0,0,1.5686833,-6.8414569,-8.6091901)"  d="M12 16a1 1 0 0 1-.64-.23l-6-5a1 1 0 1 1 1.28-1.54L12 13.71l5.36-4.32a1 1 0 0 1 1.41.15a1 1 0 0 1-.14 1.46l-6 4.83A1 1 0 0 1 12 16"/>
+    </symbol>
+</defs>
+    <use id="gear-cl-main"      class="symbol main-color" href="#gear-symbol"      />
+    <use id="lock-cl-main"      class="symbol main-color" href="#lock-symbol"      />
+    <use id="table-cl-main"     class="symbol main-color" href="#table-symbol"     />
+    <use id="layer-cl-main"     class="symbol main-color" href="#layer-symbol"     />
+    <use id="search-cl-main"    class="symbol main-color" href="#search-symbol"    />
+    <use id="arrow-cl-main"     class="symbol main-color" href="#arrow-symbol"     />
+</svg>
+
