@@ -448,6 +448,7 @@ And I will leave it to its end users.
 - Combination at maximum can contain 6 keys and 8 modificators, this not apply to textmode.
 - Combination that require specific keyboard mode is set, like ```Num``` for ```Num+``` will not resolve automatically, even if it technically possible, you must handle it manualy.
 - Any joystick value will not apply until first user interaction with widget that handle joystick appear. This it both bug and safety feature, that prevent incorrect default value apply without user note it.
+- Virtual Joystick require calibration before use. 
 - Decoy deploy and other client repeat-with-delay control may repeat incorrect number of times.  This one is difficult, it include net delays, keyboard key press timing randomization, and how game handle specific action.
 - Key handling native and on WINE may perform differently, for specific combination, why it is mystery for me.
 - Currently widget may look creepy. It is initial implementation, it lacking some feature and have some bugs too.
@@ -457,6 +458,8 @@ And I will leave it to its end users.
 - Currently client setting belong to that client. While there are probably cases where this is convenient, it most often results in strange behavior from clients with different settings. In the future, there will probably be an explicit or implicit way to synchronize settings.
 
 ## Dependencies 
-- espIdf >= 5.1.4
+- idf >= 5.1.4
+  - espressif/esp_tinyusb >= 0.17.0~2
+  - espressif/mdns        >= 1.4.2
 - nekipelov/httpparser 
 - main logo created with MockUPhone
