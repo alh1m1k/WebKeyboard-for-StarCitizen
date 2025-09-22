@@ -221,6 +221,8 @@ namespace hid {
 #else
 	        .configuration_descriptor = configurationDescriptor(),
 #endif // TUD_OPT_HIGH_SPEED
+			.self_powered 		= false,
+			.vbus_monitor_io 	= 0,
 	    };
 	}
 	

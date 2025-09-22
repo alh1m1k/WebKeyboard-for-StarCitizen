@@ -164,16 +164,21 @@ void app_main(void)
 	{
 		
 		gpio_config_t trigger = {
-		    .pin_bit_mask 	= (1ULL << RESET_TRIGGER_BTN),
-		    .mode 			= GPIO_MODE_INPUT,
-		    .pull_up_en 	= GPIO_PULLUP_ENABLE
+		    .pin_bit_mask 	 = (1ULL << RESET_TRIGGER_BTN),
+		    .mode 			 = GPIO_MODE_INPUT,
+		    .pull_up_en      = GPIO_PULLUP_ENABLE,
+			.pull_down_en    = GPIO_PULLDOWN_DISABLE,
+			.intr_type       = GPIO_INTR_DISABLE,
 		};
 		gpio_config(&trigger);
 		
 		if (RESET_LED_INDICATOR != NO_LED) {
 		    gpio_config_t ledConfig = {
-			    .pin_bit_mask 	= (1ULL << RESET_LED_INDICATOR),
-			    .mode 			= GPIO_MODE_OUTPUT,
+			    .pin_bit_mask 	 = (1ULL << RESET_LED_INDICATOR),
+			    .mode 			 = GPIO_MODE_OUTPUT,
+			    .pull_up_en      = GPIO_PULLUP_DISABLE,
+				.pull_down_en    = GPIO_PULLDOWN_DISABLE,
+				.intr_type       = GPIO_INTR_DISABLE,
 			};
 	 		gpio_config(&ledConfig);
 		}
@@ -534,7 +539,7 @@ void app_main(void)
 		} 
 		
 		
-		static uint32_t joystickPrevTaskId = 0;
+		//static uint32_t joystickPrevTaskId = 0;
 		
 		if (rawMessage.starts_with("ctr:")) { 
 			//control axis request must be fixed size: 8 axis(2byte each) + buttons(32 one bit each) = 20bytes

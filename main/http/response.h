@@ -82,7 +82,7 @@ namespace http {
 			
 			resBool contentType(const contentType ct) noexcept;
 			
-			inline resBool contentType(const char* ct) noexcept;
+			resBool contentType(const char* ct) noexcept;
 			
 			inline _cookies cookies() {
 				throw not_impleneted();

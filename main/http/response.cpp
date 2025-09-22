@@ -71,7 +71,6 @@ namespace http {
 		
 		ssize_t 	cursor 		= 0;
 		ssize_t 	chunkSize 	= std::min(size, response::MAX_UNCHUNKED_SIZE);
-		esp_err_t 	code 		= ESP_OK;
 		
 		do {
 			debugIf(LOG_HTTP, "response::write", cursor, " ", chunkSize);

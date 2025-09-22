@@ -108,10 +108,14 @@ class scheduler {
 			while (esp_timer_get_time() - prev < yeldInterval) {
 				taskYIELD();
 			}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wvolatile"
 			volatile uint32_t cycles = 0;
 			while (esp_timer_get_time() - prev < yeldInterval) {
 				cycles++;
 			}
+#pragma GCC diagnostic pop
 
 		}	
 		

@@ -29,3 +29,5 @@ idf_component_register(
     REQUIRES            freertos nvs_flash esp_event esp_netif esp_wifi esp_https_server esp_timer tinyusb mdns driver bootloader_support	# optional, list the public requirements (component names)
     PRIV_REQUIRES       # optional, list the private requirements
 )
+
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-terminate)

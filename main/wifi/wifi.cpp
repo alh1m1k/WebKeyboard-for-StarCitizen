@@ -78,7 +78,7 @@ namespace wifi {
 			}
 		}
 		static void sta_got_ip(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-			client_s* client = static_cast<struct client_s*>(arg);
+			//client_s* client = static_cast<struct client_s*>(arg);
 			auto data= static_cast<ip_event_got_ip_t*>(event_data);
 			info("GOT IP FROM AP", IP2STR(&data->ip_info.ip));
 		}
@@ -114,7 +114,7 @@ namespace wifi {
 			}
 		}
 		static void ap_assign_ip(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-			client_s* client = static_cast<struct client_s*>(arg);
+			//client_s* client = static_cast<struct client_s*>(arg);
 			auto data= static_cast<ip_event_ap_staipassigned_t*>(event_data);
 			
 			{
@@ -419,7 +419,7 @@ namespace wifi {
 		
 	resBool mode(wifi_mode_t mode) {
 		esp_netif_ip_info_t ip_info = {};
-		esp_netif_dhcp_status_t s = {};
+		//esp_netif_dhcp_status_t s = {};
 		std::lock_guard<std::mutex> guardian {client.m};
 		if (client.netif != nullptr) {
 			debugIf(LOG_WIFI, "destroy old netif");

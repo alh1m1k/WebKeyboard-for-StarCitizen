@@ -39,8 +39,11 @@ namespace http {
 					strcat(buffer, handler->uri);
 				}
 				debugIf(LOG_HTTP, "rebuilded uri is", &buffer[0]);
-				bool valid =parse(std::string(buffer));
-				debugIf(LOG_HTTP, "parce res", &buffer[0]);
+				if (parse(std::string(buffer))) {
+					debugIf(LOG_HTTP, "parce res", &buffer[0]);
+				} else {
+					debugIf(LOG_HTTP, "parce faild");
+				}
 			}
 		} else {
 			if (querySize > 1) {
