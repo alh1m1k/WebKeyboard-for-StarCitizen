@@ -118,7 +118,7 @@ Any changes made from client default state will-be stored in client(device) loca
 
 At the moment, it is impossible to add or remove controls and pages without recompilation.
 
-Application has internal "factory reset trigger" - press reset, release, wait a moment, press reset again and hold it for at least second.
+Application has internal "factory reset trigger" - press "reset", release, wait a moment, press "boot" and hold it for at least second.
 If your board have general usage binary led (not addressed led, not supported yet) it will blink few times.
 If serial terminal connected it will receive ongoing log and status of operation.  
 After "factory reset" all saved host data will-be wiped, default one will-be used.<br/>
