@@ -11,3 +11,4 @@ test
 !promo/*.png
 promo/ref
 resource/ref
+/cmake-build-debug/

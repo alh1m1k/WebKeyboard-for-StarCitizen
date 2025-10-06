@@ -37,6 +37,9 @@ namespace http::resource::memory {
 			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType);
 			
 			file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct);
+
+            //is override needed, for now its for unification with other virtual function?
+            ~file() override = default;
 			
 			bool operator==(const file& other) const;
 			

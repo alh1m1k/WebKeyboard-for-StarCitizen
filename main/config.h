@@ -66,8 +66,8 @@
 
 //USB STUFF, this is override of default values,
 //comment string to use provided via menuconfig (idf.py menuconfig)
-#define DEVICE_KB_VENDORID		0x09da
-#define DEVICE_KB_PRODUCTID     0xF6CC 
+#define DEVICE_KB_VENDORID		0xACF0
+#define DEVICE_KB_PRODUCTID     0xA1DD
 
 //#define DEVICE_KB_MANUFACTURER	"SpaceSaltyChicken"
 #define DEVICE_KB_MANUFACTURER	"RZI"

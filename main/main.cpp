@@ -224,7 +224,7 @@ void app_main(void)
 				}
 			}
 		} else {
-			auto status=  wifi::hotspotBegin(persistence.getWifiSSID(), persistence.getWifiPWD(), persistence.getWifiAuth());
+			auto status = wifi::hotspotBegin(persistence.getWifiSSID(), persistence.getWifiPWD(), persistence.getWifiAuth());
 			if (!status) {
 				trap("fail to begin wifi hotspot", status.code());
 			}
@@ -353,8 +353,8 @@ void app_main(void)
 	*/
 	
 	
-	auto kbMessageParser 		= parsers::keyboard();
-	auto packetCounter 	= packetIdGeneratorFinal();
+	auto kbMessageParser = parsers::keyboard();
+	auto packetCounter 	 = packetIdGeneratorFinal();
 	auto ctrl = controlsMapFinal();
 #ifdef _SESSION_ENABLE
 	auto sockets  = socketsFinal();

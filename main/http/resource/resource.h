@@ -17,6 +17,8 @@ namespace http::resource {
 		public: 
 				
 			virtual int type() const = 0;
+
+            virtual ~resource() = default;
 			
 			handlerRes operator()(request& req, response& resp) {
 				debugIf(LOG_HTTP, "http::resource::resource", (void*)this);

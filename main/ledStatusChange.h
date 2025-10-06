@@ -37,6 +37,7 @@ class ledStatusChange {
 		inline static const std::string offStatus = "switched-off";
 		
 		//why this allow to be happened but not static constexpr std::string onStatus, class member vs class init?
+        //there was problem with const expr std::string move to std::string_view
 		static constexpr struct led leds[5] = {
 			{ .name = "numlock", 	.bitmask = hid_keyboard_led_bm_t::KEYBOARD_LED_NUMLOCK  	},
 			{ .name = "capslock", 	.bitmask = hid_keyboard_led_bm_t::KEYBOARD_LED_CAPSLOCK 	}, 

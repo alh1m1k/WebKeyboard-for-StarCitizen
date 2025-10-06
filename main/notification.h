@@ -59,7 +59,8 @@ class notificationManager {
 	template<typename T>
 	resBool notifyC(const T& msgText, const sockets::id& idv = ANY_ID, bool binary = false) {
 		if (idv == ANY_ID) {
-			for (auto guardian = pool.sharedGuardian(), it = pool.begin(), end = pool.end(); it != end; ++it) {
+            auto guardian = pool.sharedGuardian(); //moved away from for, to remove warning about different auto type;
+			for (auto it = pool.begin(), end = pool.end(); it != end; ++it) {
 				auto msg = new message(msgText, *it, this);
 				msg->binary = binary;
 				if (auto result = queue(msg); !result) {
@@ -85,7 +86,8 @@ class notificationManager {
 	
 	template<typename T>
 	resBool notifyExeptC(const T& msgText, const sockets::id& idv, bool binary) {
-		for (auto guardian = pool.sharedGuardian(), it = pool.begin(), end = pool.end(); it != end; ++it) {
+        auto guardian = pool.sharedGuardian(); //moved away from for, to remove warning about different auto type;
+		for (auto it = pool.begin(), end = pool.end(); it != end; ++it) {
 			if (it.unsafeId() == idv) {
 				continue;
 			}

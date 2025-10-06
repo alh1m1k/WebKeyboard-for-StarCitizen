@@ -93,7 +93,8 @@ class clients {
 		typedef ID 					id;
 		
 		static constexpr auto size 	= SIZE;
-		static constexpr ID ANY_ID = {}; //empty id is ANY
+		static constexpr ID ANY_ID = {}; //empty id is ANY, not trivial type probably won't compile
+        //this is ugly and subject to change
 		
 		void lockShared() const {
 			rwLock.lock_shared();
