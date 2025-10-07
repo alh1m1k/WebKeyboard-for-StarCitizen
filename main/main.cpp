@@ -150,9 +150,13 @@ typedef generator<uint32_t, true> 													packetIdGeneratorFinal;
 typedef scheduler<std::string> 	  													tailSchedulerFinal;
 typedef ctrlmap<std::string, std::string> 	  										controlsMapFinal;
 
+#include "session/web.h"
 
 void app_main(void)
 {
+
+    auto sessionTest = http::session::web("test");
+
 	info("app init");
 	
 	bootloader_random_enable();

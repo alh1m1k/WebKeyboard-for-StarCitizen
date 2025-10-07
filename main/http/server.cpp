@@ -18,6 +18,7 @@
 #include "request.h"
 #include "response.h"
 #include "socket/handler.h"
+#include "session/memoryManager.h"
 
 namespace http {
 	
@@ -25,9 +26,7 @@ namespace http {
 		//routes.data.reserve(10); //temporal fix ptr invalidation
 	}
 	
-	server::~server() {
-		
-	}
+	server::~server() {}
 	
 	static void serverError(request& req, response& resp) {
 		if (resp.isHeaderSended()) {
@@ -50,8 +49,9 @@ namespace http {
 	}
 	
 	static esp_err_t staticRouter(httpd_req_t *esp_req) {
-		
-		request  req 	= http::request(esp_req, static_cast<route*>(esp_req->user_ctx));
+
+        route    path   = *static_cast<route*>(esp_req->user_ctx);
+		request  req 	= http::request(esp_req, path);
 		response resp 	= http::response(req);
 		
 		if (esp_req->method == 0) {
@@ -63,7 +63,7 @@ namespace http {
 		debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " ", (void*)esp_req->user_ctx);
 
 		try {
-			auto result = (*static_cast<route*>(esp_req->user_ctx))(req, resp);
+			auto result = path(req, resp);
 			
 			if (!result) {
 				serverError(req, resp);
@@ -135,7 +135,7 @@ namespace http {
 				
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, callback);
+		route candidate = route(path, mode, callback, *this);
 		
 		candidate.esp_handler.handler = &staticRouter;
 		
@@ -175,7 +175,7 @@ namespace http {
 		
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, nullptr);
+		route candidate = route(path, mode, nullptr, *this);
 		
 		if (auto pos = std::find(routes.data.begin(), routes.data.end(), candidate); pos != routes.data.end()) {
 			if (auto code = httpd_unregister_uri_handler(handler, pos->esp_handler.uri, pos->esp_handler.method); code != ESP_OK) {
@@ -192,7 +192,7 @@ namespace http {
 		
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, nullptr);
+		route candidate = route(path, mode, nullptr, *this);
 		
 		if (auto pos = std::find(routes.data.begin(), routes.data.end(), candidate); pos != routes.data.end()) {
 			return true;
@@ -200,4 +200,11 @@ namespace http {
 			return false;
 		}		
 	}
+
+    session::baseManager& server::session() {
+        if (_session == nullptr) {
+            _session = std::make_unique<session::memoryManager>();
+        }
+        return *_session;
+    }
 }

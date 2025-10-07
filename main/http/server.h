@@ -12,6 +12,7 @@
 #include "../result.h"
 #include "handler.h"
 #include "route.h"
+#include "session/baseManager.h"
 
 
 namespace http {
@@ -25,6 +26,8 @@ namespace http {
 			std::deque<class route> data = {}; //std::deque in order to protect from ptr invalidataion that kill later deref via c handlers
 			std::mutex m = {};
 		} routes;
+
+        mutable std::unique_ptr<session::baseManager> _session;
 		
 		public:
 		
@@ -45,8 +48,8 @@ namespace http {
 			resBool removeHandler(std::string_view path, httpd_method_t mode);
 			
 			bool    hasHandler(std::string_view path, httpd_method_t mode);
-			
-			//resBool addRouter (std::string_view path = "/", http::handler callback);
+
+            session::baseManager& session();
 		
 	};
 }

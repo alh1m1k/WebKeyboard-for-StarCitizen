@@ -20,15 +20,12 @@ namespace http {
 	
 	class server;
 	class cookies;
-	
-	using _cookies = cookies;
-	//using _headers = headers;
-	
+
 	class response {
 
 		friend server;
 				
-		const request& req;
+		const request& _request;
 		
 		bool _chunked 		= false;
 		
@@ -84,14 +81,12 @@ namespace http {
 			
 			resBool contentType(const char* ct) noexcept;
 			
-			inline _cookies cookies() {
+			inline cookies getCookies() {
 				throw not_impleneted();
 			}
-			
-/*			inline _headers headers() {
-				throw not_impleneted();
-			}*/
-			
+
+            session::baseSession* getSession() const;
+
 			inline bool isSended() const noexcept {
 				return _sended;
 			}

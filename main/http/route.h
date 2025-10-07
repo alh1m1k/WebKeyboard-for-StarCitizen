@@ -16,7 +16,7 @@ namespace http {
 	class server;
 	
 	typedef result<codes> handlerRes;
-	typedef std::function<handlerRes(request& req, response& resp)> handler;
+	typedef std::function<handlerRes(request& req, response& resp, server& serv)> handler;
 		
 	class route {
 		
@@ -25,10 +25,11 @@ namespace http {
 		char * 			c_str    	= nullptr;
 		httpd_uri 		esp_handler = {};
 		handler			_callback;
+        server&         _owner;
 				
 		public:
 				
-			route(std::string_view& path, httpd_method_t mode, handler _callback);
+			route(std::string_view& path, httpd_method_t mode, handler _callback, server& owner);
 			
 			route(route& copy);
 			
@@ -43,22 +44,26 @@ namespace http {
 			bool operator==(const route& other) const;
 			
 			bool operator!=(const route& other) const;
-			
+
 			bool samePath(const route& other) const;
-			
+
 			handlerRes operator()(request& req, response& resp);
 			
-			std::string_view path() const {
+			inline std::string_view path() const {
 				return std::string_view(c_str);
 			}
 			
-			httpd_method_t mode() const {
+			inline httpd_method_t mode() const {
 				return esp_handler.method;
 			}
 			
-			const handler& callback() const {
+			inline const handler& callback() const {
 				return _callback;
 			}
+
+            inline server& owner() const {
+                return _owner;
+            }
 	};
 }
 

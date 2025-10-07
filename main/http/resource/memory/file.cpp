@@ -27,7 +27,7 @@ namespace http::resource::memory {
 		return other.name < this->name;
 	}
 	
-	handlerRes file::operator()(request& req, response& resp) {
+	handlerRes file::operator()(request& req, response& resp, server& serv) {
 		
 		resp.contentType(this->contentType);
 
@@ -37,7 +37,7 @@ namespace http::resource::memory {
 	}
 				
 		
-	handlerRes file::handle(request& req, response& resp) {
+	handlerRes file::handle(request& req, response& resp, server& serv) {
 
 		
 		return (esp_err_t)ESP_OK;

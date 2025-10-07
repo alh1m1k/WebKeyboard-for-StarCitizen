@@ -26,7 +26,7 @@ namespace http::resource::memory {
 		
 		protected:
 		
-			handlerRes handle(request& req, response& resp) override;
+			handlerRes handle(request& req, response& resp, server& serv) override;
 		
 		public:
 				
@@ -49,7 +49,7 @@ namespace http::resource::memory {
 				
 			int type() const override;
 			
-			handlerRes operator()(request& req, response& resp);
+			handlerRes operator()(request& req, response& resp, server& serv);
 			
 	};
 	

@@ -10,7 +10,7 @@ namespace http::resource {
 	class resource {
 
 		protected:
-			virtual handlerRes handle(request& req, response& resp) {
+			virtual handlerRes handle(request& req, response& resp, server& serv) {
 				return (esp_err_t)ESP_OK;
 			}
 		
@@ -20,9 +20,9 @@ namespace http::resource {
 
             virtual ~resource() = default;
 			
-			handlerRes operator()(request& req, response& resp) {
+			handlerRes operator()(request& req, response& resp, server& serv) {
 				debugIf(LOG_HTTP, "http::resource::resource", (void*)this);
-				return this->handle(req, resp);
+				return this->handle(req, resp, serv);
 			}
 	};
 	

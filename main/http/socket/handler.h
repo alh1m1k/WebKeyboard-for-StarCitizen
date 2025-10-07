@@ -21,7 +21,7 @@ namespace http::socket {
 		
 			std::function<resBool(socket& context, const socket::message msg)> hndl;
 						
-			inline resBool handle(request& req, response& resp) {
+			inline resBool handle(request& req, response& resp, server& serv) {
 				
 				socket socks = socket(req.native());
 				
@@ -47,6 +47,6 @@ namespace http::socket {
 			
 			handler(handler_type&& 	hndl);
 									
-			handlerRes operator()(request& req, response& resp);
+			handlerRes operator()(request& req, response& resp, server& serv);
 	};
 }

@@ -21,9 +21,9 @@ namespace http {
 	const ssize_t response::MAX_UNCHUNKED_SIZE = 1024 * 10;
 		
 	//response::response(const httpd_req_t* esp_req){}
-	response::response(request& req) : req(req) {}
+	response::response(request& req) : _request(req) {}
 	
-	response::response(const response&& resp) : req(resp.req) {
+	response::response(const response&& resp) : _request(resp._request) {
 		throw not_impleneted("response::move cnstr");
 	}
 	
@@ -41,14 +41,14 @@ namespace http {
 			return;
 		}
 		if (_chunked) {
-			info("request complete (chunked)", this->req.getUriRaw());
+			info("request complete (chunked)", this->_request.getUriRaw());
 			_chunked = false;
 			writeDone();
 		} else {
-			if (this->req.getMethod() == 0) {
+			if (this->_request.getMethod() == 0) {
 				info("request complete (websocket)");
 			} else {
-				info("request complete", this->req.getUriRaw());
+				info("request complete", this->_request.getUriRaw());
 			}
 			
 		}
@@ -56,7 +56,7 @@ namespace http {
 	}
 	
 	resBool response::writeChunk(const uint8_t* buffer, ssize_t size) noexcept {
-		if (auto code = httpd_resp_send_chunk((httpd_req_t*)req.native(), (const char*)buffer, size); code == ESP_OK) {
+		if (auto code = httpd_resp_send_chunk((httpd_req_t*)_request.native(), (const char*)buffer, size); code == ESP_OK) {
 			_headerSended 	= true;
 			_chunked 		= true;
 			_bytes 		   += size;
@@ -74,7 +74,7 @@ namespace http {
 		
 		do {
 			debugIf(LOG_HTTP, "response::write", cursor, " ", chunkSize);
-			if (auto code = httpd_resp_send_chunk((httpd_req_t*)req.native(), (const char*)buffer+cursor, chunkSize); code == ESP_OK) {
+			if (auto code = httpd_resp_send_chunk((httpd_req_t*)_request.native(), (const char*)buffer+cursor, chunkSize); code == ESP_OK) {
 				_headerSended 	= true;
 				_chunked 		= true;
 				_bytes 		   += size;
@@ -98,7 +98,7 @@ namespace http {
 	}
 	
 	resBool response::writeDone() noexcept {
-		if (auto code = httpd_resp_send_chunk((httpd_req_t*)req.native(), nullptr, 0); code == ESP_OK) {
+		if (auto code = httpd_resp_send_chunk((httpd_req_t*)_request.native(), nullptr, 0); code == ESP_OK) {
 			_chunked 		= true;
 			_headerSended 	= true;
 			_sended  		= true;
@@ -112,7 +112,7 @@ namespace http {
 		if (split && size > MAX_UNCHUNKED_SIZE) {
 			return write(buffer, size);
 		}
-		if (auto code = httpd_resp_send((httpd_req_t*)req.native(), (const char*)buffer, size); code == ESP_OK) {
+		if (auto code = httpd_resp_send((httpd_req_t*)_request.native(), (const char*)buffer, size); code == ESP_OK) {
 			_chunked 		= true;
 			_headerSended 	= true;
 			_sended  		= true;
@@ -132,7 +132,7 @@ namespace http {
 		 if (_headerSended || _sended) {
 			 return (esp_err_t)HTTP_ERR_HEADERS_ARE_SENDED;
 		 }
-		 return httpd_resp_set_status((httpd_req_t*)req.native(), codes2Symbols(code));
+		 return httpd_resp_set_status((httpd_req_t*)_request.native(), codes2Symbols(code));
 	}
 	
 	resBool response::contentType(const enum contentType ct) noexcept {
@@ -143,8 +143,13 @@ namespace http {
 		 if (_headerSended || _sended) {
 			 return (esp_err_t)HTTP_ERR_HEADERS_ARE_SENDED;
 		 }
-		 return httpd_resp_set_type((httpd_req_t*)req.native(), ct);
+		 return httpd_resp_set_type((httpd_req_t*)_request.native(), ct);
 	}
+
+    session::baseSession* response::getSession() const {
+        return _request.getSession();
+    }
+
 }
 
 http::response& operator<<(http::response& resp, std::string_view str)	{

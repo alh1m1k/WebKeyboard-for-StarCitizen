@@ -9,6 +9,7 @@
 #include "headers.h"
 #include "../exception/not_implemented.h"
 #include "uri.h"
+#include "session/baseSession.h"
 
 namespace http {
 	
@@ -23,34 +24,38 @@ namespace http {
 		
 		std::unique_ptr<headers> _headers; //todo make defered object mutable and const
 		
-		route* 	_route = nullptr;
+		route& 	_route;
 		
 		public:
 		
-			explicit request(httpd_req_t* esp_req);
-			explicit request(httpd_req_t* esp_req, route* route);
+			//explicit request(httpd_req_t* esp_req);
+			explicit request(httpd_req_t* esp_req, route& route);
 						
 			headers& getHeaders();
 			
 			uri& getUri();
+
+            httpd_method_t getMethod() const;
+
+            inline bool isGet() const {
+                return getMethod() == httpd_method_t::HTTP_GET;
+            }
+
+            inline bool isPost() const {
+                return getMethod() == httpd_method_t::HTTP_POST;
+            }
 			
 			const char* getUriRaw() const; //todo remove me after proper implementing defered object 
 			
 			cookies& getCookies();
 			
-			const route* getRoute();
-			
-			httpd_method_t getMethod() const;
-			
-			inline bool isGet() const {
-				return getMethod() == httpd_method_t::HTTP_GET;
-			} 
-			
-			inline bool isPost() const {
-				return getMethod() == httpd_method_t::HTTP_POST;
-			}
-			
-			//method needed to expose private handler in order to successfuly build sub object like sockets or headers 
+			inline const route& getRoute() const {
+                return _route;
+            }
+
+            session::baseSession* getSession() const;
+
+			//method needed to expose private handler in order to successfuly build sub object like sockets or headers
 			//without using friend decl as it make linking impossible to manage
 			inline httpd_req_t* native() const {
 				return handler;

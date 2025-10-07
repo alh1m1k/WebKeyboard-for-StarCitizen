@@ -2,8 +2,8 @@
 
 namespace http {
 			
-	request::request(httpd_req_t* esp_req) : handler(esp_req) {}
-	request::request(httpd_req_t* esp_req, route* route) : handler(esp_req), _route(route) {}
+	//request::request(httpd_req_t* esp_req) : handler(esp_req) {}
+	request::request(httpd_req_t* esp_req, route& route) : handler(esp_req), _route(route) {}
 				
 	headers& request::getHeaders() {
 		
@@ -15,6 +15,14 @@ namespace http {
 		
 		return *_headers;		
 	}
+
+    session::baseSession* request::getSession() const {
+        if (auto result = _route.owner().session().open(); result) {
+            return std::get<session::baseSession*>(result);
+        } else {
+            return nullptr;
+        }
+    }
 	
 	uri& request::getUri() {
 		return getHeaders().getUri();
@@ -27,11 +35,7 @@ namespace http {
 	cookies& request::getCookies() {
 		return getHeaders().getCookies();
 	}
-	
-	const route* request::getRoute() {
-		return _route;
-	} 
-	
+
 	httpd_method_t request::getMethod() const {
 		return (httpd_method_t)handler->method;
 	} 	

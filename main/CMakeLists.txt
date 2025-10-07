@@ -3,8 +3,9 @@
 
 idf_component_register(
     SRCS 				
-    					resultStream.cpp http/uri.cpp  http/headers.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp 
-    					http/socket/socket.cpp http/socket/asyncSocket.cpp 
+    					resultStream.cpp http/uri.cpp  http/headers.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
+						http/session/web.cpp http/session/websocket.cpp http/session/memoryManager.cpp
+						http/socket/socket.cpp http/socket/asyncSocket.cpp
     					http/resource/memory/file.cpp http/server.cpp http/route.cpp 
     					hid/usbDevice.cpp
     					hid/usbModuleAdapter.cpp
@@ -18,7 +19,7 @@ idf_component_register(
     					# list the source files of this component
     INCLUDE_DIRS        
     					. ./exception
-    					./http ./http/exception ./http/resource ./http/resource/memory ./http/lib/httpparser
+    					./http ./http/exception ./http/resource ./http/session ./http/resource/memory ./http/lib/httpparser
     					./http/socket
     					./dns
     					./hid
