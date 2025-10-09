@@ -6,6 +6,7 @@
 #include <deque>
 #include <sys/_stdint.h>
 #include <mutex>
+#include <memory>
 
 #include "response.h"
 #include "request.h"
@@ -16,9 +17,13 @@
 
 
 namespace http {
+
+    namespace session {
+        class baseManager;
+    }
 			
 	class server {
-		
+
 		httpd_handle_t  handler = {};
 		//httpd_config    config = HTTPD_DEFAULT_CONFIG();
 				

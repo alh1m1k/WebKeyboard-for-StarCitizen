@@ -7,17 +7,12 @@
 #include <string>
 #include <optional>
 #include <sys/_stdint.h>
+#include "../hid/keyboard.h"
 #include <vector>
 		
 #include "../exception/not_implemented.h"
-#include "keyboardTask.h"
 #include "result.h"
-
-//#define __TEST_ONLY_PURE_PARESER
-
-#ifndef __TEST_ONLY_PURE_PARESER
-#include "../hid/keyboard.h"
-#endif
+#include "keyboardTask.h"
 
 namespace parsers {
 		
@@ -63,9 +58,9 @@ namespace parsers {
 #endif
 		
 		public:
-		
-			typedef hid::keyboard::sequence_writer_type::write_result write_result;
-		
+#ifndef __TEST_ONLY_PURE_PARESER
+            typedef hid::keyboard::sequence_writer_type::write_result write_result;
+#endif
 			const static auto DEFAULT_PRESS_TYPE = keyboard::token::press_e::PRESS;
 								
 			keyboard();

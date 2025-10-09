@@ -22,11 +22,11 @@ namespace http {
 		
 		httpd_req_t* handler;
 		
-		std::unique_ptr<uri> 		_uri;  //todo make defered object mutable and const
-		std::unique_ptr<cookies> 	_cookies;
-		
+		mutable std::unique_ptr<uri> 		_uri;  //todo make defered object mutable and const
+		mutable std::unique_ptr<cookies> 	_cookies;
+
 		bool populated = false;
-		
+
 		public: 
 		
 			headers();

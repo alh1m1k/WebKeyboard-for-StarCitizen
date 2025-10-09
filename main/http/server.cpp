@@ -19,6 +19,7 @@
 #include "response.h"
 #include "socket/handler.h"
 #include "session/memoryManager.h"
+#include "session/web.h"
 
 namespace http {
 	
@@ -63,8 +64,56 @@ namespace http {
 		debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " ", (void*)esp_req->user_ctx);
 
 		try {
+
+
+            {   //session block
+                result<http::session::baseSession*> sessionResult = ESP_FAIL;
+                //try reuse if cookie exist
+                if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult && std::get<const cookie>(
+                        cookieReadResult).value != "") {
+                    if (sessionResult = path.owner().session().open(std::get<const cookie>(cookieReadResult).value); sessionResult) {
+                        infoIf(LOG_SESSION, "session open(reuse)", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                    } else {
+                        info("session open(reuse) fail", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", sessionResult.code());
+                    }
+                }
+
+                if (!sessionResult) {
+                    //try open new, cookie not exist
+                    if (sessionResult = path.owner().session().open(); sessionResult) {
+                        infoIf(LOG_SESSION, "session open(new)", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                        if (auto cookieWriteResult = resp.getCookies().set(cookie("wkb-id", std::get<session::baseSession *>(sessionResult)->sid(), true)); cookieWriteResult) {
+                            infoIf(LOG_SESSION, "new cookie write successful", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                        } else {
+                            error("cookie write", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", cookieWriteResult.code());
+                            if (auto closeResult = path.owner().session().close(std::get<session::baseSession *>(sessionResult)->sid()); closeResult) {
+                                infoIf(LOG_SESSION, "malformed session closed", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                            } else {
+                                error("session close", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", closeResult.code());
+                            }
+                            sessionResult = ESP_FAIL;
+                        }
+                    }
+                }
+
+                //general session fail drop request
+                if (!sessionResult) {
+                    serverError(req, resp);
+                    debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                    return ESP_FAIL;
+                } else {
+                    info("session open succesfuly", esp_req->uri, " ", (void *) esp_req->user_ctx);
+                    if (auto session = req.getSession(); session != nullptr) {
+                        debugIf(LOG_SESSION, "session accessible");
+                        if (!static_cast<session::web*>(session)->testValue) {
+                            static_cast<session::web*>(session)->testValue = rand();
+                        }
+                    }
+                }
+            }
+
+
 			auto result = path(req, resp);
-			
 			if (!result) {
 				serverError(req, resp);
 				error("internal error", esp_req->uri, " ", (void*)esp_req->user_ctx, " code ", result.code());

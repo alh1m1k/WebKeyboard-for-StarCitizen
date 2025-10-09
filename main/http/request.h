@@ -22,7 +22,7 @@ namespace http {
 						
 		httpd_req_t* handler;
 		
-		std::unique_ptr<headers> _headers; //todo make defered object mutable and const
+		mutable std::unique_ptr<headers> _headers;
 		
 		route& 	_route;
 		
@@ -31,9 +31,9 @@ namespace http {
 			//explicit request(httpd_req_t* esp_req);
 			explicit request(httpd_req_t* esp_req, route& route);
 						
-			headers& getHeaders();
+			const headers& getHeaders();
 			
-			uri& getUri();
+			const uri& getUri();
 
             httpd_method_t getMethod() const;
 
@@ -47,7 +47,7 @@ namespace http {
 			
 			const char* getUriRaw() const; //todo remove me after proper implementing defered object 
 			
-			cookies& getCookies();
+			const cookies& getCookies();
 			
 			inline const route& getRoute() const {
                 return _route;

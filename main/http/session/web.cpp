@@ -1,6 +1,7 @@
 #include "web.h"
 
 namespace http::session {
-    web::web(const std::string& id) noexcept : _id(id)  {};
-    const std::string web::id() noexcept { return _id; };
+    web::web(const std::string& id) : _sid(id)  {};
+    web::web(std::string&& id)      : _sid(id)  {};
+    const std::string& web::sid()   { return _sid; };
 }

@@ -4,9 +4,9 @@
 idf_component_register(
     SRCS 				
     					resultStream.cpp http/uri.cpp  http/headers.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
-						http/session/web.cpp http/session/websocket.cpp http/session/memoryManager.cpp
+						http/session/web.cpp http/session/memoryManager.cpp
 						http/socket/socket.cpp http/socket/asyncSocket.cpp
-    					http/resource/memory/file.cpp http/server.cpp http/route.cpp 
+    					http/resource/memory/file.cpp http/server.cpp http/route.cpp http/cookie.cpp
     					hid/usbDevice.cpp
     					hid/usbModuleAdapter.cpp
     					hid/keyboard.cpp

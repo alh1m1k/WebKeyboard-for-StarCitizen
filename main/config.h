@@ -97,6 +97,8 @@
 
 //#define LOG_WIFI 		true
 
+#define LOG_SESSION	true
+
 
 
 

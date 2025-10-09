@@ -7,9 +7,11 @@
 #include <string>
 #include <stdexcept>
 #include <sys/_stdint.h>
+#include <algorithm>
 
 #include "esp_err.h"
 #include "result.h"
+
 
 inline size_t align32(size_t size) {
 	if (size % 4 == 0) {
@@ -96,6 +98,26 @@ inline std::string genGandom(const int len) {
     }
     
     return tmp_s;
+}
+
+// Function to trim leading whitespace
+static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), [](unsigned char ch) {
+        return std::isspace(ch);
+    }));
+}
+
+// Function to trim trailing whitespace
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if_not(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return std::isspace(ch);
+    }).base(), s.end());
+}
+
+// Function to trim both leading and trailing whitespace
+static inline void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
 }
 
 //does not ?guarantee? FIFO

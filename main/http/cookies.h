@@ -1,20 +1,37 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "esp_http_server.h"
+
+#include "result.h"
+#include "cookie.h"
+
 
 namespace http {
 	
 	class cookies {
+
+        const httpd_req_t* _handler;
+
+        std::vector<std::string> preserve = {};
 		
 		public:
+
+            static constexpr uint16_t MINIMUM_ALLOCATED_BYTES = 32;
 		
 			cookies();
-			
-			explicit cookies(const char* str);
-			
-			//explicit cookies(std::string str) {};
-			
-			explicit cookies(const httpd_req_t* esp_req);
+
+            explicit cookies(const httpd_req_t* esp_req);
+
+            result<const cookie> get(const std::string& key, uint16_t expectedSize = MINIMUM_ALLOCATED_BYTES);
+
+            result<const cookie> get(const std::string& key, uint16_t expectedSize = MINIMUM_ALLOCATED_BYTES) const;
+
+            resBool set(const cookie& cook);
+
+            resBool set(const std::string&& entry);
 			
 	};
 	

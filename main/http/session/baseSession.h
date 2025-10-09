@@ -2,21 +2,12 @@
 
 #include <string>
 
-//#include "baseManager.h"
-
-
 namespace http::session {
 
 	class baseSession {
-        protected:
-            //baseSession();
-            //virtual ~baseSession();
         public:
-            virtual const std::string   id()         = 0;
-            //other general data there
-            bool     authorized                      = false;
-            uint32_t incremental                     = 0;
-            void*    otherData                       = nullptr;
+            virtual ~baseSession() {}; //virtual destructor must present even for interface classes
+            virtual const std::string& sid() = 0;
 	};
 
 }
