@@ -355,12 +355,16 @@ namespace hid {
 			}
 			
 			inline void keyUp(const report& kbKey) {
-				tud_hid_keyboard_report(HID_ITF_PROTOCOL_KEYBOARD, 0, NULL);
+#ifndef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
+                tud_hid_keyboard_report(HID_ITF_PROTOCOL_KEYBOARD, 0, NULL);
+#endif
 				dumbCombination("keyup", combination);
 			}
 			
 			inline void keyDown(const report& kbKey) {
+#ifndef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
 				tud_hid_keyboard_report(HID_ITF_PROTOCOL_KEYBOARD, kbKey.modifier, kbKey.data);
+#endif
 				dumbCombination("keydown", combination);
 				activeReport = kbKey;
 			}

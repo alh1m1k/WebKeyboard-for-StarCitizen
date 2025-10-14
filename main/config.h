@@ -77,6 +77,10 @@
 #define DEVICE_KB_HID 			"WebKeyboard for StarCitizen"
 
 
+//JTAG DEBUG
+//#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
+                                                //as CDC and JTAG are compete for resources
+
 //different subsytem log
 
 //#define LOG_JOYSTICK 	true

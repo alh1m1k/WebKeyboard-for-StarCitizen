@@ -50,7 +50,11 @@ namespace hid {
 	}
 	
 	bool keyboard::mounted() const noexcept {
-		return _installed && tud_mounted();
+#ifdef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
+        return _installed;
+#else
+        return _installed && tud_mounted();
+#endif
 	}
 	
 	bool keyboard::setReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {

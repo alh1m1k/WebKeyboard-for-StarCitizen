@@ -228,11 +228,15 @@ namespace hid {
 	
 	
 	bool usbDevice::install() {
-		
-		config = std::make_unique_for_overwrite<tinyusb_config_t>();
-    	*config = makeConfig();
-	    	
-	    ESP_ERROR_CHECK(tinyusb_driver_install(config.get()));
+
+        config = std::make_unique_for_overwrite<tinyusb_config_t>();
+        *config = makeConfig();
+
+#ifdef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
+        info("DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC are enabled, usb stack supressed");
+#else
+        ESP_ERROR_CHECK(tinyusb_driver_install(config.get()));
+#endif
 	    
 	    return true;
 	}
