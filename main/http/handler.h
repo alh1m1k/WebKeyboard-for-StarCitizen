@@ -4,7 +4,7 @@
 #include "request.h"
 #include "server.h"
 #include "codes.h"
-#include "../result.h"
+#include "result.h"
 
 
 namespace http {
@@ -12,6 +12,7 @@ namespace http {
 	class request;
 	class response;
     class server;
+    enum class codes;
 	
 	//typedef std::function< result<const response, const codes> (const request& req, response& resp) > handler; fail to compile angry check for const it seems
 	typedef result<codes> handlerResult;

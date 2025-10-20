@@ -1,45 +1,41 @@
 
 #include "server.h"
 
-#include <esp_http_server.h>
 #include <variant>
 #include <exception>
 #include <cassert>
 
-#include "assert.h"
-#include "bad_api_call.h"
 #include "esp_err.h"
-#include "codes.h"
-#include "../util.h"
-#include "generated.h"
-#include "handler.h"
+#include "assert.h"
+
+
+#include "bad_api_call.h"
 #include "headers_sended.h"
-#include "headers.h"
-#include "request.h"
-#include "response.h"
+
+#include "codes.h"
+#include "util.h"
+
 #include "socket/handler.h"
-#include "session/memoryManager.h"
-#include "session/web.h"
+#include "session/manager.h"
+#include "session/session.h"
+#include "session/pointer.h"
+#include "session/interfaces/iSocksCntSession.h"
+#include "session/interfaces/iWebSocketSession.h"
 
 namespace http {
-	
-	server::server() {
-		//routes.data.reserve(10); //temporal fix ptr invalidation
-	}
-	
-	server::~server() {}
-	
-	static void serverError(request& req, response& resp) {
+
+	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
 		if (resp.isHeaderSended()) {
 			//nothing we can do as this moment
 			info("handler callback return error but headers already send do nothing ",  HTTP_ERR_HEADERS_ARE_SENDED);
 			return;
 		} else {
+            code = code < http::codes::BAD_REQUEST ? http::codes::INTERNAL_SERVER_ERROR : code;
 			auto newResp = http::response(req); //move not implemented
-			if (auto res = newResp.status(codes::INTERNAL_SERVER_ERROR); !res) {
+			if (auto res = newResp.status(code); !res) {
 				error("send api unavailable ", res.code());
 			} 
-			if (auto res = newResp.writeResp("500 Internal Server Error"); !res) {
+			if (auto res = newResp.writeResp(codes2Symbols(code)); !res) {
 				error("send api unavailable ", res.code());
 			}
 		};
@@ -48,6 +44,63 @@ namespace http {
 	static void serverException(request& req, response& resp, std::exception* e) {
 		serverError(req, resp);
 	}
+
+    static esp_err_t sessionOpen(request& req, response& resp, route& path) {
+
+        using session_ptr_type = session::manager<session::session>::session_ptr_type;
+
+        session::manager<session::session>::result_type sessionResult = ESP_FAIL;
+        //try reuse if cookie exist
+        infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " ", (void *)req.native()->user_ctx);
+        if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult && std::get<const cookie>(
+                cookieReadResult).value != "") {
+            if (sessionResult = path.owner().getSession().open(std::get<const cookie>(cookieReadResult).value); sessionResult) {
+                infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " ", (void *) req.native()->user_ctx, std::get<const cookie>(cookieReadResult).value);
+            } else {
+                info("session open(reuse) fail", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", sessionResult.code());
+            }
+        } else {
+            error("cookie get", req.native()->uri, " ", (void *) req.native()->user_ctx, " ", cookieReadResult.code());
+        }
+
+        if (!sessionResult) {
+            //try open new, cookie not exist
+            infoIf(LOG_SESSION, "try session open(new)");
+            if (sessionResult = path.owner().getSession().open(); sessionResult) {
+                infoIf(LOG_SESSION, "session open(new)", req.native()->uri, " ", (void *) req.native()->user_ctx, " ", std::get<session_ptr_type>(sessionResult)->sid());
+                if (auto cookieWriteResult = resp.getCookies().set(cookie("wkb-id", std::get<session_ptr_type>(sessionResult)->sid(), true)); cookieWriteResult) {
+                    infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " ", (void *) req.native()->user_ctx);
+                } else {
+                    error("cookie write", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", cookieWriteResult.code());
+                    if (auto closeResult = path.owner().getSession().close(std::get<session_ptr_type>(sessionResult)->sid()); closeResult) {
+                        infoIf(LOG_SESSION, "malformed session closed", req.native()->uri, " ", (void *) req.native()->user_ctx);
+                    } else {
+                        error("session close", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", closeResult.code());
+                    }
+                    sessionResult = ESP_FAIL;
+                }
+            }
+        }
+
+        //general session fail drop request
+        if (sessionResult) {
+            info("session open succesfuly", req.native()->uri, " ", (void *) req.native()->user_ctx);
+            req.native()->sess_ctx = (void*)(new http::session::pointer{std::get<session_ptr_type>(sessionResult)});
+            req.native()->free_ctx = (httpd_free_ctx_fn_t)http::session::freePointer;
+            if (auto sessionSocks = pointer_cast<session::iSocksCntSession>(req.getSession()); sessionSocks != nullptr) {
+                [[maybe_unused]] uint32_t pendingSockets = ++sessionSocks->socketCounter();
+                infoIf(LOG_SESSION, "session", std::get<session_ptr_type>(sessionResult)->sid(), " new connection, pendingSockets: ", pendingSockets);
+            }
+            //if (path.)
+            if (auto sessionWS = pointer_cast<session::iWebSocketSession>(req.getSession()); sessionWS != nullptr) {
+                infoIf(LOG_SESSION, "session", std::get<session_ptr_type>(sessionResult)->sid(), " new connection");
+            }
+        } else {
+            return sessionResult.code();
+        }
+
+        return ESP_OK;
+    }
 	
 	static esp_err_t staticRouter(httpd_req_t *esp_req) {
 
@@ -65,53 +118,16 @@ namespace http {
 
 		try {
 
-
-            {   //session block
-                result<http::session::baseSession*> sessionResult = ESP_FAIL;
-                //try reuse if cookie exist
-                if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult && std::get<const cookie>(
-                        cookieReadResult).value != "") {
-                    if (sessionResult = path.owner().session().open(std::get<const cookie>(cookieReadResult).value); sessionResult) {
-                        infoIf(LOG_SESSION, "session open(reuse)", esp_req->uri, " ", (void *) esp_req->user_ctx);
-                    } else {
-                        info("session open(reuse) fail", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", sessionResult.code());
-                    }
-                }
-
-                if (!sessionResult) {
-                    //try open new, cookie not exist
-                    if (sessionResult = path.owner().session().open(); sessionResult) {
-                        infoIf(LOG_SESSION, "session open(new)", esp_req->uri, " ", (void *) esp_req->user_ctx);
-                        if (auto cookieWriteResult = resp.getCookies().set(cookie("wkb-id", std::get<session::baseSession *>(sessionResult)->sid(), true)); cookieWriteResult) {
-                            infoIf(LOG_SESSION, "new cookie write successful", esp_req->uri, " ", (void *) esp_req->user_ctx);
-                        } else {
-                            error("cookie write", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", cookieWriteResult.code());
-                            if (auto closeResult = path.owner().session().close(std::get<session::baseSession *>(sessionResult)->sid()); closeResult) {
-                                infoIf(LOG_SESSION, "malformed session closed", esp_req->uri, " ", (void *) esp_req->user_ctx);
-                            } else {
-                                error("session close", esp_req->uri, " ", (void *) esp_req->user_ctx, " code ", closeResult.code());
-                            }
-                            sessionResult = ESP_FAIL;
-                        }
-                    }
-                }
-
-                //general session fail drop request
-                if (!sessionResult) {
-                    serverError(req, resp);
-                    debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " ", (void *) esp_req->user_ctx);
+            if (!(esp_req->method == 0 && path.isWebSocket())) {
+                //auto start session only if it not ongoing websocket com
+                //because ws not have cookies, but initial Get have, so socket will rcv it session on protocol upgrade stage until it closes
+                if (auto code = sessionOpen(req, resp, path); code != ESP_OK) {
+                    error("session open", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", code);
+                    serverError(req, resp, code == NO_SLOT_SESSION_ERROR ? http::codes::TOO_MANY_REQUESTS : http::codes::INTERNAL_SERVER_ERROR);
+                    debugIf(LOG_HTTP, "<--- static routing complete", req.native()->uri, " ", (void *) req.native()->user_ctx);
                     return ESP_FAIL;
-                } else {
-                    info("session open succesfuly", esp_req->uri, " ", (void *) esp_req->user_ctx);
-                    if (auto session = req.getSession(); session != nullptr) {
-                        debugIf(LOG_SESSION, "session accessible");
-                        if (!static_cast<session::web*>(session)->testValue) {
-                            static_cast<session::web*>(session)->testValue = rand();
-                        }
-                    }
                 }
             }
-
 
 			auto result = path(req, resp);
 			if (!result) {
@@ -169,7 +185,7 @@ namespace http {
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 	= 20;
 		config.max_open_sockets 	= 12;
-		config.stack_size 			+= 1024; //temporaly fix of sovf
+		config.stack_size 		   += 1024; //temporaly fix of sovf
 		return  httpd_start(&handler, &config);
 	}
 
@@ -178,7 +194,7 @@ namespace http {
 	}
 	
 	//todo move sem
-	resBool server::addHandler(std::string_view path, httpd_method_t mode, http::handler callback) {
+	resBool server::addHandler(std::string_view path, httpd_method_t mode, const handler_type& callback) {
 		
 		assert(callback != nullptr);
 				
@@ -250,10 +266,11 @@ namespace http {
 		}		
 	}
 
-    session::baseManager& server::session() {
+    session::iManager& server::getSession() const {
         if (_session == nullptr) {
-            _session = std::make_unique<session::memoryManager>();
+            _session = std::make_unique<session::manager<session::session>>();
         }
         return *_session;
     }
+
 }

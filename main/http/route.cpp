@@ -8,7 +8,7 @@
 //class represent memory slot for path, callback and esp_handler
 namespace http {
 		
-	route::route(std::string_view& path, httpd_method_t mode, handler callback, server& owner): c_str(new char(path.size()+1)), _callback(callback), _owner(owner) {
+	route::route(std::string_view& path, httpd_method_t mode, handler_type callback, server& owner): c_str(new char(path.size() + 1)), _callback(callback), _owner(owner) {
 		
 		mempcpy(c_str, path.data(), path.size());
 		c_str[path.size()] = 0;
@@ -97,8 +97,8 @@ namespace http {
 	bool route::samePath(const route& other) const {
 		return (strcmp(esp_handler.uri,  other.esp_handler.uri) == 0) && (esp_handler.method == other.esp_handler.method);
 	}
-	
-	handlerResult route::operator()(request& req, response& resp) {
+
+    route::handler_res_type route::operator()(request& req, response& resp) {
 		if (this->_callback == nullptr) {
 			throw bad_api_call("route::operator() callback is nullptr", ESP_FAIL);
 		}

@@ -146,7 +146,18 @@ namespace http {
 		 return httpd_resp_set_type((httpd_req_t*)_request.native(), ct);
 	}
 
-    session::baseSession* response::getSession() const {
+    headers& response::getHeaders() {
+        if (_headers == nullptr) {
+            _headers = std::make_unique<headers>(_request.native());
+        }
+        return *_headers;
+    }
+
+    cookies& response::getCookies() {
+        return getHeaders().getCookies();
+    }
+
+    std::shared_ptr<session::iSession> response::getSession() const {
         return _request.getSession();
     }
 

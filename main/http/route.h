@@ -2,34 +2,45 @@
 
 #include "generated.h"
 
-#include "esp_err.h"
 #include <algorithm>
 #include <cstring>
+#include <functional>
+
+#include "esp_err.h"
+
+#include "request.h"
 #include "response.h"
 #include "server.h"
-#include "handler.h"
+#include "socket/handler.h"
 
 
 //class represent memory slot for path, callback and esp_handler
 namespace http {
+
+    namespace socket {
+        class handler;
+    }
 	
 	class server;
-	
-	typedef result<codes> handlerRes;
-	typedef std::function<handlerRes(request& req, response& resp, server& serv)> handler;
-		
+
 	class route {
-		
-		friend server;
-		
-		char * 			c_str    	= nullptr;
-		httpd_uri 		esp_handler = {};
-		handler			_callback;
-        server&         _owner;
+        public:
+
+            typedef result<codes> handler_res_type;
+            typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
+
+        private:
+
+            friend server;
+
+            char * 			c_str    	= nullptr;
+            httpd_uri 		esp_handler = {};
+            handler_type    _callback;
+            server&         _owner;
 				
 		public:
-				
-			route(std::string_view& path, httpd_method_t mode, handler _callback, server& owner);
+
+			route(std::string_view& path, httpd_method_t mode, handler_type _callback, server& owner);
 			
 			route(route& copy);
 			
@@ -47,7 +58,7 @@ namespace http {
 
 			bool samePath(const route& other) const;
 
-			handlerRes operator()(request& req, response& resp);
+			handler_res_type operator()(request& req, response& resp);
 			
 			inline std::string_view path() const {
 				return std::string_view(c_str);
@@ -56,8 +67,12 @@ namespace http {
 			inline httpd_method_t mode() const {
 				return esp_handler.method;
 			}
+
+            inline bool isWebSocket() const {
+                return _callback.target<http::socket::handler>();
+            }
 			
-			inline const handler& callback() const {
+			inline const handler_type& callback() const {
 				return _callback;
 			}
 

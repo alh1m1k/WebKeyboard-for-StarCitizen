@@ -12,3 +12,5 @@ test
 promo/ref
 resource/ref
 /cmake-build-debug/
+README.DEBUG.md
+.clangd

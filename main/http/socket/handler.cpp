@@ -1,4 +1,5 @@
 #include "handler.h"
+
 #include "util.h"
 
 
@@ -11,6 +12,9 @@ namespace http::socket {
 	handlerRes handler::operator()(request& req, response& resp, server& serv) {
 	    if (req.isGet()) {
 	        debugIf(LOG_SOCKET, "socket::operator() handshake");
+            if (auto webSockSess = session::pointer_cast<session::iWebSocketSession>(req.getSession()); webSockSess != nullptr) {
+                webSockSess->setSocket(socket(req.native()).keep());
+            }
 	        return ESP_OK;
 	    }
 	    debugIf(LOG_SOCKET, "socket::operator()");

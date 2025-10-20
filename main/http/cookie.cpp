@@ -2,6 +2,7 @@
 
 #include "string"
 #include "util.h"
+#include "generated.h"
 
 
 namespace http {
@@ -18,6 +19,8 @@ namespace http {
         size_t      pos = 0;
         uint16_t    index = 0;
         size_t      cSize = cookies.size();
+
+        infoIf(LOG_COOKIE_BUILD, "cookie::cookie", cookies.c_str());
 
         while(pos < cSize) {
             size_t wordEndPos   = std::min(cookies.find(';', pos), cSize);
@@ -91,7 +94,7 @@ namespace http {
 
     bool cookie::populate(std::string&& name_, std::string&& value_, uint16_t index) {
 
-        debug("cookie::populate", name_.c_str(), " ", value_.c_str(), " ", index);
+        debugIf(LOG_COOKIE_BUILD, "cookie::populate", name_.c_str(), " ", value_.c_str(), " ", value_.size(), " ", index);
 
         if (index == 0) {
             name    = name_;

@@ -2,60 +2,66 @@
 
 #include "generated.h"
 
-#include <esp_http_server.h>
 #include <deque>
 #include <sys/_stdint.h>
 #include <mutex>
 #include <memory>
 
-#include "response.h"
+#include <esp_http_server.h>
+
+
+#include "result.h"
 #include "request.h"
-#include "../result.h"
-#include "handler.h"
+#include "response.h"
 #include "route.h"
-#include "session/baseManager.h"
+#include "http/session/interfaces/iManager.h"
 
 
 namespace http {
 
     namespace session {
-        class baseManager;
+        class iManager;
     }
-			
+
+    //this class became a template
 	class server {
 
 		httpd_handle_t  handler = {};
 		//httpd_config    config = HTTPD_DEFAULT_CONFIG();
 				
 		struct {
-			std::deque<class route> data = {}; //std::deque in order to protect from ptr invalidataion that kill later deref via c handlers
+			std::deque<class route> data = {}; //std::deque in order to protect from ptr invalidation that kill later deref via c handlers
 			std::mutex m = {};
 		} routes;
 
-        mutable std::unique_ptr<session::baseManager> _session;
-		
+        mutable std::unique_ptr<session::iManager> _session;
+
 		public:
-		
-			server();
-			
+
+            typedef result<codes> handler_res_type;
+            typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
+
+
+			server() = default;
+
 			server(server&) = delete;
-			
-			virtual ~server();
-			
+
+            virtual ~server() = default;
+
 			auto operator=(server&) = delete;
 			
 			resBool begin(uint16_t port);
 			
 			resBool end();
 			
-			resBool addHandler(std::string_view path, httpd_method_t mode, http::handler callback);
+			resBool addHandler(std::string_view path, httpd_method_t mode, const handler_type& callback);
 			
 			resBool removeHandler(std::string_view path, httpd_method_t mode);
 			
 			bool    hasHandler(std::string_view path, httpd_method_t mode);
 
-            session::baseManager& session();
-		
+            virtual session::iManager& getSession() const;
+
 	};
 }
 

@@ -21,16 +21,11 @@
 
 
 #include "asyncSocket.h"
-#include "bad_api_call.h"
 #include "ctrlmap.h"
 #include "esp_timer.h"
-#include "keyboardTask.h"
-#include "not_found.h"
 #include "scheduler.h"
 #include "storage.h"
-#include "unsupported.h"
 #include "clients.h"
-#include "codes.h"
 #include "config.h"
 #include "define.h"
 #include "generated.h"
@@ -44,7 +39,6 @@
 #include "resource/memory/file.h"
 #include "result.h"
 #include "socket/handler.h"
-#include "socket/socket.h"
 #include "usbDevice.h"
 #include "util.h"
 #include "wifi/wifi.h"
@@ -52,12 +46,11 @@
 #include "driver/gpio.h"
 #include "hwrandom.h"
 #include "esp_random.h"
-#include "task.h"
-#include "packers.h"
 #include "ledStatusChange.h"
 #include "usbDeviceImpl.h"
 #include "joystick.h"
 #include "bootloader_random.h"
+#include "wsproto.h"
 
 #ifdef WIFI_AP_DNS
 #include "dns/server.h"
@@ -136,20 +129,6 @@ void trap(const char* msg, esp_err_t code = ESP_FAIL) {
 	}
 	throw std::runtime_error("trap func must newer ended");
 }
-
-hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_type& stream, const std::string_view& byteStream) {
-	
-	stream.copyFrom(&byteStream[0], byteStream.size());
-	
-	return stream;
-}
-
-typedef clients<http::socket::asyncSocket, SESSION_MAX_CLIENT_COUNT, std::string> 	socketsFinal;
-typedef notificationManager<socketsFinal> 											notificationManagerFinal;
-typedef generator<uint32_t, true> 													packetIdGeneratorFinal;
-typedef scheduler<std::string> 	  													tailSchedulerFinal;
-typedef ctrlmap<std::string, std::string> 	  										controlsMapFinal;
-
 
 void app_main(void)
 {
@@ -341,62 +320,7 @@ void app_main(void)
 		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
 	}
 
-	
-	
-	/*
-	* TODO 
-	* Httpd Stuck problem
-	* it is not Static router (no control transfer to it)
-	* it is not Clients or Notification deadlock (i disable it)
-	* it is not httpd chunk file transfer optimization (i disable it)
-	* it feel like httpd socket or thread pool depletion
-	* or as variant incorrect http route handling leading to depletion (mission of proper ending)
-	*/
-	
-	
-	auto kbMessageParser = parsers::keyboard();
-	auto packetCounter 	 = packetIdGeneratorFinal();
-	auto ctrl = controlsMapFinal();
-#ifdef _SESSION_ENABLE
-	auto sockets  = socketsFinal();
-#endif
-#ifdef _NOTIFICATION_ENABLE
-	auto notification 	= notificationManagerFinal(sockets);
-#endif
-	auto tailOp				= tailSchedulerFinal();
-	
-	struct  {
-		parsers::keyboard& 			parser;
-		hid::keyboard& 			keyboard;
-		hid::joystick&             joy;
-#ifdef _SESSION_ENABLE
-		socketsFinal& 				sockets;
-#endif
-#ifdef _NOTIFICATION_ENABLE
-		notificationManagerFinal&	notification;
-#endif
-		packetIdGeneratorFinal&     packetCounter;
-		ctrlmap<std::string, std::string>& ctrl;
-		std::string& persistanceSign;
-		std::string& bootingSign;
-		tailSchedulerFinal& tailOp;
-	} closureCtx = {
-		.parser 			= kbMessageParser,
-		.keyboard 			= kb,
-		.joy				= joy,
-#ifdef _SESSION_ENABLE
-		.sockets 			= sockets,
-#endif
-#ifdef _NOTIFICATION_ENABLE
-		.notification		= notification,
-#endif
-		.packetCounter      = packetCounter,
-		.ctrl				= ctrl,
-		.persistanceSign    = persistanceSign,
-		.bootingSign		= bootingSign,
-		.tailOp 			= tailOp,
-	};
-	
+
 /*	result = webServer.addHandler("/leave"sv, httpd_method_t::HTTP_POST, [&closureCtx](http::request& req, http::response& resp)-> http::handlerRes {
 		
 		debug("call leave handler");
@@ -418,367 +342,29 @@ void app_main(void)
 
 		return (esp_err_t)ESP_OK;
 	});*/
-	
-	
-	if (status = webServer.addHandler("/socks"sv, httpd_method_t::HTTP_GET, http::socket::handler([&closureCtx](http::socket::socket& context, const http::socket::socket::message& rawMessage) -> resBool {
-		
-		debugIf(LOG_MESSAGES, "sock rcv", rawMessage);
-		
-#ifdef _SESSION_ENABLE
 
-		auto longSocks = context.keep();
-
-#endif
-			
-		if (rawMessage.starts_with("auth:")) {
-			auto pack = unpackMsg(rawMessage);
-			if (!pack.success) {
-				error("auth block fail2parce");
-				return ESP_FAIL;
-			}	
-			
-			
-			std::string clientId = std::string(trim(pack.body));
-			if (!clientId.size()) {
-				error("auth block fail2clientid");
-				return ESP_FAIL;
-			}	
-			
-			info("client is connecting", clientId, " ", pack.taskId);
-#ifdef _SESSION_ENABLE				
-			bool success = false; bool isNew = false;
-			if (closureCtx.sockets.has(clientId)) {
-				success = closureCtx.sockets.update(clientId, std::move(longSocks));
-				info("updated client to new socket", closureCtx.sockets.count());
-			} else {
-				success = closureCtx.sockets.add(std::move(longSocks), clientId);
-				isNew   = true;
-				info("add new client", closureCtx.sockets.count());
-			}
-#else 
-			bool success = true;
-#endif
-	
-			debugIf(LOG_MESSAGES, "respond", pack.taskId, " ", resultMsg("auth", pack.taskId, success));
-			context.write(resultMsg("auth", pack.taskId, success));
-#ifdef _NOTIFICATION_ENABLE
-			if (success) {
-				if (isNew) {
-					if (auto ret = closureCtx.notification.notify(signNotify(closureCtx.packetCounter(), "storageSign", closureCtx.persistanceSign), clientId); !ret) {
-						error("unable send notification (storageSign)", ret.code());
-					}
-					if (auto ret = closureCtx.notification.notify(signNotify(closureCtx.packetCounter(), "bootingSign", closureCtx.bootingSign), clientId); !ret) {
-						error("unable send notification (bootingSign)", ret.code());
-					}
-					if (auto ret = closureCtx.notification.notifyExept(connectedNotify(closureCtx.packetCounter(), clientId, true), clientId); !ret) {
-						error("unable send notification (auth)", ret.code());
-					}
-				} else {
-					
-				}
-				{
-					auto guardian = closureCtx.ctrl.sharedGuardian(); //it leave with scope
-					for (auto it = closureCtx.ctrl.begin(), endIt = closureCtx.ctrl.end(); it != endIt; ++it) {
-						auto pair = *it;
-						closureCtx.notification.notify(kbNotify(closureCtx.packetCounter(), pair.first, pair.second), clientId);
-					}
-				}
-				
-				std::string joystickView = {};
-				joystickView.resize(20);
-				closureCtx.joy.control().copyTo(joystickView.data(), joystickView.size());
-				closureCtx.notification.notify(ctrNotify(closureCtx.packetCounter(), joystickView), clientId, true);
-			}
-#endif			
-			
-			return ESP_OK;
-			
-		} 
-		
-#ifdef _SESSION_ENABLE			
-		if (!closureCtx.sockets.has(longSocks)) {
-			error("authfail");
-			context.write("authfail");
-			return ESP_OK;
-		}
-#endif
-		
-		if (rawMessage.starts_with("leave:")) {
-			auto pack = unpackMsg(rawMessage);
-			if (!pack.success) {
-				return ESP_FAIL;
-			} 
-			std::string clientId = std::string(trim(pack.body));
-			//std::string clientId = std::string(pack.body);
-			if (!clientId.size()) {
-				return ESP_FAIL;
-			}	
-
-			info("client is leaving", pack.taskId, " ", pack.body);
-#ifdef _SESSION_ENABLE
-			bool success = closureCtx.sockets.remove(longSocks);
-			if (!success) {
-				success = closureCtx.sockets.remove(clientId);
-			} else {
-				closureCtx.sockets.remove(clientId);
-			}
-#else
-			bool success = true;
-#endif
-			
-			context.write(resultMsg("leave", pack.taskId, success));
-#ifdef _NOTIFICATION_ENABLE
-			if (success) {
-				if (auto ret = closureCtx.notification.notifyExept(connectedNotify(closureCtx.packetCounter(), clientId, false), clientId); !ret) {
-					error("unable send notification (leave)", ret.code());
-				}
-			}
-#endif
-			
-			return ESP_OK;
-				
-		} 
-		
-		
-		//static uint32_t joystickPrevTaskId = 0;
-		
-		if (rawMessage.starts_with("ctr:")) { 
-			//control axis request must be fixed size: 8 axis(2byte each) + buttons(32 one bit each) = 20bytes
-			auto pack = unpackMsg(rawMessage);
-			if (!pack.success) {
-				return ESP_FAIL;
-			}
-			if (pack.body.size() != 20) {
-				error("ctrl axis packet has invalid size: ", rawMessage, " ", rawMessage.size(), " ", (uint)pack.body[0], " ", (uint)pack.body[1], " ", (uint)pack.body[pack.body.size()-2], " ", (uint)pack.body[pack.body.size()-1], " ",  pack.body.size(), " ", 20);
-				return ESP_FAIL;
-			} 
-/*			if (auto taskId = packetIdFromView(pack.taskId); !taskId) {
-				error("rcv \"ctr\" packet is malformed", pack.taskId, " ", taskId.code());
-				return ESP_FAIL;
-			} else {
-				//ban OutOfOrder execution
-				if (auto uTaskId = std::get<uint32_t>(taskId); uTaskId < joystickPrevTaskId) {
-					error("rcv \"ctr\" packet outoforder", uTaskId, " ", joystickPrevTaskId);
-					return ESP_FAIL;
-				} else {
-					joystickPrevTaskId = uTaskId;
-				}
-			}*/
-			
-			auto controlStream = closureCtx.joy.control();
-			controlStream << pack.body;
-						
-			auto clientId = closureCtx.sockets.get(longSocks);
-			if (auto ret = closureCtx.notification.notifyExept(ctrNotify(closureCtx.packetCounter(), pack.body), clientId, true); !ret) {
-				error("unable send notification (ctr)", ret.code());
-			}
-			
-			return ESP_OK; //no respond
-		}
-		
-		if (rawMessage.starts_with("axi:")) { 
-			//custom axis request must be fixed size: 2byte + buttons (32 one bit each) + 4byte header = 10 bytes
-		}
-		
-		
-		if (rawMessage.starts_with("ping:")) {
-			auto pack = unpackMsg(rawMessage);
-			if (pack.success) {
-				context.write(resultMsg("ping", pack.taskId, pack.success));		
-				return ESP_OK;
-			} else {
-				return ESP_FAIL;
-			}
-		} else if (rawMessage.starts_with("kb:")) {
-			auto pack = unpackMsg(rawMessage);
-			if (!pack.success) {
-				return ESP_FAIL;
-			}
-			auto kbPack = unpackKb(pack.body);
-			debugIf(LOG_MESSAGES, "kb payload", pack.body, " ", kbPack.hasAction, " ", kbPack.input, " ", kbPack.actionId, " ", kbPack.actionType);
-			if (kbPack.hasInput) {
-				if (!closureCtx.parser.parse(kbPack.input)) {
-					context.write(resultMsg("kb", pack.taskId, false));
-				} else {
-					auto kbResult = closureCtx.parser.writeTo(closureCtx.keyboard);
-					context.write(resultMsg("kb", pack.taskId, true));
-					if (kbResult) {
-						debugIf(LOG_MESSAGES, "kb schedule ok", std::get<uint32_t>(kbResult));
-					} else {
-						error("kb schedule fail", kbResult.code());
-					}
-				}
-			} else {
-				context.write(resultMsg("kb", pack.taskId, true)); //case to update of switchoff state to controls
-			}
+    auto kbMessageParser    = typename wsproto::kb_parser_type();
+    auto packetCounter 	    = typename wsproto::packet_seq_generator_type();
+    auto ctrl               = typename wsproto::ctrl_map_type();
+    auto sockets            = typename wsproto::sockets_type();
+    auto notification 	    = typename wsproto::notification_type(sockets);
+    auto tailScheduler		= typename wsproto::scheduler_type();
 
 
-#ifdef _NOTIFICATION_ENABLE
-			if (kbPack.hasAction) {
-				closureCtx.ctrl.nextState(std::string(kbPack.actionId), std::string(kbPack.actionType));
-				try {
-					auto clientId = closureCtx.sockets.get(longSocks);
-					//todo check chat kbNotify move is performed
-					if (auto ret = closureCtx.notification.notifyExept(kbNotify(closureCtx.packetCounter(), kbPack.actionId, kbPack.actionType), clientId); !ret) {
-						error("unable send notification (kba)", ret.code());
-					}
-				} catch (not_found& e) {
-					error("unable to send kb notify", e.what());
-				}
-			} else {
-				debug("no action data", pack.taskId);
-			}
-#endif
-			
-			return ESP_OK;
-			
-		} else if (rawMessage.starts_with("settings-get:")) {
-			
-			auto pack = unpackMsg(rawMessage);
-			
-			if (!pack.success) {
-				return ESP_FAIL;
-			}
-						
-			auto persistence = storage();
-														
-			context.write(settingsGetMsg(pack.taskId, persistence.getWifiSSID(), persistence.getWifiAuth()));
-			
-			return ESP_OK;
-			
-		} else if (rawMessage.starts_with("settings-set:")) { 
-			
-			auto pack = unpackMsg(rawMessage);
-					
-			if (!pack.success) {
-				return ESP_FAIL;
-			}
-			
-			
-			auto settings 	= unpackSettings(rawMessage);
-			bool updated 	= false;
-						
-			if (!(settings.success && settings.valid)) {
-				context.write(resultMsg("settings-set", pack.taskId, false));
-				return ESP_OK;
-			}
-			
-			storage persistence = storage();
-			
-			if (settings.auth != persistence.getWifiAuth() && settings.auth != wifi_auth_mode_t::WIFI_AUTH_MAX) {
-				if (auto r = persistence.setWifiAuth(settings.auth); r) {
-					info("AUTH type updated", settings.auth);
-					updated = true;
-				} else {
-					error("AUTH type update fail");
-				}
-			}
-			
-			if (auto ssid = std::string(settings.ssid); ssid != persistence.getWifiSSID()) {
-				if (auto r = persistence.setWifiSSID(ssid); r) {
-					info("SSID updated", ssid);
-					updated = true;
-				} else {
-					error("SSID update fail");
-				}
-			}
-						
-			if (settings.hasPassword) {
-				if (auto password = std::string(settings.password); password != persistence.getWifiPWD()) {
-					if (auto r = persistence.setWifiPWD(password); r) {
-						info("password updated");
-						updated = true;
-					} else {
-						error("password update fail");
-					}
-				}
-			}
-			
-			context.write(resultMsg("settings-set", pack.taskId, true));
-			
-			if (updated) {
-				if (auto ret = closureCtx.notification.notify(settingsSetNotify(closureCtx.packetCounter())); !ret) {
-					error("unable send notification (settingsSetNotify)", ret.code());
-				}
-			}
-			
-			return ESP_OK;			
-		} else if (rawMessage.starts_with("repeat:")) { 
-			
-			debugIf(LOG_MESSAGES, "repeat:");
-			
-			auto pack = unpackMsg(rawMessage);
-			
-			if (!pack.success) {
-				debugIf(LOG_MESSAGES, "general fail");
-				return ESP_FAIL;
-			}
-			
-			auto repeatTask = unpackKbRepeatPack(pack.body);
-			
-			if (!(repeatTask.success && repeatTask.valid)) {
-				errorIf(LOG_MESSAGES, "repeatTask fail", 
-						 repeatTask.success, 
-					" ", repeatTask.valid, 
-					" ", repeatTask.validIntervalMS, 
-					" ", repeatTask.validRepeat,
-					" ", repeatTask.validActionType,
-					" ", repeatTask.validActionId,
-					" ", repeatTask.validInput
-				);
-				context.write(resultMsg("repeat", pack.taskId, false));
-				return ESP_OK;
-			}
-			
-			bool status = false;
-			std::string taskId = "repeat-";
-			taskId += repeatTask.pack.actionId;
-			std::string combination(repeatTask.pack.input);
-			
-			if (repeatTask.pack.actionType == "switched-on") {
-				status = closureCtx.tailOp.schedule(taskId, [&closureCtx, combination]() -> void {
-					info("schedule delayed kb press", combination, " ", esp_timer_get_time() / 1000);
-					auto parser = parsers::keyboard();
-					if (parser.parse(std::string_view(combination))) {
-						auto kbResult = parser.writeTo(closureCtx.keyboard);
-					} else {
-						error("unable process repeat", combination);
-					}
-				}, repeatTask.intervalMS, repeatTask.repeat);
-				info("scheduled task", taskId, " ", status, " ", repeatTask.intervalMS, " ", repeatTask.repeat);
-								
-			} else {
-				status = closureCtx.tailOp.unschedule(taskId);
-				info("unscheduled task", taskId, " ", status);
-			}
-			
-#ifdef _NOTIFICATION_ENABLE
-			if (repeatTask.pack.hasAction && status) {
-				closureCtx.ctrl.nextState(std::string(repeatTask.pack.actionId), std::string(repeatTask.pack.actionType));
-				try {
-					auto clientId = closureCtx.sockets.get(longSocks);
-					//todo check chat kbNotify move is performed
-					if (auto ret = closureCtx.notification.notifyExept(kbNotify(closureCtx.packetCounter(), repeatTask.pack.actionId, repeatTask.pack.actionType), clientId); !ret) {
-						error("unable send notification (kba-repeat)", ret.code());
-					}
-				} catch (not_found& e) {
-					error("unable to send kb notify (repeat)", e.what());
-				}
-			} else {
-				debug("no action data", pack.taskId);
-			}
-#endif
-				
-			context.write(resultMsg("repeat", pack.taskId, status));
-			
-			return ESP_OK;
-		}
-		
-		error("rcv undefined msg type", rawMessage);
-				
-		return ESP_OK;
-		
-	})); !status) {
+	if (status = webServer.addHandler("/socks"sv, httpd_method_t::HTTP_GET, http::socket::handler(
+        wsproto(
+            kbMessageParser,
+            kb,
+            joy,
+            sockets,
+            notification,
+            packetCounter,
+            ctrl,
+            persistanceSign,
+            bootingSign,
+            tailScheduler
+        )
+    )); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /socks", status.code());
 	}
@@ -791,9 +377,9 @@ void app_main(void)
 	
 	
 	//kb.onLedStatusChange(ledStatusChange(closureCtx.ctrl, closureCtx.notification, closureCtx.packetCounter, closureCtx.tailOp));
-	kb.onLedStatusChange(ledStatusChange(closureCtx.ctrl, closureCtx.notification, closureCtx.packetCounter));
+	kb.onLedStatusChange(ledStatusChange(ctrl, notification, packetCounter));
 
-	tailOp.begin();
+    tailScheduler.begin();
 	
 	
 	//todo fix schedule faild before .begin

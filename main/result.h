@@ -2,8 +2,8 @@
 
 #include <variant>
 #include <future>
-#include "esp_err.h"
 
+#include "esp_err.h"
 #include "util.h"
 
 /*template<typename T, typename VARIANT_T>

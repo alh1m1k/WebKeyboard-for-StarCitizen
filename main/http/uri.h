@@ -2,10 +2,13 @@
 
 #include "generated.h"
 
+#include <cstring>
+
 #include "esp_http_server.h"
 #include "parsing_error.h"
+
 #include "urlparser.h"
-#include <cstring>
+
 
 namespace http {
 	class uri: public httpparser::UrlParser {

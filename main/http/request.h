@@ -1,23 +1,25 @@
 #pragma once
 
 #include <cstddef>
-#include <esp_http_server.h>
 #include  <memory>
 
+#include <esp_http_server.h>
+
+#include "../exception/not_implemented.h"
 #include "parsing_error.h"
+
+#include "uri.h"
 #include "cookies.h"
 #include "headers.h"
-#include "../exception/not_implemented.h"
-#include "uri.h"
-#include "session/baseSession.h"
+#include "http/session/interfaces/iSession.h"
+#include "http/session/pointer.h"
 
 namespace http {
-	
-	class response;
+
 	class cookies;
 	class headers;
 	class route;
-			
+
 	class request {
 						
 		httpd_req_t* handler;
@@ -31,9 +33,9 @@ namespace http {
 			//explicit request(httpd_req_t* esp_req);
 			explicit request(httpd_req_t* esp_req, route& route);
 						
-			const headers& getHeaders();
+			const headers& getHeaders() const;
 			
-			const uri& getUri();
+			const uri& getUri() const;
 
             httpd_method_t getMethod() const;
 
@@ -47,13 +49,13 @@ namespace http {
 			
 			const char* getUriRaw() const; //todo remove me after proper implementing defered object 
 			
-			const cookies& getCookies();
+			const cookies& getCookies() const;
 			
 			inline const route& getRoute() const {
                 return _route;
             }
 
-            session::baseSession* getSession() const;
+            std::shared_ptr<session::iSession> getSession() const;
 
 			//method needed to expose private handler in order to successfuly build sub object like sockets or headers
 			//without using friend decl as it make linking impossible to manage
@@ -62,5 +64,10 @@ namespace http {
 			}
 			
 	};
+
+    template<class T>
+    inline std::shared_ptr<T> session_acquire(request& r) noexcept {
+        return session::acquire<T>(*static_cast<session::pointer*>(r.native()->sess_ctx));
+    }
 }
 

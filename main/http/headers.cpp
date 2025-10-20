@@ -68,7 +68,7 @@ namespace http {
 			
 	}
 	
-	uri& headers::getUri() {
+	uri& headers::getUri() const {
 		
 		if (_uri == nullptr) {
 			if (populated) {
@@ -81,7 +81,7 @@ namespace http {
 		return *_uri;
 	}
 	
-	cookies& headers::getCookies() {
+	cookies& headers::getCookies() const {
 		
 		if (_cookies == nullptr) {
 			if (populated) {

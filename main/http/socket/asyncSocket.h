@@ -2,15 +2,17 @@
 
 #include "generated.h"
 
-#include "esp_err.h"
-#include "esp_http_server.h"
-#include "result.h"
+//#define SYNC_WRITE_OP_WITH_MUTEX
 
-#define SYNC_WRITE_OP_WITH_MUTEX
-
-#if defined(SYNC_WRITE_OP_WITH_MUTEX) 
+#if defined(SYNC_WRITE_OP_WITH_MUTEX)
 #include <mutex>
 #endif
+
+
+#include "esp_err.h"
+#include "esp_http_server.h"
+
+#include "result.h"
 
 namespace http::socket {
 	

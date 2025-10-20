@@ -2,29 +2,34 @@
 
 #include "generated.h"
 
-#include "esp_http_server.h"
 #include <cstddef>
 #include <string_view>
 #include <sys/_stdint.h>
 
-#include "codes.h"
-#include "cookies.h"
-#include "request.h"
+#include "esp_http_server.h"
+
 #include "../exception/bad_api_call.h"
 #include "../exception/not_implemented.h"
-#include "server.h"
-#include "../result.h"
+
+#include "result.h"
+#include "codes.h"
 #include "contentType.h"
+#include "cookies.h"
+#include "request.h"
+
 
 namespace http {
-	
-	class server;
+
 	class cookies;
+    class headers;
+
+    namespace session {
+        class iSession;
+        class iManager;
+    }
 
 	class response {
 
-		friend server;
-				
 		const request& _request;
 		
 		bool _chunked 		= false;
@@ -34,6 +39,8 @@ namespace http {
 		bool _headerSended  = false;
 		
 		size_t _bytes = 0;
+
+        mutable std::unique_ptr<headers> _headers;
 				
 		//explicit response(const httpd_req_t* esp_req);
 		
@@ -50,6 +57,8 @@ namespace http {
 			response& operator=(const response& resp);
 			
 			void done();
+
+
 									
 			resBool writeChunk(const uint8_t* buffer, ssize_t size) noexcept; //most low lvl write
 			
@@ -80,12 +89,12 @@ namespace http {
 			resBool contentType(const contentType ct) noexcept;
 			
 			resBool contentType(const char* ct) noexcept;
-			
-			inline cookies getCookies() {
-				throw not_impleneted();
-			}
 
-            session::baseSession* getSession() const;
+            headers& getHeaders();
+			
+			cookies& getCookies();
+
+            std::shared_ptr<session::iSession> getSession() const;
 
 			inline bool isSended() const noexcept {
 				return _sended;

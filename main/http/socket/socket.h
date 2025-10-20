@@ -2,15 +2,18 @@
 
 #include "generated.h"
 
-#include "asyncSocket.h"
-#include "esp_err.h"
-#include "esp_http_server.h"
-#include "invalid_descriptor.h"
-#include "result.h"
-
-#if defined(SYNC_WRITE_OP_WITH_MUTEX) 
+#if defined(SYNC_WRITE_OP_WITH_MUTEX)
 #include <mutex>
 #endif
+
+#include "esp_err.h"
+#include "esp_http_server.h"
+
+#include "invalid_descriptor.h"
+
+#include "result.h"
+#include "asyncSocket.h"
+
 
 namespace http::socket {
 	

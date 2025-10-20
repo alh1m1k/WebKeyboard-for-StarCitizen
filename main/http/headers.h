@@ -2,19 +2,21 @@
 
 #include "generated.h"
 
-#include "esp_err.h"
+#include <sys/_stdint.h>
+#include <cstring>
+
 #include "esp_http_server.h"
+#include "esp_err.h"
+
 #include "parsing_error.h"
-#include "request.h"
-#include "response.h"
-#include "cookies.h"
+
+#include "result.h"
+#include "util.h"
 #include "lib/httpparser/httprequestparser.h"
 #include "lib/httpparser/request.h"
-#include "result.h"
 #include "uri.h"
-#include "util.h"
-#include <cstring>
-#include <sys/_stdint.h>
+#include "cookies.h"
+
 
 namespace http {
 	
@@ -43,9 +45,9 @@ namespace http {
 									
 			resBool set(const char* headerId, const char* str) const;
 			
-			uri& getUri();
+			uri& getUri() const;
 			
-			cookies& getCookies();
+			cookies& getCookies() const;
 			
 			inline std::string accept() const {
 				return get("Accept");

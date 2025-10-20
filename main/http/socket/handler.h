@@ -1,35 +1,45 @@
 #pragma once
 
-#include "esp_err.h"
-
 #include "generated.h"
 
-#include "result.h"
-#include "socket.h"
-#include "../handler.h"
+#include <memory>
 
+#include "esp_err.h"
+
+#include "result.h"
+#include "request.h"
+#include "response.h"
+#include "socket.h"
+#include "server.h"
+#include "session/interfaces/iWebSocketSession.h"
+#include "session/session.h"
+#include "session/pointer.h"
+#include "context.h"
+
+namespace http {
+    class server;
+    class response;
+}
 
 namespace http::socket {
-	
-	using http::request;
-	using http::response;
-	using http::handlerRes;
-		
+
+    typedef result<codes> handlerRes;
+
 	class handler {
 				
 		protected:
 		
-			std::function<resBool(socket& context, const socket::message msg)> hndl;
+			std::function<resBool(socket& remote, const socket::message msg, const context& ctx)> hndl;
 						
 			inline resBool handle(request& req, response& resp, server& serv) {
 				
 				socket socks = socket(req.native());
-				
+
 				if (auto msg = socks.read(); !msg) {
 					debug("handler::handle unable 2 read", msg.code());
 					return msg.code();
 				} else if (hndl != nullptr) {
-					return hndl(socks, std::get<socket::message>(msg));
+					return hndl(socks, std::get<socket::message>(msg), context(req.native()));
 				} else {
 					debug("http::socket::handler callback not defined");
 				}
@@ -39,7 +49,7 @@ namespace http::socket {
 		
 		public:
 			
-			typedef std::function<resBool(socket& context, const socket::message& rawMessage)> handler_type;
+			typedef std::function<resBool(socket& remote, const socket::message& rawMessage, const context& ctx)> handler_type;
 				
 			friend socket& operator<<(socket& stream, const socket::message& result);
 						
