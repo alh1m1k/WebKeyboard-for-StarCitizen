@@ -2,12 +2,12 @@
 
 #include "generated.h"
 
-#include <sys/_stdint.h>
 #include <string>
 #include <type_traits>
 
 #include "class/hid/hid.h"
 #include "common/tusb_common.h"
+
 #include "util.h"
 #include "packers.h"
 

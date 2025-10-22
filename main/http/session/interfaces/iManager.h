@@ -16,21 +16,27 @@ namespace http::session {
     class iSession;
     class request;
 
-    class iManager {
+    class iManager : virtual public iCast {
 
         public:
 
-            typedef iSession                          session_type;
+            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_MANAGER;
+
+            typedef iSession                             session_type;
             typedef std::shared_ptr<session_type>        session_ptr_type;
             typedef result<session_ptr_type>             result_type;
+            typedef uint32_t                             index_type;
 
+            iManager(){};
             virtual ~iManager() {};
 
-            virtual result_type open(const request* context = nullptr) = 0;
-            virtual result_type open(const std::string& sid, const request* context = nullptr) = 0;
+            virtual result_type open (const request* context = nullptr) = 0;
+            virtual result_type open (const std::string& sid, const request* context = nullptr) = 0;
             virtual resBool     close(const std::string& sid) = 0;
 
-            virtual size_t size() const  = 0;
+            virtual result_type fromIndex(index_type index, bool markAlive = false) = 0;
+
+            virtual size_t count() const  = 0;
 
             virtual void collect() = 0;
     };

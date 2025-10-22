@@ -22,15 +22,18 @@ namespace http::session {
             explicit iSession(std::string&& sid, uint32_t index) noexcept;   //called by manager, on open
         public:
 
-            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::BASE_API;
+            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_SESSION;
 
-            iSession(uint32_t& traits) { traits |= (1 << TRAIT_ID); };   //used only as delivered constructor
+            typedef std::string sid_type;
+            typedef uint32_t    index_type;
+
+            iSession() {};   //used only as delivered constructor
             virtual ~iSession() {}; //virtual destructor must present even for interface classes
 
-            virtual const std::string&  sid()    const = 0;
-            virtual bool                valid()  const = 0; //this session is garbage, there is no turned back
-            virtual bool                expired(int64_t timestamp) const = 0; //this session is expired, it will-be ::invalidate at next open or at gc cycle
-            virtual uint32_t            index()  const = 0;
+            virtual const sid_type&     sid()                       const = 0;
+            virtual       bool          valid()                     const = 0; //this session is garbage, there is no turned back
+            virtual       bool          expired(int64_t timestamp)  const = 0; //this session is expired, it will-be ::invalidate at next open or at gc cycle
+            virtual       index_type    index()                     const = 0;
 
 	};
 

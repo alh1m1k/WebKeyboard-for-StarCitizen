@@ -14,9 +14,9 @@ namespace http::session {
 
         public:
 
-            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::TEST;
+            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_TEST;
 
-            iTest(uint32_t& traits) { traits |= TRAIT_ID; };   //used only as delivered constructor
+            iTest(){};   //used only as delivered constructor
             virtual ~iTest() {}; //virtual destructor must present even for interface classes
 
             inline bool socketCounter() {

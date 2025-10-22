@@ -3,13 +3,17 @@
 namespace http::session {
 
     enum class traits : uint32_t {
-        BASE_API = 0,
-        SOCKET_COUNT,
-        WEBSOCKET,
+        I_SESSION = 0,
+        I_SOCKS_CNT_SESSION,
+        I_WEB_SOCKET_SESSION,
         SESSION,
-        TEST,
+        I_TEST,
+
+        I_MANAGER,
+        MANAGER,
 
         TOTAL
     };
+
 
 }

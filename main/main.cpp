@@ -1,55 +1,45 @@
+#include "generated.h"
+
 #include <algorithm>
-#include <cstddef>
 #include <cstdlib>
-#include <cstring>
 #include <future>
-#include <iterator>
-#include <mutex>
-#include <stdio.h>
-#include <stdbool.h>
 #include <string>
-#include <sys/_stdint.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <limits>
 #include <stdexcept>
 #include <string_view>
-#include <charconv>
 #include <random>
 
-#include <esp_wifi_types.h>
 
-
-#include "asyncSocket.h"
-#include "ctrlmap.h"
-#include "esp_timer.h"
-#include "scheduler.h"
-#include "storage.h"
-#include "clients.h"
-#include "config.h"
-#include "define.h"
-#include "generated.h"
-#include "contentType.h"
 #include "esp_err.h"
-#include "handler.h"
-#include "http/server.h"
-#include "hid/keyboard.h"
-#include "notification.h"
-#include "parsers/keyboard.h"
-#include "resource/memory/file.h"
-#include "result.h"
-#include "socket/handler.h"
-#include "usbDevice.h"
+#include "bootloader_random.h"
+#include "esp_random.h"
+#include <esp_wifi_types.h>
+#include "esp_timer.h"
+
+
 #include "util.h"
+#include "result.h"
+
 #include "wifi/wifi.h"
-#include "resource/memory/shortcut.h"
+#include "hid/usbDevice.h"
+#include "hid/usbDeviceImpl.h"
+#include "hid/keyboard.h"
+#include "hid/joystick.h"
 #include "driver/gpio.h"
 #include "hwrandom.h"
-#include "esp_random.h"
 #include "ledStatusChange.h"
-#include "usbDeviceImpl.h"
-#include "joystick.h"
-#include "bootloader_random.h"
+
+#include "contentType.h"
+#include "http/server.h"
+#include "socket/handler.h"
+#include "resource/memory/shortcut.h"
+#include "sessionManager.h"
+#include "resource/memory/file.h"
+
+#include "ctrlmap.h"
+#include "scheduler.h"
+#include "storage.h"
+#include "notification.h"
+#include "parsers/keyboard.h"
 #include "wsproto.h"
 
 #ifdef WIFI_AP_DNS
@@ -280,6 +270,7 @@ void app_main(void)
 
 	std::cout << "starting webServer " << std::endl;
 	http::server webServer = {};
+    webServer.attachSessions<sessionManager>();
 	
 	if (auto status = webServer.begin(80); !status) {
 		trap("fail 2 setup webServer", status.code());
@@ -343,21 +334,22 @@ void app_main(void)
 		return (esp_err_t)ESP_OK;
 	});*/
 
-    auto kbMessageParser    = typename wsproto::kb_parser_type();
-    auto packetCounter 	    = typename wsproto::packet_seq_generator_type();
-    auto ctrl               = typename wsproto::ctrl_map_type();
-    auto sockets            = typename wsproto::sockets_type();
-    auto notification 	    = typename wsproto::notification_type(sockets);
-    auto tailScheduler		= typename wsproto::scheduler_type();
+    auto  kbMessageParser    = typename wsproto::kb_parser_type();
+    auto  packetCounter 	 = typename wsproto::packet_seq_generator_type();
+    auto  ctrl               = typename wsproto::ctrl_map_type();
+    auto  tailScheduler		 = typename wsproto::scheduler_type();
 
+    //this is little ugly but save until we not close server forcely
+    auto& sessions     = *(sessionManager*)webServer.getSessions().get();
+    auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
 
 	if (status = webServer.addHandler("/socks"sv, httpd_method_t::HTTP_GET, http::socket::handler(
         wsproto(
             kbMessageParser,
             kb,
             joy,
-            sockets,
-            notification,
+            sessions,
+            notifications,
             packetCounter,
             ctrl,
             persistanceSign,
@@ -376,8 +368,8 @@ void app_main(void)
 	}, 10000, 100);*/
 	
 	
-	//kb.onLedStatusChange(ledStatusChange(closureCtx.ctrl, closureCtx.notification, closureCtx.packetCounter, closureCtx.tailOp));
-	kb.onLedStatusChange(ledStatusChange(ctrl, notification, packetCounter));
+	//kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter, tailOp));
+	kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter));
 
     tailScheduler.begin();
 	

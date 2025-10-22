@@ -15,16 +15,16 @@ namespace http::session {
 
         public:
 
-            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::WEBSOCKET;
+            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_WEB_SOCKET_SESSION;
 
-            iWebSocketSession(uint32_t& traits) { traits |= (1 << TRAIT_ID); };   //used only as delivered constructor
+            iWebSocketSession() {};   //used only as delivered constructor
             virtual ~iWebSocketSession() {}; //virtual destructor must present even for interface classes
 
-            void setSocket(const socket::asyncSocket& socket) {
+            virtual void setSocket(const socket::asyncSocket& socket) {
                 _socket = socket;
             }
 
-            socket::asyncSocket& getSocket() {
+            virtual socket::asyncSocket& getSocket() {
                 return _socket;
             }
 

@@ -15,14 +15,12 @@
 #include "ctrlmap.h"
 #include "scheduler.h"
 #include "packers.h"
-#include "http/session/session.h"
-#include "http/session/pointer.h"
+#include "sessionManager.h"
+#include "session.h"
 #include "storage.h"
 
 hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_type& stream, const std::string_view& byteStream) {
-
     stream.copyFrom(&byteStream[0], byteStream.size());
-
     return stream;
 }
 
@@ -33,8 +31,8 @@ class wsproto {
         typedef parsers::keyboard 	                                                        kb_parser_type;
         typedef hid::keyboard	                                                            keyboard_type;
         typedef hid::joystick                                                               joystick_type;
-        typedef clients<http::socket::asyncSocket, SESSION_MAX_CLIENT_COUNT, std::string> 	sockets_type;
-        typedef notificationManager<sockets_type> 											notification_type;
+        typedef sessionManager                                                              sessions_type;
+        typedef notificationManager<sessions_type> 										    notifications_type;
         typedef generator<uint32_t, true> 													packet_seq_generator_type;
         typedef scheduler<std::string> 	  												    scheduler_type;
         typedef ctrlmap<std::string, std::string> 	  										ctrl_map_type;
@@ -43,8 +41,8 @@ class wsproto {
         kb_parser_type& 			parser;
         keyboard_type& 			    keyboard;
         joystick_type&              joystick;
-        sockets_type& 				sockets;
-        notification_type&	        notification;
+        sessions_type&              sessions;
+        notifications_type&	        notifications;
         packet_seq_generator_type&  packetCounter;
         ctrl_map_type&              ctrl;
         sing_type&                  persistenceSign;
@@ -52,27 +50,27 @@ class wsproto {
         scheduler_type&             tailScheduler;
 
         wsproto(
-            parsers::keyboard& 			    parser,
-            hid::keyboard& 			        keyboard,
-            hid::joystick&                  joystick,
-            sockets_type& 				    sockets,
-            notification_type&	            notification,
-            packet_seq_generator_type&      packetCounter,
-            ctrl_map_type&                  ctrl,
-            sing_type&                      persistenceSign,
-            sing_type&                      bootingSign,
-            scheduler_type&                 tailScheduler
+                parsers::keyboard& 			    parser,
+                hid::keyboard& 			        keyboard,
+                hid::joystick&                  joystick,
+                sessions_type&                  sessions,
+                notifications_type&	            notifications,
+                packet_seq_generator_type&      packetCounter,
+                ctrl_map_type&                  ctrl,
+                sing_type&                      persistenceSign,
+                sing_type&                      bootingSign,
+                scheduler_type&                 tailScheduler
         ) :
-            parser(parser),
-            keyboard(keyboard),
-            joystick(joystick),
-            sockets(sockets),
-            notification(notification),
-            packetCounter(packetCounter),
-            ctrl(ctrl),
-            persistenceSign(persistenceSign),
-            bootingSign(bootingSign),
-            tailScheduler(tailScheduler)
+                parser(parser),
+                keyboard(keyboard),
+                joystick(joystick),
+                sessions(sessions),
+                notifications(notifications),
+                packetCounter(packetCounter),
+                ctrl(ctrl),
+                persistenceSign(persistenceSign),
+                bootingSign(bootingSign),
+                tailScheduler(tailScheduler)
         {
 
         }
@@ -83,13 +81,22 @@ class wsproto {
 
             debugIf(LOG_MESSAGES, "sock rcv", rawMessage);
 
-            auto longSocks = socket.keep();
-
-            if (auto sess = http::session::pointer_cast<http::session::session>(ctx.getSession()); sess != nullptr) {
-                debug("session in websocket !!!!", sess->sid());
+            auto pSession = pointer_cast<session>(ctx.getSession());
+            if (pSession == nullptr) {
+                error("general ws-session fail");
+                return ESP_FAIL;
             }
 
+            std::string clientName = {};
+            uint32_t    clientId   = 0;
+            if (auto reader = pSession->read(); reader) {
+                clientName = reader->clientName;
+                clientId   = pSession->index();
+            }
+
+
             if (rawMessage.starts_with("auth:")) {
+
                 auto pack = unpackMsg(rawMessage);
                 if (!pack.success) {
                     error("auth block fail2parce");
@@ -97,61 +104,47 @@ class wsproto {
                 }
 
 
-                std::string clientId = std::string(trim(pack.body));
-                if (!clientId.size()) {
+                clientName = std::string(trim(pack.body));
+                if (!clientName.size()) {
                     error("auth block fail2clientid");
                     return ESP_FAIL;
                 }
 
-                info("client is connecting", clientId, " ", pack.taskId);
+                info("client is connecting", clientName, " ", pack.taskId);
 
-                bool success = false; bool isNew = false;
-                if (sockets.has(clientId)) {
-                    success = sockets.update(clientId, std::move(longSocks));
-                    info("updated client to new socket", sockets.count());
-                } else {
-                    success = sockets.add(std::move(longSocks), clientId);
-                    isNew   = true;
-                    info("add new client", sockets.count());
+                pSession->write()->clientName = clientName;
+                pSession->authorize();
+
+                debugIf(LOG_MESSAGES, "respond", pack.taskId, " ", resultMsg("auth", pack.taskId, true));
+                socket.write(resultMsg("auth", pack.taskId, true));
+
+                if (auto ret = notifications.notify(signNotify(packetCounter(), "storageSign", persistenceSign), clientId); !ret) {
+                    error("unable send notifications (storageSign)", ret.code());
+                }
+                if (auto ret = notifications.notify(signNotify(packetCounter(), "bootingSign", bootingSign), clientId); !ret) {
+                    error("unable send notifications (bootingSign)", ret.code());
+                }
+                if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, true), clientId); !ret) {
+                    error("unable send notifications (auth)", ret.code());
+                }
+                {
+                    auto guardian = ctrl.sharedGuardian(); //it leave with scope
+                    for (auto it = ctrl.begin(), endIt = ctrl.end(); it != endIt; ++it) {
+                        auto pair = *it;
+                        notifications.notify(kbNotify(packetCounter(), pair.first, pair.second), clientId);
+                    }
                 }
 
-                debugIf(LOG_MESSAGES, "respond", pack.taskId, " ", resultMsg("auth", pack.taskId, success));
-                socket.write(resultMsg("auth", pack.taskId, success));
-
-                if (success) {
-                    if (isNew) {
-                        if (auto ret = notification.notify(signNotify(packetCounter(), "storageSign", persistenceSign), clientId); !ret) {
-                            error("unable send notification (storageSign)", ret.code());
-                        }
-                        if (auto ret = notification.notify(signNotify(packetCounter(), "bootingSign", bootingSign), clientId); !ret) {
-                            error("unable send notification (bootingSign)", ret.code());
-                        }
-                        if (auto ret = notification.notifyExept(connectedNotify(packetCounter(), clientId, true), clientId); !ret) {
-                            error("unable send notification (auth)", ret.code());
-                        }
-                    } else {
-
-                    }
-                    {
-                        auto guardian = ctrl.sharedGuardian(); //it leave with scope
-                        for (auto it = ctrl.begin(), endIt = ctrl.end(); it != endIt; ++it) {
-                            auto pair = *it;
-                            notification.notify(kbNotify(packetCounter(), pair.first, pair.second), clientId);
-                        }
-                    }
-
-                    std::string joystickView = {};
-                    joystickView.resize(20);
-                    joystick.control().copyTo(joystickView.data(), joystickView.size());
-                    notification.notify(ctrNotify(packetCounter(), joystickView), clientId, true);
-                }
+                std::string joystickView = {};
+                joystickView.resize(20);
+                joystick.control().copyTo(joystickView.data(), joystickView.size());
+                notifications.notify(ctrNotify(packetCounter(), joystickView), clientId, true);
 
                 return ESP_OK;
-
             }
 
-            if (!sockets.has(longSocks)) {
-                error("authfail");
+            if (!pSession->isAuthorized()) {
+                info("authfail");
                 socket.write("authfail");
                 return ESP_OK;
             }
@@ -161,33 +154,18 @@ class wsproto {
                 if (!pack.success) {
                     return ESP_FAIL;
                 }
-                std::string clientId = std::string(trim(pack.body));
-                //std::string clientId = std::string(pack.body);
-                if (!clientId.size()) {
-                    return ESP_FAIL;
+
+                info("client is leaving", pack.taskId, " ", clientName);
+
+                socket.write(resultMsg("leave", pack.taskId, true));
+                if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, false), clientId); !ret) {
+                    error("unable send notifications (leave)", ret.code());
                 }
 
-                info("client is leaving", pack.taskId, " ", pack.body);
-                bool success = sockets.remove(longSocks);
-                if (!success) {
-                    success = sockets.remove(clientId);
-                } else {
-                    sockets.remove(clientId);
-                }
-
-                socket.write(resultMsg("leave", pack.taskId, success));
-                if (success) {
-                    if (auto ret = notification.notifyExept(connectedNotify(packetCounter(), clientId, false), clientId); !ret) {
-                        error("unable send notification (leave)", ret.code());
-                    }
-                }
+                sessions.close(pSession->sid());
 
                 return ESP_OK;
-
             }
-
-
-            //static uint32_t joystickPrevTaskId = 0;
 
             if (rawMessage.starts_with("ctr:")) {
                 //control axis request must be fixed size: 8 axis(2byte each) + buttons(32 one bit each) = 20bytes
@@ -215,9 +193,8 @@ class wsproto {
                 auto controlStream = joystick.control();
                 controlStream << pack.body;
 
-                auto clientId = sockets.get(longSocks);
-                if (auto ret = notification.notifyExept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
-                    error("unable send notification (ctr)", ret.code());
+                if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
+                    error("unable send notifications (ctr)", ret.code());
                 }
 
                 return ESP_OK; //no respond
@@ -263,10 +240,8 @@ class wsproto {
                 if (kbPack.hasAction) {
                     ctrl.nextState(std::string(kbPack.actionId), std::string(kbPack.actionType));
                     try {
-                        auto clientId = sockets.get(longSocks);
-                        //todo check chat kbNotify move is performed
-                        if (auto ret = notification.notifyExept(kbNotify(packetCounter(), kbPack.actionId, kbPack.actionType), clientId); !ret) {
-                            error("unable send notification (kba)", ret.code());
+                        if (auto ret = notifications.notifyExcept(kbNotify(packetCounter(), kbPack.actionId, kbPack.actionType), clientId); !ret) {
+                            error("unable send notifications (kba)", ret.code());
                         }
                     } catch (not_found& e) {
                         error("unable to send kb notify", e.what());
@@ -342,8 +317,8 @@ class wsproto {
                 socket.write(resultMsg("settings-set", pack.taskId, true));
 
                 if (updated) {
-                    if (auto ret = notification.notify(settingsSetNotify(packetCounter())); !ret) {
-                        error("unable send notification (settingsSetNotify)", ret.code());
+                    if (auto ret = notifications.notify(settingsSetNotify(packetCounter())); !ret) {
+                        error("unable send notifications (settingsSetNotify)", ret.code());
                     }
                 }
 
@@ -400,10 +375,8 @@ class wsproto {
                 if (repeatTask.pack.hasAction && status) {
                     ctrl.nextState(std::string(repeatTask.pack.actionId), std::string(repeatTask.pack.actionType));
                     try {
-                        auto clientId = sockets.get(longSocks);
-                        //todo check chat kbNotify move is performed
-                        if (auto ret = notification.notifyExept(kbNotify(packetCounter(), repeatTask.pack.actionId, repeatTask.pack.actionType), clientId); !ret) {
-                            error("unable send notification (kba-repeat)", ret.code());
+                        if (auto ret = notifications.notifyExcept(kbNotify(packetCounter(), repeatTask.pack.actionId, repeatTask.pack.actionType), clientId); !ret) {
+                            error("unable send notifications (kba-repeat)", ret.code());
                         }
                     } catch (not_found& e) {
                         error("unable to send kb notify (repeat)", e.what());

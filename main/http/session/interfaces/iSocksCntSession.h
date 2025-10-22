@@ -43,9 +43,9 @@ namespace http::session {
 
             typedef attributeHandler attribute;
 
-            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::SOCKET_COUNT;
+            static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_SOCKS_CNT_SESSION;
 
-            iSocksCntSession(uint32_t& traits) { traits |= (1 << TRAIT_ID); };   //used only as delivered constructor
+            iSocksCntSession() {};   //used only as delivered constructor
             virtual ~iSocksCntSession() {}; //virtual destructor must present even for interface classes
 
             virtual attribute socketCounter() {

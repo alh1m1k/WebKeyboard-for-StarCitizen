@@ -3,10 +3,10 @@
 
 #include <variant>
 #include <exception>
-#include <cassert>
+#include <stdexcept>
+
 
 #include "esp_err.h"
-#include "assert.h"
 
 
 #include "bad_api_call.h"
@@ -16,11 +16,11 @@
 #include "util.h"
 
 #include "socket/handler.h"
-#include "session/manager.h"
-#include "session/session.h"
-#include "session/pointer.h"
+#include "session/interfaces/iManager.h"
 #include "session/interfaces/iSocksCntSession.h"
 #include "session/interfaces/iWebSocketSession.h"
+#include "session/pointer.h"
+
 
 namespace http {
 
@@ -47,14 +47,14 @@ namespace http {
 
     static esp_err_t sessionOpen(request& req, response& resp, route& path) {
 
-        using session_ptr_type = session::manager<session::session>::session_ptr_type;
+        using session_ptr_type = session::iManager::session_ptr_type;
 
-        session::manager<session::session>::result_type sessionResult = ESP_FAIL;
+        session::iManager::result_type sessionResult = ESP_FAIL;
         //try reuse if cookie exist
         infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " ", (void *)req.native()->user_ctx);
         if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult && std::get<const cookie>(
                 cookieReadResult).value != "") {
-            if (sessionResult = path.owner().getSession().open(std::get<const cookie>(cookieReadResult).value); sessionResult) {
+            if (sessionResult = path.owner()->getSessions()->open(std::get<const cookie>(cookieReadResult).value); sessionResult) {
                 infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " ", (void *) req.native()->user_ctx, std::get<const cookie>(cookieReadResult).value);
             } else {
                 info("session open(reuse) fail", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", sessionResult.code());
@@ -66,13 +66,13 @@ namespace http {
         if (!sessionResult) {
             //try open new, cookie not exist
             infoIf(LOG_SESSION, "try session open(new)");
-            if (sessionResult = path.owner().getSession().open(); sessionResult) {
+            if (sessionResult = path.owner()->getSessions()->open(); sessionResult) {
                 infoIf(LOG_SESSION, "session open(new)", req.native()->uri, " ", (void *) req.native()->user_ctx, " ", std::get<session_ptr_type>(sessionResult)->sid());
                 if (auto cookieWriteResult = resp.getCookies().set(cookie("wkb-id", std::get<session_ptr_type>(sessionResult)->sid(), true)); cookieWriteResult) {
                     infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " ", (void *) req.native()->user_ctx);
                 } else {
                     error("cookie write", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", cookieWriteResult.code());
-                    if (auto closeResult = path.owner().getSession().close(std::get<session_ptr_type>(sessionResult)->sid()); closeResult) {
+                    if (auto closeResult = path.owner()->getSessions()->close(std::get<session_ptr_type>(sessionResult)->sid()); closeResult) {
                         infoIf(LOG_SESSION, "malformed session closed", req.native()->uri, " ", (void *) req.native()->user_ctx);
                     } else {
                         error("session close", req.native()->uri, " ", (void *) req.native()->user_ctx, " code ", closeResult.code());
@@ -101,7 +101,8 @@ namespace http {
 
         return ESP_OK;
     }
-	
+
+    //this method must process any exception and hold them inside fn border;
 	static esp_err_t staticRouter(httpd_req_t *esp_req) {
 
         route    path   = *static_cast<route*>(esp_req->user_ctx);
@@ -175,7 +176,9 @@ namespace http {
 			error("server exception", e.what(), ESP_FAIL);
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " ", (void*)esp_req->user_ctx);
 			return ESP_FAIL;
-		} 
+		} catch (...) {
+            return ESP_FAIL;
+        }
 				
 		debugIf(LOG_HTTP, "<--- static routing complete (nothing)", esp_req->uri, " ", (void*)esp_req->user_ctx);
 		return ESP_OK;
@@ -196,11 +199,13 @@ namespace http {
 	//todo move sem
 	resBool server::addHandler(std::string_view path, httpd_method_t mode, const handler_type& callback) {
 		
-		assert(callback != nullptr);
+		if (callback == nullptr) {
+            throw std::invalid_argument("callback must be provided");
+        }
 				
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, callback, *this);
+		route candidate = route(path, mode, callback, this);
 		
 		candidate.esp_handler.handler = &staticRouter;
 		
@@ -231,7 +236,9 @@ namespace http {
 				return code;
 			}
 			info("register route", (void*)&routes.data[routes.data.size()-1]);
-			assert(&routes.data[routes.data.size()-1] == routes.data[routes.data.size()-1].esp_handler.user_ctx);
+            if (&routes.data[routes.data.size()-1] != routes.data[routes.data.size()-1].esp_handler.user_ctx) {
+                throw std::runtime_error("implementation error");
+            }
 			return ResBoolOK;
 		}
 	}
@@ -240,7 +247,7 @@ namespace http {
 		
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, nullptr, *this);
+		route candidate = route(path, mode, nullptr, this);
 		
 		if (auto pos = std::find(routes.data.begin(), routes.data.end(), candidate); pos != routes.data.end()) {
 			if (auto code = httpd_unregister_uri_handler(handler, pos->esp_handler.uri, pos->esp_handler.method); code != ESP_OK) {
@@ -257,7 +264,7 @@ namespace http {
 		
 		std::lock_guard<std::mutex> guardian = std::lock_guard(routes.m);
 		
-		route candidate = route(path, mode, nullptr, *this);
+		route candidate = route(path, mode, nullptr, this);
 		
 		if (auto pos = std::find(routes.data.begin(), routes.data.end(), candidate); pos != routes.data.end()) {
 			return true;
@@ -266,11 +273,22 @@ namespace http {
 		}		
 	}
 
-    session::iManager& server::getSession() const {
-        if (_session == nullptr) {
-            _session = std::make_unique<session::manager<session::session>>();
+    void server::setSessions(server::sessions_ptr_type&& manager) {
+        auto guardian = std::lock_guard(routes.m);
+        if (_sessions != nullptr) {
+            throw std::invalid_argument("session cannot be changed after init");
         }
-        return *_session;
+        _sessions = std::move(manager);
+    }
+
+    const server::sessions_ptr_type& server::getSessions() const {
+        if (_sessions == nullptr) {
+            auto guardian = std::lock_guard(routes.m);
+            if (_sessions == nullptr) {
+                _sessions = std::make_unique<session::manager<session::session<>>>();
+            }
+        }
+        return _sessions;
     }
 
 }

@@ -36,11 +36,11 @@ namespace http {
             char * 			c_str    	= nullptr;
             httpd_uri 		esp_handler = {};
             handler_type    _callback;
-            server&         _owner;
+            server* const   _owner;
 				
 		public:
 
-			route(std::string_view& path, httpd_method_t mode, handler_type _callback, server& owner);
+			route(std::string_view& path, httpd_method_t mode, handler_type _callback, server* owner);
 			
 			route(route& copy);
 			
@@ -76,7 +76,7 @@ namespace http {
 				return _callback;
 			}
 
-            inline server& owner() const {
+            inline server* owner() const {
                 return _owner;
             }
 	};

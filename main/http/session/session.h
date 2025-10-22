@@ -11,11 +11,14 @@ namespace http::session {
     template <typename T>
     class manager;
 
+    struct extendedSessionData {};
+
+    template<class TSessionData = extendedSessionData>
     class session: public iSession, public iSocksCntSession {
 
         protected:
 
-            struct sharedData {
+            struct sharedData : public TSessionData {
                 size_t pendingSockets = 0;
                 size_t index          = 0;
             };
@@ -50,31 +53,47 @@ namespace http::session {
                 return &_data;
             }
 
-            inline virtual void invalidate() noexcept {
+            inline void invalidate() noexcept override {
                 _valid = false;
             }
 
             //warning using this not thread safe, there is no proper locking and int64 not atomic on esp32
             //use ::valid instead, this one for manager thread
-            virtual void update(int64_t timestamp) noexcept override;
+            void update(int64_t timestamp) noexcept override {
+                _updated = timestamp;
+            }
 
-            session(std::string&& sid, uint32_t index) noexcept;
+            session(std::string&& sid, uint32_t index) noexcept :
+                        /*iSession(_traits),
+                         iSocksCntSession(_traits),*/
+                        _sid(sid),
+                        _index(index),
+                        _valid(true) {
 
-            void     setSocketCounter(uint32_t value) override;
-            uint32_t getSocketCounter()               override;
-            uint32_t incSocketCounter(int32_t delta)  override;
+            }
+
+            void setSocketCounter(uint32_t value) override {
+                _data.pendingSockets = value;
+            }
+
+            uint32_t getSocketCounter() override {
+                return _data.pendingSockets;
+            }
+
+            uint32_t incSocketCounter(int32_t delta)  override {
+                return (write()->pendingSockets += delta);
+            }
 
         public:
 
             static constexpr uint32_t TRAIT_ID = (uint32_t)traits::SESSION;
 
-            using   iSession::features_type;
             typedef sharedData                                     shared_data_type;
             typedef guardian<std::shared_lock<std::shared_mutex>>  read_guardian_type;
             typedef guardian<std::unique_lock<std::shared_mutex>>  write_guardian_type;
 
 
-            friend class manager<session>;
+            friend class manager<session<TSessionData>>;
 
             virtual ~session() = default;
 
@@ -89,9 +108,12 @@ namespace http::session {
 
             //warning using this not thread safe, there is no proper locking and int64 not atomic on esp32
             //use ::valid instead, this one for manager thread
-            virtual bool expired(int64_t timestamp) const noexcept;
-
-            const features_type getTraits() const override;
+            bool expired(int64_t timestamp) const noexcept override {
+                if (_updated == -1) {
+                    return false;
+                }
+                return (timestamp - _updated) > ((int64_t )duration() * 1000000);
+            }
 
             virtual inline int32_t duration() const {
                 return 60*5;
@@ -109,8 +131,22 @@ namespace http::session {
                 return _index;
             }
 
-            void * neighbour(uint32_t traitId) override;
-            void * downcast() override;
+            void * neighbour(uint32_t traitId) override {
+                switch (traitId) {
+                    case iSession::TRAIT_ID:
+                        return static_cast<iSession *>(static_cast<session *>(this));
+                    case iSocksCntSession::TRAIT_ID:
+                        return static_cast<iSocksCntSession *>(static_cast<session *>(this));
+                    case TRAIT_ID:
+                        return static_cast<session *>(this);
+                    default:
+                        return nullptr;
+                }
+            }
+
+            void * downcast() override {
+                return static_cast<session*>(this);
+            }
 
     };
 
