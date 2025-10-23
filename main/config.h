@@ -80,6 +80,8 @@
 //JTAG DEBUG
 //#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
                                                 //as CDC and JTAG are compete for resources
+//use menuconfig Component config > ESP System Settings :: CONFIG_ESP_CONSOLE_UART = CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+//to redirect app logs to JTAG uart
 
 //different subsytem log
 
@@ -95,13 +97,17 @@
 
 //#define LOG_LED 		true
 
-//#define LOG_MESSAGES 	true
+#define LOG_MESSAGES    false
 
 //#define LOG_SCHEDULER true
 
 //#define LOG_WIFI 		true
 
-#define LOG_SESSION	true
+#define LOG_SESSION        false
+
+#define LOG_COOKIES     false
+
+#define LOG_COOKIE_BUILD false
 
 
 

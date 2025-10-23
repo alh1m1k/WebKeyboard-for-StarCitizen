@@ -88,6 +88,8 @@ namespace http {
             if (req.native()->sess_ctx == nullptr || static_cast<http::session::pointer*>(req.native()->sess_ctx)->lock() != absSess) {
                 req.native()->sess_ctx = (void*)(new http::session::pointer{absSess});
                 req.native()->free_ctx = (httpd_free_ctx_fn_t)http::session::freePointer;
+                static uint32_t count = 0;
+                debug("allocPointer", req.native()->sess_ctx, " ", count);
             }
             if (auto sessionSocks = pointer_cast<session::iSocksCntSession>(req.getSession()); sessionSocks != nullptr) {
                 [[maybe_unused]] uint32_t pendingSockets = ++sessionSocks->socketCounter();

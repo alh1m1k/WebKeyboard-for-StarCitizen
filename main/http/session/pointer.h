@@ -39,6 +39,8 @@ namespace http::session {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
     static void freePointer(void* ptr) {
+        static uint32_t  count = 0;
+        debug("freePointer", ptr, " ", count);
         if (ptr != nullptr) {
             auto actualPrt = static_cast<pointer*>(ptr);
             if (auto absSess = actualPrt->lock(); absSess != nullptr) {
