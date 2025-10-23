@@ -12,6 +12,9 @@
 #include "http/session/session.h"
 #include "util.h"
 
+#include "../../hwrandom.h"
+#include "stdlib.h"
+
 namespace http::session {
 
 #define SESSION_ERROR_BASE      10000
@@ -59,15 +62,15 @@ namespace http::session {
                     }
                     auto operator++() {
                         for (++it; it != end; ++it) {
-                            if (*it == nullptr || (*it)->expired(timestamp)) {
-                                continue;
+                            if (*it != nullptr && !(*it)->expired(timestamp)) {
+                                break;
                             }
                         }
                     }
                     auto operator--() {
                         for (--it; it != begin; --it) {
-                            if (*it == nullptr || (*it)->expired(timestamp)) {
-                                continue;
+                            if (*it != nullptr && !(*it)->expired(timestamp)) {
+                                break;
                             }
                         }
                     }
@@ -83,6 +86,8 @@ namespace http::session {
             };
 
             virtual std::string generateSID(const request* context = nullptr) {
+                auto proxy = hwrandom<unsigned>();
+                srand(proxy());
                 return genGandom(10);
             }
 
@@ -235,7 +240,6 @@ namespace http::session {
             result_type open(const std::string& sid, const request* context = nullptr) override {
                 auto timestamp = esp_timer_get_time();
                 if (auto sess = find(sid); sess != nullptr) {
-                    debug("session founded!");
                     if (validateSession(sess, context)) {
                         if (!sess->expired(timestamp)) {
                             updateSessionPtr(sess, timestamp);
@@ -269,7 +273,6 @@ namespace http::session {
             result_type fromIndex(index_type index, bool markAlive = false) override {
                 auto timestamp = esp_timer_get_time();
                 if (auto sess = find(index); sess != nullptr) {
-                    debug("session founded!");
                     if (!sess->expired(timestamp)) {
                         if (markAlive) {
                             updateSessionPtr(sess, timestamp);

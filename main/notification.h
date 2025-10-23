@@ -29,7 +29,7 @@ class notificationManager {
 
         message(const std::string& data, std::vector<typename TSessions::index_type>&& to, bool binary, notificationManager* manager)
                 : data(data), to(std::move(to)), manager(manager), binary(binary) {
-            debugIf(LOG_MESSAGES, "message::message", this->data.c_str(), this->data.size(), "address cnt: ", to.size());
+            debugIf(LOG_MESSAGES, "message::message", this->data.c_str(), this->data.size(), " address cnt: ", to.size());
         };
 
     };
@@ -38,7 +38,7 @@ class notificationManager {
 	
 	void static staticHandler(void* arg) {
 		message* msg = static_cast<message*>(arg);
-		debugIf(LOG_MESSAGES, "send message(async)", (void*)arg, " str:data ",  msg->data.c_str(), " ", msg->data.size());
+		debugIf(LOG_MESSAGES, "send message(async)", (void*)arg, " str:data ",  msg->data.c_str(), " address cnt: ", msg->data.size());
         for (auto i = msg->to.size() - 1; i < msg->to.size(); --i) {
             if (auto socksResult = msg->manager->resolve(msg->to[i]); socksResult) {
                 if (auto socket = std::get<http::socket::asyncSocket>(socksResult); socket.valid()) {

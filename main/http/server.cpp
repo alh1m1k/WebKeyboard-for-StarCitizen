@@ -84,9 +84,11 @@ namespace http {
 
         //general session fail drop request
         if (sessionResult) {
-            info("session open succesfuly", req.native()->uri, " ", (void *) req.native()->user_ctx);
-            req.native()->sess_ctx = (void*)(new http::session::pointer{std::get<session_ptr_type>(sessionResult)});
-            req.native()->free_ctx = (httpd_free_ctx_fn_t)http::session::freePointer;
+            auto absSess = std::get<session_ptr_type>(sessionResult);
+            if (req.native()->sess_ctx == nullptr || static_cast<http::session::pointer*>(req.native()->sess_ctx)->lock() != absSess) {
+                req.native()->sess_ctx = (void*)(new http::session::pointer{absSess});
+                req.native()->free_ctx = (httpd_free_ctx_fn_t)http::session::freePointer;
+            }
             if (auto sessionSocks = pointer_cast<session::iSocksCntSession>(req.getSession()); sessionSocks != nullptr) {
                 [[maybe_unused]] uint32_t pendingSockets = ++sessionSocks->socketCounter();
                 infoIf(LOG_SESSION, "session", std::get<session_ptr_type>(sessionResult)->sid(), " new connection, pendingSockets: ", pendingSockets);

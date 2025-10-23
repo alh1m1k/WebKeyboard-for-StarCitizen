@@ -94,6 +94,8 @@ class wsproto {
                 clientId   = pSession->index();
             }
 
+            info("session credits", clientId, " ", clientName);
+
 
             if (rawMessage.starts_with("auth:")) {
 

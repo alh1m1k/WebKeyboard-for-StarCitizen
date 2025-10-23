@@ -38,16 +38,19 @@ namespace http::session {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-    static void freePointer(pointer* ptr) {
-        if (auto absSess = ptr->lock(); absSess != nullptr) {
-            if (auto socksSession = pointer_cast<iSocksCntSession>(absSess); socksSession != nullptr) {
-                [[maybe_unused]] uint32_t socksCount = --socksSession->socketCounter();
-                infoIf(LOG_SESSION, "session", absSess->sid(), " socket close, pendingSockets: ", socksCount);
-            } else {
-                infoIf(LOG_SESSION, "freePointer", absSess->sid());
+    static void freePointer(void* ptr) {
+        if (ptr != nullptr) {
+            auto actualPrt = static_cast<pointer*>(ptr);
+            if (auto absSess = actualPrt->lock(); absSess != nullptr) {
+                if (auto socksSession = pointer_cast<iSocksCntSession>(absSess); socksSession != nullptr) {
+                    [[maybe_unused]] uint32_t socksCount = --socksSession->socketCounter();
+                    infoIf(LOG_SESSION, "session", absSess->sid(), " socket close, pendingSockets: ", socksCount);
+                } else {
+                    infoIf(LOG_SESSION, "freePointer", absSess->sid());
+                }
             }
+            delete actualPrt;
         }
-        delete ptr;
     }
 #pragma GCC diagnostic pop
 
