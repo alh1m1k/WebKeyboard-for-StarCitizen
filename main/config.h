@@ -97,15 +97,15 @@
 
 //#define LOG_LED 		true
 
-#define LOG_MESSAGES    false
+//#define LOG_MESSAGES 	true
 
 //#define LOG_SCHEDULER true
 
 //#define LOG_WIFI 		true
 
-#define LOG_SESSION        false
+#define LOG_SESSION      false
 
-#define LOG_COOKIES     false
+#define LOG_COOKIES      false
 
 #define LOG_COOKIE_BUILD false
 

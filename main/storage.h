@@ -56,19 +56,19 @@ class storage {
 		
 		std::string getWifiSSID(std::string defaultValue = WIFI_SSID) {
 			
-/*			size_t 	  size 	= 0;
+			size_t 	  size 	= 0;
 			esp_err_t code 	= ESP_OK;
-*//*
+/*
 			get_item_size: Size of the item, if it exists.
             For strings, this size includes the zero terminator.
-*//*
+*/
 			if (code = nvsHandle->get_item_size(nvs::ItemType::SZ, "wifi-ssid", size); code == ESP_OK && size >= 3+1 ) {
 				std::string value = {};
 				value.resize(size); //use string like buffer
-*//*
+/*
 			get_string(,,len) The length of the output buffer pointed to by out_str/out_blob.
 		    Use \c get_item_size to query the size of the item beforehand.
-*//*
+*/
 				if (code = nvsHandle->get_string("wifi-ssid", value.data(), value.capacity()); code == ESP_OK) {
 					lastErr = ESP_OK;
 					value.resize(size-1); //resize string to actual size
@@ -76,7 +76,7 @@ class storage {
 				}
 			} 
 			
-			lastErr = code;*/
+			lastErr = code;
 			return defaultValue;
 		}
 		
@@ -87,7 +87,7 @@ class storage {
 		
 		std::string getWifiPWD(std::string defaultValue = WIFI_PWD) {
 			
-/*			size_t 	  size 	= 0;
+			size_t 	  size 	= 0;
 			esp_err_t code 	= ESP_OK;
 			
 			if (code = nvsHandle->get_item_size(nvs::ItemType::SZ, "wifi-pwd", size); code == ESP_OK && size >= 3+1 ) {
@@ -99,7 +99,7 @@ class storage {
 				}
 			}
 				
-			lastErr = code;*/
+			lastErr = code;
 			return defaultValue;
 		}
 		
@@ -109,7 +109,7 @@ class storage {
 		
 		wifi_auth_mode_t getWifiAuth(wifi_auth_mode_t defaultValue = WIFI_AP_AUTH) {
 			
-/*			size_t 	  size 	= 0;
+			size_t 	  size 	= 0;
 			esp_err_t code 	= ESP_OK;
 			
 			if (code = nvsHandle->get_item_size(nvs::ItemType::I32, "wifi-auth", size); code == ESP_OK) {
@@ -119,7 +119,7 @@ class storage {
 				}
 			}
 			
-			lastErr = code;*/
+			lastErr = code;
 			return defaultValue;
 		}
 		
