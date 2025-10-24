@@ -18,7 +18,7 @@ namespace http {
 
 	class cookies;
 	class headers;
-	class route;
+	class action;
 
 	class request {
 						
@@ -26,12 +26,12 @@ namespace http {
 		
 		mutable std::unique_ptr<headers> _headers;
 		
-		route& 	_route;
+		action& 	_route;
 		
 		public:
 		
 			//explicit request(httpd_req_t* esp_req);
-			explicit request(httpd_req_t* esp_req, route& route);
+			explicit request(httpd_req_t* esp_req, action& route);
 						
 			const headers& getHeaders() const;
 			
@@ -51,7 +51,7 @@ namespace http {
 			
 			const cookies& getCookies() const;
 			
-			inline const route& getRoute() const {
+			inline const action& getRoute() const {
                 return _route;
             }
 

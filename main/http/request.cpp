@@ -5,7 +5,7 @@
 namespace http {
 			
 	//request::request(httpd_req_t* esp_req) : handler(esp_req) {}
-	request::request(httpd_req_t* esp_req, route& route) : handler(esp_req), _route(route) {}
+	request::request(httpd_req_t* esp_req, action& route) : handler(esp_req), _route(route) {}
 				
 	const headers& request::getHeaders() const {
 		

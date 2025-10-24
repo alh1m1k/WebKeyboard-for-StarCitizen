@@ -2,8 +2,6 @@
 
 #include "generated.h"
 
-#include <deque>
-#include <sys/_stdint.h>
 #include <mutex>
 #include <memory>
 
@@ -13,7 +11,7 @@
 #include "result.h"
 #include "request.h"
 #include "response.h"
-#include "route.h"
+#include "action.h"
 #include "http/session/interfaces/iManager.h"
 
 
@@ -28,10 +26,7 @@ namespace http {
 
 		httpd_handle_t  handler = {};
 
-		struct {
-			std::deque<class route> data = {}; //std::deque in order to protect from ptr invalidation that kill later deref via c handlers
-			mutable std::mutex m = {};
-		} routes;
+        mutable std::mutex _m;
 
         mutable std::unique_ptr<session::iManager> _sessions;
 
@@ -62,11 +57,11 @@ namespace http {
 			
 			resBool end();
 			
-			resBool addHandler(std::string_view path, httpd_method_t mode, const handler_type& callback);
+			resBool addHandler(const char * url, httpd_method_t mode, handler_type&& callback);
 			
-			resBool removeHandler(std::string_view path, httpd_method_t mode);
+			resBool removeHandler(const char * url, httpd_method_t mode);
 			
-			bool    hasHandler(std::string_view path, httpd_method_t mode);
+			bool    hasHandler(const char * url, httpd_method_t mode);
 
             template<class TSessionManager>
             inline void attachSessions() { //todo init vector

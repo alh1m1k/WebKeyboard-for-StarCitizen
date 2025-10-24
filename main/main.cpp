@@ -278,41 +278,41 @@ void app_main(void)
 				
 	resBool status = ESP_OK;
 
-	if (status = webServer.addHandler("/"sv, httpd_method_t::HTTP_GET, index_html_memory_file); !status) {
+	if (status = webServer.addHandler("/", httpd_method_t::HTTP_GET, index_html_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /", 				status.code());
 	}
-	if (status = webServer.addHandler("/lib.js"sv, 		httpd_method_t::HTTP_GET, lib_js_memory_file); !status) {
+	if (status = webServer.addHandler("/lib.js", 		httpd_method_t::HTTP_GET, lib_js_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /lib.js", 		status.code());
 	}
-	if (status = webServer.addHandler("/widget.js"sv, 	httpd_method_t::HTTP_GET, widget_js_memory_file); !status) {
+	if (status = webServer.addHandler("/widget.js", 	httpd_method_t::HTTP_GET, widget_js_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /widget.js", 	status.code());
 	}
-	if (status = webServer.addHandler("/overlay.js"sv, 	httpd_method_t::HTTP_GET, overlay_js_memory_file); !status) {
+	if (status = webServer.addHandler("/overlay.js", 	httpd_method_t::HTTP_GET, overlay_js_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /overlay.js", 	status.code());
 	}
-	if (status = webServer.addHandler("/favicon.ico"sv, httpd_method_t::HTTP_GET, favicon_ico_memory_file); !status) {
+	if (status = webServer.addHandler("/favicon.ico", httpd_method_t::HTTP_GET, favicon_ico_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /favicon.ico", 	status.code());
 	}
-	if (status = webServer.addHandler("/index.js"sv, 	httpd_method_t::HTTP_GET, index_js_memory_file); !status) {
+	if (status = webServer.addHandler("/index.js", 	httpd_method_t::HTTP_GET, index_js_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /index.js", 		status.code());
 	}
-	if (status = webServer.addHandler("/index.css"sv, 	httpd_method_t::HTTP_GET, index_css_memory_file); !status) {
+	if (status = webServer.addHandler("/index.css", 	httpd_method_t::HTTP_GET, index_css_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /index.css", 		status.code());
 	}
-	if (status = webServer.addHandler("/symbols.svg"sv, httpd_method_t::HTTP_GET, symbols_svg_memory_file); !status) {
+	if (status = webServer.addHandler("/symbols.svg", httpd_method_t::HTTP_GET, symbols_svg_memory_file); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
 	}
 
 
-/*	result = webServer.addHandler("/leave"sv, httpd_method_t::HTTP_POST, [&closureCtx](http::request& req, http::response& resp)-> http::handlerRes {
+/*	result = webServer.addHandler("/leave", httpd_method_t::HTTP_POST, [&closureCtx](http::request& req, http::response& resp)-> http::handlerRes {
 		
 		debug("call leave handler");
 		
@@ -343,7 +343,7 @@ void app_main(void)
     auto& sessions     = *(sessionManager*)webServer.getSessions().get();
     auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
 
-	if (status = webServer.addHandler("/socks"sv, httpd_method_t::HTTP_GET, http::socket::handler(
+	if (status = webServer.addHandler("/socks", httpd_method_t::HTTP_GET, http::socket::handler(
         wsproto(
             kbMessageParser,
             kb,
