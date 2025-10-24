@@ -3,6 +3,7 @@
 #include "http/session/manager.h"
 #include "http/session/session.h"
 #include "http/session/pointer.h"
+#include "http/socket/asyncSocket.h"
 #include "http/session/interfaces/iWebSocketSession.h"
 #include "sessionManager.h"
 
@@ -18,11 +19,12 @@ struct extendedSessionFields {
     uint32_t    flags      = 0;
 };
 
-class session: public http::session::session<extendedSessionFields>, public http::session::iWebSocketSession {
+class session: public http::session::session<extendedSessionFields>, virtual public http::session::iWebSocketSession {
 
     friend class sessionManager;
     friend class http::session::manager<session>; //also need to call virt methods
 
+    socket_type _socket;
     bool _authorize = false;
 
     protected:
@@ -40,11 +42,15 @@ class session: public http::session::session<extendedSessionFields>, public http
             _authorize = true;
         }
 
-        void setSocket(const http::socket::asyncSocket &socket) override {
+        void setSocket(const socket_type &socket) override {
             if (_socket != socket) {
                 _authorize = false;
                 _socket = socket;
             }
+        }
+
+        socket_type& getSocket() override {
+            return _socket;
         }
 
         void* neighbour(uint32_t traitId) override {

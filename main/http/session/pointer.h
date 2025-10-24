@@ -9,7 +9,6 @@
 #include "traits.h"
 #include "http/session/interfaces/iSession.h"
 #include "http/session/interfaces/iSocksCntSession.h"
-#include "http/session/interfaces/iTest.h"
 
 
 namespace http::session {
@@ -45,8 +44,8 @@ namespace http::session {
             auto actualPrt = static_cast<pointer*>(ptr);
             if (auto absSess = actualPrt->lock(); absSess != nullptr) {
                 if (auto socksSession = pointer_cast<iSocksCntSession>(absSess); socksSession != nullptr) {
-                    [[maybe_unused]] uint32_t socksCount = --socksSession->socketCounter();
-                    infoIf(LOG_SESSION, "session", absSess->sid(), " socket close, pendingSockets: ", socksCount);
+                    socksSession->socksCntDecr();
+                    infoIf(LOG_SESSION, "session", socksSession->sid(), " socket close, pendingSockets: ", socksSession->socksCnt());
                 } else {
                     infoIf(LOG_SESSION, "freePointer", absSess->sid());
                 }

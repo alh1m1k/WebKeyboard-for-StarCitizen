@@ -53,7 +53,7 @@ namespace http::session {
                 return &_data;
             }
 
-            inline void invalidate() noexcept override {
+            inline void invalidate(int reason = 0) noexcept override {
                 _valid = false;
             }
 
@@ -70,18 +70,6 @@ namespace http::session {
                         _index(index),
                         _valid(true) {
 
-            }
-
-            void setSocketCounter(uint32_t value) override {
-                _data.pendingSockets = value;
-            }
-
-            uint32_t getSocketCounter() override {
-                return _data.pendingSockets;
-            }
-
-            uint32_t incSocketCounter(int32_t delta)  override {
-                return (write()->pendingSockets += delta);
             }
 
         public:
@@ -125,6 +113,18 @@ namespace http::session {
 
             virtual write_guardian_type write() {
                 return write_guardian_type(this, std::unique_lock(_mux));
+            }
+
+            void socksCntInc()  override {
+                write()->pendingSockets++;
+            }
+
+            void socksCntDecr()  override {
+                write()->pendingSockets--;
+            }
+
+            size_t  socksCnt() const override {
+                return _data.pendingSockets;
             }
 
             inline uint32_t index() const override {

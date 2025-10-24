@@ -92,12 +92,12 @@ namespace http {
                 debug("allocPointer", req.native()->sess_ctx, " ", count);
             }
             if (auto sessionSocks = pointer_cast<session::iSocksCntSession>(req.getSession()); sessionSocks != nullptr) {
-                [[maybe_unused]] uint32_t pendingSockets = ++sessionSocks->socketCounter();
-                infoIf(LOG_SESSION, "session", std::get<session_ptr_type>(sessionResult)->sid(), " new connection, pendingSockets: ", pendingSockets);
+                sessionSocks->socksCntInc();
+                infoIf(LOG_SESSION, "session", sessionSocks->sid(), " new connection, pendingSockets: ", sessionSocks->socksCnt());
             }
             //if (path.)
             if (auto sessionWS = pointer_cast<session::iWebSocketSession>(req.getSession()); sessionWS != nullptr) {
-                infoIf(LOG_SESSION, "session", std::get<session_ptr_type>(sessionResult)->sid(), " new connection");
+                infoIf(LOG_SESSION, "session", sessionWS->sid(), " new connection");
             }
         } else {
             return sessionResult.code();
