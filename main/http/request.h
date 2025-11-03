@@ -6,11 +6,13 @@
 #include <esp_http_server.h>
 
 #include "../exception/not_implemented.h"
+#include "../exception/invalid_descriptor.h"
 #include "parsing_error.h"
 
 #include "uri.h"
 #include "cookies.h"
 #include "headers.h"
+#include "network.h"
 #include "http/session/interfaces/iSession.h"
 #include "http/session/pointer.h"
 
@@ -25,19 +27,46 @@ namespace http {
 		httpd_req_t* handler;
 		
 		mutable std::unique_ptr<headers> _headers;
+
+		mutable std::unique_ptr<network> _remoteNetwork;
+
+		mutable std::unique_ptr<network> _localNetwork;
 		
-		action& 	_route;
-		
+		action& _action;
+
+		inline int tryFileDescriptor() const {
+			if (auto sock = httpd_req_to_sockfd(handler); sock > 0) {
+				return sock;
+			} else {
+				throw invalid_descriptor("http_request");
+			}
+		}
+
 		public:
 		
 			//explicit request(httpd_req_t* esp_req);
-			explicit request(httpd_req_t* esp_req, action& route);
+			explicit request(httpd_req_t* esp_req, action& action);
 						
 			const headers& getHeaders() const;
+
+			httpd_method_t getMethod() const;
+
+			const char* getUriRaw() const; //todo remove me after proper implementing defered object
 			
 			const uri& getUri() const;
 
-            httpd_method_t getMethod() const;
+			const cookies& getCookies() const;
+
+			std::shared_ptr<session::iSession> getSession() const;
+
+			inline const action& getRoute() const {
+				return _action;
+			}
+
+			const network& getRemote() const;
+
+			const network& getLocal() const;
+
 
             inline bool isGet() const {
                 return getMethod() == httpd_method_t::HTTP_GET;
@@ -46,16 +75,6 @@ namespace http {
             inline bool isPost() const {
                 return getMethod() == httpd_method_t::HTTP_POST;
             }
-			
-			const char* getUriRaw() const; //todo remove me after proper implementing defered object 
-			
-			const cookies& getCookies() const;
-			
-			inline const action& getRoute() const {
-                return _route;
-            }
-
-            std::shared_ptr<session::iSession> getSession() const;
 
 			//method needed to expose private handler in order to successfuly build sub object like sockets or headers
 			//without using friend decl as it make linking impossible to manage

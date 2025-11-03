@@ -5,15 +5,15 @@
 
 namespace http::socket {
 					
-	handler::handler(handler_type& 	hndl): hndl(hndl){ debugIf(LOG_SOCKET, "socks handler ref(copy)"); };
+	handler::handler(handler_type& 	    hndl): hndl(hndl){ debugIf(LOG_SOCKET, "socks handler ref(copy)"); };
 	
-	handler::handler(handler_type&& 	hndl): hndl(hndl){ debugIf(LOG_SOCKET, "socks handler move"); };
+	handler::handler(handler_type&& 	hndl): hndl(std::move(hndl)) { debugIf(LOG_SOCKET, "socks handler move"); };
 							
 	handlerRes handler::operator()(request& req, response& resp, server& serv) {
 	    if (req.isGet()) {
-	        debugIf(LOG_SOCKET, "socket::operator() handshake");
-            if (auto webSockSess = session::pointer_cast<session::iWebSocketSession>(req.getSession()); webSockSess != nullptr) {
-                webSockSess->setSocket(socket(req.native()).keep());
+            if (auto wsSessionPtr = session::pointer_cast<session::iWebSocketSession>(req.getSession()); wsSessionPtr != nullptr) {
+				wsSessionPtr->setWebSocket(socket(req.native()).keep());
+                debugIf(LOG_SESSION || LOG_SOCKET, "websocket handshake", httpd_req_to_sockfd(req.native()));
             }
 	        return ESP_OK;
 	    }

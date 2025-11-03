@@ -28,7 +28,7 @@ namespace http::socket {
 		public:
 							
 			typedef std::string message;
-			
+
 			asyncSocket(): hd(nullptr), fd(0) {}; //only use as memory allocator
 			
 			explicit asyncSocket(httpd_handle_t hd, int fd);
@@ -41,7 +41,7 @@ namespace http::socket {
 			
 			resBool write(const char* msg, 						httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	);
 			
-			inline bool operator==(const asyncSocket& sock) {
+			inline bool operator==(const asyncSocket& sock) const {
 				return hd == sock.hd && fd == sock.fd;
 			}
 			
@@ -57,4 +57,6 @@ namespace http::socket {
 				return fd;
 			}
 	};
+
+	static auto noAsyncSocket = asyncSocket(nullptr, -1);
 }

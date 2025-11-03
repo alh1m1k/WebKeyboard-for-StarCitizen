@@ -1,6 +1,9 @@
 #pragma once
 
 #include <mutex>
+#include <functional>
+
+#include "task.h"
 
 #include "http/session/interfaces/iSession.h"
 #include "http/session/interfaces/iSocksCntSession.h"
@@ -14,7 +17,9 @@ namespace http::session {
     struct extendedSessionData {};
 
     template<class TSessionData = extendedSessionData>
-    class session: public iSession, public iSocksCntSession {
+    class session: public iSession, virtual public iSocksCntSession {
+
+        portMUX_TYPE _spin = portMUX_INITIALIZER_UNLOCKED;
 
         protected:
 
@@ -30,7 +35,7 @@ namespace http::session {
                     T        lock;
                 public:
                     guardian(session* owner, T&& lock) : owner(owner), lock(std::move(lock)) {}
-                    inline operator bool() {
+                    explicit inline operator bool() {
                         return true;
                     }
                     inline const std::string sid() const {
@@ -41,12 +46,10 @@ namespace http::session {
                     }
             };
 
-            int64_t _updated = -1; //newer
+            uint32_t _updatedS = 0;
             std::string _sid;
-            const uint32_t _index;
             std::shared_mutex _mux;
             sharedData _data = {};
-            uint32_t   _traits = 0;
             bool _valid;
 
             inline virtual sharedData* data() noexcept {
@@ -57,19 +60,17 @@ namespace http::session {
                 _valid = false;
             }
 
-            //warning using this not thread safe, there is no proper locking and int64 not atomic on esp32
-            //use ::valid instead, this one for manager thread
+            //allow to update _updatedS atomically
+            //this allow fast non block keepAlive where .expire called on session manager
             void update(int64_t timestamp) noexcept override {
-                _updated = timestamp;
+                taskENTER_CRITICAL(&_spin);
+                auto _t = (uint32_t)(timestamp / 1000000);
+                _updatedS = _t;
+                taskEXIT_CRITICAL(&_spin);
             }
 
-            session(std::string&& sid, uint32_t index) noexcept :
-                        /*iSession(_traits),
-                         iSocksCntSession(_traits),*/
-                        _sid(sid),
-                        _index(index),
-                        _valid(true) {
-
+            session(std::string&& sid, uint32_t index) noexcept : _sid(sid), _valid(true) {
+                _data.index = index;
             }
 
         public:
@@ -85,26 +86,31 @@ namespace http::session {
 
             virtual ~session() = default;
 
+            [[nodiscard]]
             inline const std::string& sid() const override {
                 return _sid;
             }
 
             //this once lack of locking at boolean will-be atomic on esp32, unit there is no non trivial op
+            [[nodiscard]]
             inline bool valid() const override {
                 return _valid;
             }
 
             //warning using this not thread safe, there is no proper locking and int64 not atomic on esp32
             //use ::valid instead, this one for manager thread
+            [[nodiscard]]
             bool expired(int64_t timestamp) const noexcept override {
-                if (_updated == -1) {
-                    return false;
+                if (timestamp > 4294967295000000) {
+                    error("session impl reach it's limit");
+                    esp_restart();
                 }
-                return (timestamp - _updated) > ((int64_t )duration() * 1000000);
+                return (timestamp - (int64_t )_updatedS * 1000000) > ((int64_t )duration() * 1000000);
             }
 
+            [[nodiscard]]
             virtual inline int32_t duration() const {
-                return 60*5;
+                return SESSION_TIMEOUT;
             }
 
             virtual read_guardian_type  read() {
@@ -123,12 +129,14 @@ namespace http::session {
                 write()->pendingSockets--;
             }
 
+            [[nodiscard]]
             size_t  socksCnt() const override {
                 return _data.pendingSockets;
             }
 
-            inline uint32_t index() const override {
-                return _index;
+            [[nodiscard]]
+            uint32_t index() const override {
+                return _data.index;
             }
 
             void * neighbour(uint32_t traitId) override {

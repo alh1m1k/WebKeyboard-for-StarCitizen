@@ -14,7 +14,6 @@ namespace http {
 namespace http::session {
 
     class iSession;
-    class request;
 
     class iManager : virtual public iCast {
 

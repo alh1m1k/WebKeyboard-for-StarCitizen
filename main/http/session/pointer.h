@@ -35,24 +35,4 @@ namespace http::session {
         return nullptr;
     }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-    static void freePointer(void* ptr) {
-        static uint32_t  count = 0;
-        debug("freePointer", ptr, " ", count);
-        if (ptr != nullptr) {
-            auto actualPrt = static_cast<pointer*>(ptr);
-            if (auto absSess = actualPrt->lock(); absSess != nullptr) {
-                if (auto socksSession = pointer_cast<iSocksCntSession>(absSess); socksSession != nullptr) {
-                    socksSession->socksCntDecr();
-                    infoIf(LOG_SESSION, "session", socksSession->sid(), " socket close, pendingSockets: ", socksSession->socksCnt());
-                } else {
-                    infoIf(LOG_SESSION, "freePointer", absSess->sid());
-                }
-            }
-            delete actualPrt;
-        }
-    }
-#pragma GCC diagnostic pop
-
 }

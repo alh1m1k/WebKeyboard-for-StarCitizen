@@ -8,6 +8,7 @@ static constexpr const char* MSG_OK 	= "ok";
 static constexpr const char* MSG_FAIL 	= "fail";
 
 static constexpr const char* MSG_CLIENT_CONNECTED 		= "nt:%lu:Client %s connected";
+static constexpr const char* MSG_CLIENT_RECONNECTED		= "nt:%lu:Client %s reconnected";
 static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s disconnected";
 
 #define LED_GREEN  (gpio_num_t)15  // the light is lit when set high level.

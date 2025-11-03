@@ -1,6 +1,5 @@
 #include "generated.h"
 
-#include <algorithm>
 #include <cstdlib>
 #include <future>
 #include <string>
@@ -47,6 +46,9 @@
 #endif
 
 #include "resultStream.h" //need for cout << result
+
+
+// compile time define example target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
 
 
 extern "C" {
@@ -362,16 +364,17 @@ void app_main(void)
 	}
 	
 	std::cout << "starting of webServer complete" << std::endl;
-	
-/*	tailOp.schedule("kbStatus1", []() -> void {
-		debug("scheduler test 10sec", esp_timer_get_time() / 1000);
-	}, 10000, 100);*/
-	
-	
+
 	//kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter, tailOp));
 	kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter));
 
     tailScheduler.begin();
+
+    tailScheduler.schedule("server gc", [&webServer]() -> void {
+        infoIf(LOG_SERVER_GC, "server gc start");
+        webServer.collect();
+        infoIf(LOG_SERVER_GC, "server gc end");
+    }, 10000, -1);
 	
 	
 	//todo fix schedule faild before .begin

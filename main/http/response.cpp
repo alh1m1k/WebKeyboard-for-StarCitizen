@@ -98,6 +98,7 @@ namespace http {
 	}
 	
 	resBool response::writeDone() noexcept {
+		debug("write chunkedDone");
 		if (auto code = httpd_resp_send_chunk((httpd_req_t*)_request.native(), nullptr, 0); code == ESP_OK) {
 			_chunked 		= true;
 			_headerSended 	= true;
@@ -113,7 +114,7 @@ namespace http {
 			return write(buffer, size);
 		}
 		if (auto code = httpd_resp_send((httpd_req_t*)_request.native(), (const char*)buffer, size); code == ESP_OK) {
-			_chunked 		= true;
+			_chunked 		= false;
 			_headerSended 	= true;
 			_sended  		= true;
 			_bytes 		   += size;
@@ -160,6 +161,14 @@ namespace http {
     std::shared_ptr<session::iSession> response::getSession() const {
         return _request.getSession();
     }
+
+	const network& response::getRemote() const {
+		return _request.getRemote();
+	}
+
+	const network& response::getLocal() const {
+		return _request.getLocal();
+	}
 
 }
 

@@ -43,11 +43,11 @@ namespace http {
 
 			server() = default;
 
-			server(server&) = delete;
+			server(const server&) = delete;
 
             virtual ~server() = default;
 
-			auto operator=(server&) = delete;
+			auto operator=(const server&) = delete;
 
             inline httpd_handle_t native() {
                 return handler;
@@ -62,6 +62,8 @@ namespace http {
 			resBool removeHandler(const char * url, httpd_method_t mode);
 			
 			bool    hasHandler(const char * url, httpd_method_t mode);
+
+			void 	collect();
 
             template<class TSessionManager>
             inline void attachSessions() { //todo init vector

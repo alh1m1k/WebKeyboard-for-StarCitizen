@@ -20,8 +20,9 @@ namespace http::session {
             iWebSocketSession() {};   //used only as delivered constructor
             virtual ~iWebSocketSession() {}; //virtual destructor must present even for interface classes
 
-            virtual void setSocket(const socket_type& socket) = 0;
-            virtual socket_type& getSocket() = 0;
+            virtual void setWebSocket(const socket_type& socket)        = 0;
+            virtual bool updateWebSocketIfEq(const socket_type& ifEqualToThis, const socket_type& setToThis) = 0;
+            virtual socket_type& getWebSocket() = 0;
 
 	};
 

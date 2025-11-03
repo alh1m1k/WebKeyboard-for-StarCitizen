@@ -32,7 +32,7 @@ namespace http::session {
             size_t  count = 0;
         } storage;
 
-        generator<uint32_t, false> _generator = {};
+        generator<uint32_t, false> _generator = {0};
 
         protected:
 
@@ -53,7 +53,15 @@ namespace http::session {
                 using reference 		= std::conditional<constType, container_type::const_reference, container_type::reference>::type;
                 using iterator_category = std::bidirectional_iterator_tag;
 
-                explicit manager_iterator(internal_it_type begin, internal_it_type end, int64_t timestamp) : it(begin), begin(begin), end(end), timestamp(timestamp) {};
+                explicit manager_iterator(internal_it_type begin, internal_it_type end, int64_t timestamp) : it(begin), begin(begin), end(end), timestamp(timestamp) {
+                    //c++ it half opened to we can iterate safly from begin to end
+                    //this ugly code can be plased there on inside .begin
+                    if (it != end) { //it is not ended
+                        if ((*it) == nullptr || (*it)->expired(timestamp)) { //current pos was invalid
+                            this->operator++(); //find next valid pos
+                        }
+                    }
+                };
                 manager_iterator(const manager_iterator& copy)                  = default;
                 manager_iterator(manager_iterator &&move)                       = default;
                     manager_iterator& operator=(const manager_iterator& copy)   = default;
@@ -68,9 +76,10 @@ namespace http::session {
                         }
                     }
                     auto operator--() {
+                        //begin() - 1 is invalid, so it is irrelevant valid it or not
                         for (--it; it != begin; --it) {
                             if (*it != nullptr && !(*it)->expired(timestamp)) {
-                                break;
+                                return;
                             }
                         }
                     }
@@ -84,16 +93,6 @@ namespace http::session {
                         return other.it > this->it;
                     }
             };
-
-            virtual std::string generateSID(const request* context = nullptr) {
-                auto proxy = hwrandom<unsigned>();
-                srand(proxy());
-                return genGandom(10);
-            }
-
-            virtual uint32_t index() {
-                return _generator();
-            }
 
             esp_err_t place(std::shared_ptr<iSession>& session, int64_t timestamp) {
                 auto guardian = std::unique_lock(storage.rwMutex);
@@ -185,12 +184,26 @@ namespace http::session {
                 return nullptr;
             }
 
+            virtual std::string generateSID(const request* context = nullptr) {
+                auto proxy = hwrandom<unsigned>();
+                srand(proxy());
+                return genGandom(10);
+            }
+
+            virtual uint32_t index() {
+                return _generator();
+            }
+
+            virtual manager::session_type* makeSession(const request* context = nullptr) {
+                return new TSession(generateSID(context), index());
+            }
+
             virtual bool validateSession(std::shared_ptr<iSession>& session, const request* context = nullptr) const {
                 return true;
             }
 
-            virtual void invalidateSessionPtr(session_ptr_type& sessionPtr) const {
-                std::static_pointer_cast<TSession>(sessionPtr)->invalidate();
+            virtual void invalidateSessionPtr(session_ptr_type& sessionPtr, int reason = 0) const {
+                std::static_pointer_cast<TSession>(sessionPtr)->invalidate(reason);
             }
 
             virtual void updateSessionPtr(session_ptr_type& sessionPtr, int64_t timestamp) const {
@@ -206,13 +219,20 @@ namespace http::session {
             typedef manager_iterator<false> iterator;
             typedef manager_iterator<true>  const_iterator;
 
+            enum class closeReason : int {
+                NORMAL_TERM = 0,
+                EXPIRED,
+                GENERAL_ERROR,
+                TOTAL,
+            };
+
             auto operator=(manager&) = delete;
 
             virtual ~manager() {
                 auto guardian = std::unique_lock(storage.rwMutex);
                 for (int i = 0; i < storage.data.size(); ++i) {
                     if (storage.data[i] != nullptr) {
-                        invalidateSessionPtr(storage.data[i]);
+                        invalidateSessionPtr(storage.data[i], (int)closeReason::NORMAL_TERM);
                         storage.data[i] = nullptr;
                     }
                 }
@@ -223,7 +243,7 @@ namespace http::session {
                 auto timestamp = esp_timer_get_time();
                 for (int i = 0; i < 3; ++i) {
                     //this one is for allowing to call private/protected constructor via frendship
-                    manager::session_ptr_type sess(new TSession(generateSID(context), index()));
+                    manager::session_ptr_type sess(makeSession());
                     if (auto code = place(sess, timestamp); code == ESP_OK) {
                         updateSessionPtr(sess, timestamp);
                         return sess;
@@ -245,7 +265,7 @@ namespace http::session {
                             updateSessionPtr(sess, timestamp);
                             return sess;
                         } else {
-                            invalidateSessionPtr(sess);
+                            invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
                             remove(sess); //do no block both rwMutex
                             infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
                             return ESP_ERR_NOT_FOUND;
@@ -262,7 +282,7 @@ namespace http::session {
             resBool close(const std::string& sid) override {
                 if (storage.count > 0) { //suppose that read and write are atomic
                     if (auto sess = find(sid); sess != nullptr) {
-                        invalidateSessionPtr(sess);
+                        invalidateSessionPtr(sess, (int)closeReason::NORMAL_TERM);
                         remove(sess);
                         return ESP_OK;
                     }
@@ -279,7 +299,7 @@ namespace http::session {
                         }
                         return sess;
                     } else {
-                        invalidateSessionPtr(sess);
+                        invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
                         remove(sess); //do no block both rwMutex
                         infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
                         return ESP_ERR_NOT_FOUND;
@@ -308,21 +328,31 @@ namespace http::session {
                 return storage.count;
             }
 
-            //suppose that collect called not in current request
-            //so it some kind save to lock both manager and session
-            void collect() override {
-                if (storage.count > 0) {
-                    auto timestamp = esp_timer_get_time();
-                    auto guardian = std::unique_lock(storage.rwMutex);
-                    for (size_t i = 0; i < total; ++i) {
-                        if (storage.data[i] != nullptr && storage.data[i]->expired(timestamp)) {
-                            invalidateSessionPtr(storage.data[i]);
-                            storage.data[i] = nullptr;
-                            storage.count--;
-                        }
+        //this method collect all expired session
+        //it move it out storage before invalidate
+        //in order to do not block booth session and manager
+        void collect() override {
+            //mark is used to move invalidateSessionPtr out of
+            std::vector<std::shared_ptr<iSession>> mark = {};
+            if (storage.count > 0) {
+                auto timestamp = esp_timer_get_time();
+                auto guardian = std::unique_lock(storage.rwMutex);
+                for (size_t i = 0; i < total; ++i) {
+                    if (storage.data[i] != nullptr && storage.data[i]->expired(timestamp)) {
+                        debugIf(LOG_SERVER_GC, storage.data[i]->sid().c_str(), " expired and collected: i: ", storage.data[i]->index());
+                        mark.emplace_back(storage.data[i]);
+                        storage.data[i] = nullptr;
+                        storage.count--;
                     }
                 }
             }
+            if (mark.size() > 0) {
+                info("server gc collected", mark.size(), " sessions");
+                for (auto it = mark.begin(); it != mark.end(); ++it) {
+                    invalidateSessionPtr(*it, (int)closeReason::EXPIRED);
+                }
+            }
+        }
 
             void* neighbour(uint32_t traitId) override {
                 switch (traitId) {
@@ -340,8 +370,7 @@ namespace http::session {
             }
 
             auto sharedGuardian() const {
-                auto guardian = std::shared_lock(storage.rwMutex);
-                return guardian;
+                return std::shared_lock(storage.rwMutex);
             }
 
             iterator begin() {

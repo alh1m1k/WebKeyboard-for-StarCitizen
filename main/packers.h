@@ -411,22 +411,38 @@ std::string settingsGetMsg(std::string_view id, const std::string& ssid, wifi_au
 	return buffer;
 }
 
-std::string connectedNotify(uint32_t packetId, std::string& clientId, bool status) {
-	
+//reason 1 - connected
+//reason 2 - reconnected
+//reason 3 - disconnect
+std::string connectedNotify(uint32_t packetId, std::string& clientId, int reason) {
+
 	constexpr auto templateConnectedSize 		= strlen(MSG_CLIENT_CONNECTED);
+	constexpr auto templateReConnectedSize 		= strlen(MSG_CLIENT_RECONNECTED);
 	constexpr auto templateDisconnectedSize 	= strlen(MSG_CLIENT_DISCONNECTED);
 	constexpr auto maxPacketIdSize 				= 10; //std::snprintf(nullptr, 0, "%d", 1);
-		
-	std::string buffer = "";
-	buffer.resize((status ? templateConnectedSize : templateDisconnectedSize) + clientId.size() + maxPacketIdSize);
 
-	auto wr = std::snprintf(buffer.data(), buffer.capacity(), (status ? MSG_CLIENT_CONNECTED : MSG_CLIENT_DISCONNECTED), packetId, clientId.c_str());
-	
+	std::string buffer = "";
+	int wr;
+	if (reason == 1) {
+		buffer.resize(templateConnectedSize + clientId.size() + maxPacketIdSize);
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_CONNECTED, packetId, clientId.c_str());
+	} else if (reason == 2) {
+		buffer.resize(templateReConnectedSize + clientId.size() + maxPacketIdSize);
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_RECONNECTED, packetId, clientId.c_str());
+	} else if (reason == 3) {
+		buffer.resize(templateDisconnectedSize + clientId.size() + maxPacketIdSize);
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_DISCONNECTED, packetId, clientId.c_str());
+	} else {
+		throw new std::invalid_argument("reason invalid");
+	}
+
 	if (wr == buffer.capacity()) {
 		throw std::runtime_error("buffer capacity safeguard");
 	}
 	
 	buffer.resize(wr);
+
+    debug("connectedNotify", buffer.c_str());
 	
 	return buffer;
 }

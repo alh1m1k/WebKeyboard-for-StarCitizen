@@ -14,13 +14,11 @@
 #include "esp_wifi_default.h"
 #include "esp_wifi_types.h"
 #include "generated.h"
-#include "nvs.h"
 #include "result.h"
 #include <optional>
 #include <iostream>
 #include <string>
 #include <sys/_stdint.h>
-#include <esp_netif_sntp.h>
 #include "esp_mac.h"
 #include "esp_netif_ip_addr.h"
 #include "nvsRes.h"

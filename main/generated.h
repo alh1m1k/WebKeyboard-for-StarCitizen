@@ -107,6 +107,14 @@
 #define LOG_WIFI_AP_PWD	false
 #endif
 
+#ifndef SESSION_TIMEOUT
+SESSION_TIMEOUT 60*20
+#endif
+
+#ifndef SID_COOKIE_TTL
+SID_COOKIE_TTL 3600*24
+#endif
+
 
 
 

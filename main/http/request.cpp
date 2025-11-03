@@ -5,14 +5,12 @@
 namespace http {
 			
 	//request::request(httpd_req_t* esp_req) : handler(esp_req) {}
-	request::request(httpd_req_t* esp_req, action& route) : handler(esp_req), _route(route) {}
+	request::request(httpd_req_t* esp_req, action& action) : handler(esp_req), _action(action) {}
 				
 	const headers& request::getHeaders() const {
-		
 		if (_headers == nullptr) {
 			_headers = std::make_unique<headers>(handler);
 		}
-		
 		return *_headers;		
 	}
 
@@ -38,6 +36,20 @@ namespace http {
 
 	httpd_method_t request::getMethod() const {
 		return (httpd_method_t)handler->method;
-	} 	
+	}
+
+	const network& request::getRemote() const {
+		if (_remoteNetwork == nullptr) {
+			_remoteNetwork = std::make_unique<network>(tryFileDescriptor(), true);
+		}
+		return *_remoteNetwork;
+	}
+
+	const network& request::getLocal() const {
+		if (_localNetwork == nullptr) {
+			_localNetwork = std::make_unique<network>(tryFileDescriptor(), false);
+		}
+		return *_localNetwork;
+	}
 }
 

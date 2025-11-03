@@ -96,6 +96,10 @@ namespace http {
 
             std::shared_ptr<session::iSession> getSession() const;
 
+			const network& getRemote() const;
+
+			const network& getLocal() const;
+
 			inline bool isSended() const noexcept {
 				return _sended;
 			}

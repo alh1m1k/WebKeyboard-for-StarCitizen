@@ -6,8 +6,8 @@
 #include <iostream>
 #include <string>
 #include <stdexcept>
-#include <sys/_stdint.h>
 #include <algorithm>
+#include "type_traits"
 
 #include "esp_err.h"
 #include "result.h"
@@ -131,6 +131,12 @@ static uint32_t genId() {
 		return id++;
 	}
 }
+
+template<typename T, typename = void>
+struct has_value_type : std::false_type {};
+
+template<typename T>
+struct has_value_type<T, std::void_t<typename T::value_type>> : std::true_type {};
 
 template<typename valueType = uint32_t, bool threadSafe = false>
 class generator {

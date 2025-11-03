@@ -64,4 +64,6 @@ namespace http::socket {
 				}
 			}	
 	};
+
+	static auto noSocket = socket(nullptr);
 }
