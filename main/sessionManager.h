@@ -3,41 +3,31 @@
 #include "session.h"
 #include "request.h"
 #include "http/session/manager.h"
+#include "crypto/hash/httpIdentity.h"
+#include "crypto/hash/sha256Engine.h"
 
 class sessionManager: public http::session::manager<class session> {
 
     typedef  http::session::manager<class session> base;
+    typedef  crypto::hash::httpIdentity<hwrandom<int>, crypto::hash::sha256Engine> sid_generator_type;
 
     protected:
 
+        sid_generator_type identity;
+
         const std::function<void(int type, http::session::iSession* context, void* data)> memberNotification = nullptr;
 
-        void processMemberNotification(int type, http::session::iSession* context, void* data) const {
-            if (auto sess = find(context->sid()); sess != nullptr) {
-                notification(type, sess, data);
-            } else {
-                error("session that emit event does not exist", context->sid().c_str());
-            }
-        }
+        std::string generateSID(const http::request *context = nullptr) override;
 
-        manager<session>::session_type* makeSession(const http::request *context = nullptr) override {
-            auto sess = new session(generateSID(context), index());
-            if (notification != nullptr) {
-                sess->notification = memberNotification;
-            }
-            return sess;
-        }
+        bool validateSession(std::shared_ptr<http::session::iSession> &session, const http::request *context = nullptr) const override;
 
-        void updateSessionPtr(session_ptr_type& sessionPtr, int64_t timestamp) const override {
-            std::static_pointer_cast<session>(sessionPtr)->update(timestamp);
-        }
+        void processMemberNotification(int type, http::session::iSession* context, void* data) const;
 
-        void invalidateSessionPtr(session_ptr_type& sessionPtr, int reason = 0) const override {
-            std::static_pointer_cast<session>(sessionPtr)->invalidate();
-            if (notification != nullptr) {
-                notification((int)sessionNotification::CLOSE, sessionPtr, (void*)&reason);
-            }
-        }
+        manager<session>::session_type* makeSession(const http::request *context = nullptr) override;
+
+        void updateSessionPtr(session_ptr_type& sessionPtr, int64_t timestamp) const override;
+
+        void invalidateSessionPtr(session_ptr_type& sessionPtr, int reason = 0) const override;
 
     public:
 
@@ -53,9 +43,12 @@ class sessionManager: public http::session::manager<class session> {
             TOTAL,
         };
 
-        sessionManager(): memberNotification([manager = this](int type, http::session::iSession* context, void* data) -> void {
-            manager->processMemberNotification(type, context, data);
-        }) {
+        sessionManager(const std::string& secret) :
+            identity(secret),
+            memberNotification([manager = this](int type, http::session::iSession* context, void* data) -> void {
+                manager->processMemberNotification(type, context, data);
+            })
+        {
 
         };
 
@@ -63,49 +56,11 @@ class sessionManager: public http::session::manager<class session> {
 
         std::function<void(int type, session_ptr_type& context, void* data)> notification = nullptr;
 
+        result_type open(const http::request *context = nullptr) override;
 
-        result_type open(const http::request *context = nullptr) override {
-            if (auto r = base::open(context); r) {
-                if (notification != nullptr) {
-                    note_open_type details = {
-                        .reason  = 1,
-                        .req    = context,
-                    };
-                    notification((int)sessionNotification::OPEN, std::get<session_ptr_type>(r), (void*)&details);
-                }
-                return r;
-            } else {
-                return r;
-            }
-        }
+        result_type open(const std::string &sid, const http::request *context = nullptr) override;
 
-        result_type open(const std::string &sid, const http::request *context = nullptr) override {
-            if (auto r = base::open(sid, context); r) {
-                if (notification != nullptr) {
-                    note_open_type details = {
-                        .reason  = 2,
-                        .req    = context,
-                    };
-                    notification((int)sessionNotification::OPEN, std::get<session_ptr_type>(r), (void*)&details);
-                } else {
-                    error("no manager");
-                }
-                return r;
-            } else {
-                return r;
-            }
-        }
+        void* neighbour(uint32_t traitId) override;
 
-        void* neighbour(uint32_t traitId) override {
-            switch (traitId) {
-                case sessionManager::TRAIT_ID:
-                    return static_cast<sessionManager*>(this);
-                default:
-                    return http::session::manager<session>::neighbour(traitId);
-            }
-        }
-
-        void* downcast() override {
-            return static_cast<sessionManager*>(this);
-        }
+        void* downcast() override;
 };

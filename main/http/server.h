@@ -65,9 +65,9 @@ namespace http {
 
 			void 	collect();
 
-            template<class TSessionManager>
-            inline void attachSessions() { //todo init vector
-                setSessions(std::make_unique<TSessionManager>());
+            template<class TSessionManager, typename... Args>
+            inline void attachSessions(Args&&... args) { //todo init vector
+                setSessions(std::make_unique<TSessionManager>(std::forward<Args>(args)...));
             }
 
             const sessions_ptr_type& getSessions() const;

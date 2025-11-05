@@ -11,7 +11,8 @@ class hwrandom {
 		
 	public:
 	
-		typedef R result_type; 
+		typedef R result_type;
+        typedef std::true_type rand_fill;
 	
 		hwrandom() {}
 		
@@ -33,6 +34,10 @@ class hwrandom {
 			result_type buffer;
 			esp_fill_random(&buffer, sizeof(result_type));
 			return buffer;
+		}
+
+		void fill(void* ptr, size_t size) {
+			esp_fill_random(&ptr, size);
 		}
 		
 		void discard(unsigned long long z) {

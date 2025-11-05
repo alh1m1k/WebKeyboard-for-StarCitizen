@@ -85,7 +85,9 @@ inline void eraseByReplace(vector& v, typename vector::iterator eraseIt) {
 	v.erase(replaceWith);
 }
 
-inline std::string genGandom(const int len) {
+//todo remove me
+template <typename rndT = int(void)>
+inline std::string randomString(const int len, rndT& rnd = rand) {
     static const char alphanum[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -94,7 +96,7 @@ inline std::string genGandom(const int len) {
     tmp_s.reserve(len);
 
     for (int i = 0; i < len; ++i) {
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+        tmp_s += alphanum[rnd() % (sizeof(alphanum) - 1)];
     }
     
     return tmp_s;
@@ -132,11 +134,11 @@ static uint32_t genId() {
 	}
 }
 
-template<typename T, typename = void>
-struct has_value_type : std::false_type {};
 
-template<typename T>
-struct has_value_type<T, std::void_t<typename T::value_type>> : std::true_type {};
+#define TRAIT(trait_name) template <typename T, typename = void> 			\
+						  struct have_##trait_name : std::false_type {}; 	\
+						  template <typename T> 							\
+						  struct have_##trait_name<T, std::enable_if_t<std::is_same_v<typename T::trait_name, std::true_type>>> : std::true_type {};
 
 template<typename valueType = uint32_t, bool threadSafe = false>
 class generator {

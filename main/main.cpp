@@ -203,7 +203,7 @@ void app_main(void)
 		}
 		
 		if (persistanceSign = persistence.getStorageSign(); persistanceSign == "") {
-			persistanceSign = genGandom(32);
+			persistanceSign = randomString(32);
 			infoIf(LOG_ENTROPY, "generate new storage sign", persistanceSign.c_str());
 			if (auto status = persistence.setStorageSign(persistanceSign); status) {
 				debug("new storage sign is set");
@@ -217,7 +217,7 @@ void app_main(void)
 	}
 	
 	{
-		bootingSign = genGandom(32);
+		bootingSign = randomString(32);
 	}
 	
 	
@@ -272,7 +272,7 @@ void app_main(void)
 
 	std::cout << "starting webServer " << std::endl;
 	http::server webServer = {};
-    webServer.attachSessions<sessionManager>();
+    webServer.attachSessions<sessionManager>("magic words");
 	
 	if (auto status = webServer.begin(80); !status) {
 		trap("fail 2 setup webServer", status.code());
