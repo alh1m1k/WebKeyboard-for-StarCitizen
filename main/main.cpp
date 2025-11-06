@@ -313,28 +313,28 @@ void app_main(void)
 		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
 	}
 
-
-/*	result = webServer.addHandler("/leave", httpd_method_t::HTTP_POST, [&closureCtx](http::request& req, http::response& resp)-> http::handlerRes {
-		
-		debug("call leave handler");
-		
-		auto socket = http::socket::socket(req.native()).keep();
-		
-		
-		auto clientId = closureCtx.sockets.get(socket);
-		bool success = closureCtx.sockets.remove(socket);
-		
-		#ifdef _NOTIFICATION_ENABLE
-			if (success) {
-				if (auto ret = closureCtx.notification.notifyExept(connectedNotify(closureCtx.packetCounter(), clientId, false), clientId); !ret) {
-					debug("unable send notification (leave)", ret.code());
-				}
+	if (status = webServer.addHandler("/leave", httpd_method_t::HTTP_POST,
+	  [&webServer](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
+		if (auto absSess = req.getSession(); absSess != nullptr) {
+			if (webServer.getSessions()->close(absSess->sid())) {
+				return ESP_OK;
 			}
-		#endif
+		}
+	    return ESP_FAIL;
+	}); !status) {
+		webServer.end();
+		trap("fail 2 setup webServer path /leave", 	status.code());
+	}
 
+	if (status = webServer.addHandler("/renew", httpd_method_t::HTTP_POST,
+	  [](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
+		  response << ""; //currently needed to complete query
+		  return ESP_OK;  //rest will handle server
+	  }); !status) {
+		webServer.end();
+		trap("fail 2 setup webServer path /renew", 	status.code());
+	}
 
-		return (esp_err_t)ESP_OK;
-	});*/
 
     auto  kbMessageParser    = typename wsproto::kb_parser_type();
     auto  packetCounter 	 = typename wsproto::packet_seq_generator_type();

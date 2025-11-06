@@ -6,6 +6,7 @@ namespace http::session {
         I_SESSION = 0,
         I_SOCKS_CNT_SESSION,
         I_WEB_SOCKET_SESSION,
+        I_RENEW_SESSION,
         SESSION,
         I_TEST,
 

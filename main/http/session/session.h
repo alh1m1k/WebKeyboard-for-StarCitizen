@@ -46,7 +46,8 @@ namespace http::session {
                     }
             };
 
-            uint32_t _updatedS = 0;
+            uint32_t _updatedExpiredS   = 0;
+            uint32_t _updatedOutdatedS  = 0;
             std::string _sid;
             std::shared_mutex _mux;
             sharedData _data = {};
@@ -65,7 +66,15 @@ namespace http::session {
             void update(int64_t timestamp) noexcept override {
                 taskENTER_CRITICAL(&_spin);
                 auto _t = (uint32_t)(timestamp / 1000000);
-                _updatedS = _t;
+                _updatedExpiredS = _t;
+                taskEXIT_CRITICAL(&_spin);
+            }
+
+            void renew(const sid_type& sid, int64_t timestamp) noexcept override {
+                taskENTER_CRITICAL(&_spin);
+                auto _t = (uint32_t)(timestamp / 1000000);
+                _sid = sid;
+                _updatedOutdatedS = _t;
                 taskEXIT_CRITICAL(&_spin);
             }
 
@@ -105,12 +114,28 @@ namespace http::session {
                     error("session impl reach it's limit");
                     esp_restart();
                 }
-                return (timestamp - (int64_t )_updatedS * 1000000) > ((int64_t )duration() * 1000000);
+                return (timestamp - (int64_t )_updatedExpiredS * 1000000) > ((int64_t )duration() * 1000000);
+            }
+
+            [[nodiscard]]
+            bool outdated(int64_t timestamp) const noexcept override {
+                if (timestamp > 4294967295000000) {
+                    error("session impl reach it's limit");
+                    esp_restart();
+                }
+                return (timestamp - (int64_t )_updatedOutdatedS * 1000000) > ((int64_t )refreshInterval() * 1000000);
             }
 
             [[nodiscard]]
             virtual inline int32_t duration() const {
+                static_assert(SESSION_SID_REFRESH_INTERVAL > SESSION_TIMEOUT, "SESSION_SID_REFRESH_INTERVAL > SESSION_TIMEOUT");
                 return SESSION_TIMEOUT;
+            }
+
+            [[nodiscard]]
+            virtual inline int32_t refreshInterval() const {
+                static_assert(SESSION_SID_REFRESH_INTERVAL > SESSION_TIMEOUT, "SESSION_SID_REFRESH_INTERVAL > SESSION_TIMEOUT");
+                return SESSION_SID_REFRESH_INTERVAL;
             }
 
             virtual read_guardian_type  read() {

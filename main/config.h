@@ -55,7 +55,8 @@
 
 
 #define SID_COOKIE_TTL                      3600*24
-#define SESSION_TIMEOUT                     60*5
+#define SESSION_TIMEOUT                     60*30
+#define SESSION_SID_REFRESH_INTERVAL        3600
 //maximum number of clients, no point in increasing.
 //The network stack probably won't be able to handle even that amount.
 #define SESSION_MAX_CLIENT_COUNT 			10
@@ -79,7 +80,7 @@
 
 
 //JTAG DEBUG
-#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
+//#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
                                                 //as CDC and JTAG are compete for resources
 //use menuconfig Component config > ESP System Settings :: CONFIG_ESP_CONSOLE_UART = CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 //to redirect app logs to JTAG uart
@@ -98,7 +99,7 @@
 
 //#define LOG_LED 		true
 
-#define LOG_MESSAGES 	true
+//#define LOG_MESSAGES  true
 
 //#define LOG_SCHEDULER true
 
@@ -106,7 +107,7 @@
 
 #define LOG_SESSION      false
 
-#define LOG_SESSION_EVT  true
+#define LOG_SESSION_EVT  false
 
 #define LOG_COOKIES      false
 

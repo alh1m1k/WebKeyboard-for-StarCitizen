@@ -12,8 +12,7 @@ class hwrandom {
 	public:
 	
 		typedef R result_type;
-        typedef std::true_type rand_fill;
-	
+
 		hwrandom() {}
 		
 		virtual ~hwrandom() {}
@@ -36,6 +35,7 @@ class hwrandom {
 			return buffer;
 		}
 
+        using trait_fill_buffer = std::true_type;
 		void fill(void* ptr, size_t size) {
 			esp_fill_random(&ptr, size);
 		}

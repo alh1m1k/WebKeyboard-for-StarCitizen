@@ -19,7 +19,7 @@ namespace http {
 		
 		public:
 
-            static constexpr uint16_t MINIMUM_ALLOCATED_BYTES = 32;
+            static constexpr uint16_t MINIMUM_ALLOCATED_BYTES = 100; //for sid
 		
 			cookies();
 

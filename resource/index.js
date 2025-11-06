@@ -1861,6 +1861,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
     const identityV = identity();
     socket.identity(() => identityV);
+    socket.session( () => fetch("/renew", { method: 'POST' }) );
     socket.open();
 
     notificator.addNotification("Attempting connect...", "connection_info", "info", 0);

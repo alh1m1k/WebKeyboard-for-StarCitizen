@@ -45,7 +45,7 @@ bool sessionManager::validateSession(std::shared_ptr<http::session::iSession> &s
 }
 
 void sessionManager::processMemberNotification(int type, http::session::iSession* context, void* data) const {
-    if (auto sess = find(context->sid()); sess != nullptr) {
+    if (auto sess = find(context->sid(), guard<ro_lock_type>()); sess != nullptr) {
         notification(type, sess, data);
     } else {
         error("session that emit event does not exist", context->sid().c_str());

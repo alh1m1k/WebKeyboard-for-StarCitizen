@@ -14,12 +14,8 @@ namespace crypto::hash {
     template<class rndFnT, class hashEngineT>
     class httpIdentity {
 
-        template<typename T, typename = void>
-        struct can_it_fill_buffer : std::false_type {};
-        template<typename T>
-        struct can_it_fill_buffer<T, std::void_t<typename T::rand_fill>> : std::true_type {};
-
         TRAIT(trait_chunk_hash);
+        TRAIT(trait_fill_buffer);
 
         rndFnT _rnd                     = {};
         std::vector<uint8_t> _secret    = {};
@@ -30,7 +26,7 @@ namespace crypto::hash {
                 if (buffer.size() < size) {
                     return false;
                 }
-                if constexpr (can_it_fill_buffer<hashEngineT>::value) {
+                if constexpr (have_trait_fill_buffer<hashEngineT>::value) {
                     _rnd.fill((void*)buffer.data(), size);
                 } else {
                     constexpr int bytes = sizeof(typename rndFnT::result_type);

@@ -14,7 +14,9 @@ namespace http::session {
 
             virtual void update(int64_t timestamp) noexcept = 0;
 
-            explicit iSession(std::string&& sid, uint32_t index) noexcept;   //called by manager, on open
+			virtual void renew(const sid_type& sid, int64_t timestamp) noexcept = 0;
+
+            explicit iSession(std::string&& sid, uint32_t index) noexcept {};   //called by manager, on open
         public:
 
             static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_SESSION;

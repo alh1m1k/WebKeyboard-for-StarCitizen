@@ -89,6 +89,7 @@ namespace http {
     }
 #pragma GCC diagnostic pop
 
+
     static esp_err_t sessionOpen(request& req, response& resp, action& path) {
 
         using session_ptr_type = session::iManager::session_ptr_type;
@@ -98,10 +99,35 @@ namespace http {
         session::iManager::result_type sessionResult = ESP_FAIL;
         //try reuse if cookie exist
         infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " t ", esp_timer_get_time());
-        if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult && std::get<const cookie>(
-                cookieReadResult).value != "") {
+        if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult) {
             if (sessionResult = path.owner->getSessions()->open(std::get<const cookie>(cookieReadResult).value, &req); sessionResult) {
                 infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " t ", esp_timer_get_time(), std::get<const cookie>(cookieReadResult).value);
+                if (auto absSess = std::get<session_ptr_type>(sessionResult); absSess->outdated(esp_timer_get_time())) {
+                    infoIf(LOG_SESSION, "session is outdated", req.native()->uri, " t ", esp_timer_get_time());
+                    if (sessionResult = path.owner->getSessions()->renew(absSess, &req); sessionResult) {
+                        infoIf(LOG_SESSION, "session renew", req.native()->uri, " t ", esp_timer_get_time(), " ", absSess->sid().c_str());
+                        auto sidCookie = cookie("wkb-id", absSess->sid(), true);
+                        sidCookie.maxAge = SID_COOKIE_TTL;
+                        if (auto cookieWriteResult = resp.getCookies().set(sidCookie); cookieWriteResult) {
+                            infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " t ", esp_timer_get_time());
+                        } else {
+                            error("cookie write", req.native()->uri, " t ", esp_timer_get_time(), " code ", cookieWriteResult.code());
+                            if (auto closeResult = path.owner->getSessions()->close(absSess->sid()); closeResult) {
+                                infoIf(LOG_SESSION, "outdated session closed", req.native()->uri, " t ", esp_timer_get_time());
+                            } else {
+                                error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ", closeResult.code());
+                            }
+                            sessionResult = ESP_FAIL;
+                        }
+                    } else {
+                        error("fail to renew outdated session", req.native()->uri, " t ", esp_timer_get_time(), " ", sessionResult.code());
+                        if (auto closeResult = path.owner->getSessions()->close(absSess->sid()); closeResult) {
+                            infoIf(LOG_SESSION, "outdated session closed", req.native()->uri, " t ", esp_timer_get_time());
+                        } else {
+                            error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ", closeResult.code());
+                        }
+                    }
+                }
             } else {
                 info("session open(reuse) fail", req.native()->uri, " t ", esp_timer_get_time(), " code ", sessionResult.code());
             }
@@ -119,18 +145,14 @@ namespace http {
                     auto sidCookie = cookie("wkb-id", std::get<session_ptr_type>(sessionResult)->sid(), true);
                     sidCookie.maxAge = SID_COOKIE_TTL;
                     if (auto cookieWriteResult = resp.getCookies().set(sidCookie); cookieWriteResult) {
-                        infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " t ",
-                               esp_timer_get_time());
+                        infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " t ", esp_timer_get_time());
                     } else {
-                        error("cookie write", req.native()->uri, " t ", esp_timer_get_time(), " code ",
-                              cookieWriteResult.code());
+                        error("cookie write", req.native()->uri, " t ", esp_timer_get_time(), " code ", cookieWriteResult.code());
                         if (auto closeResult = path.owner->getSessions()->close(
                                     std::get<session_ptr_type>(sessionResult)->sid()); closeResult) {
-                            infoIf(LOG_SESSION, "malformed session closed", req.native()->uri, " t ",
-                                   esp_timer_get_time());
+                            infoIf(LOG_SESSION, "malformed session closed", req.native()->uri, " t ", esp_timer_get_time());
                         } else {
-                            error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ",
-                                  closeResult.code());
+                            error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ", closeResult.code());
                         }
                         sessionResult = ESP_FAIL;
                     }
@@ -246,12 +268,13 @@ namespace http {
 		} catch (headers_sended& e) {
 			error("handler throw error", e.what(), e.code());
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-		} catch (bad_api_call& e) {
+		} catch (std::exception& e) {
 			serverException(req, resp, &e);
 			error("server exception", e.what(), ESP_FAIL);
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 			return ESP_FAIL;
 		} catch (...) {
+            error("server exception",ESP_FAIL);
             return ESP_FAIL;
         }
 				

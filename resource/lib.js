@@ -307,6 +307,9 @@ function Socket(target) {
                     console.warn("no handler");
                 }
 
+                privateCtx.lastOpenAt = new Date();
+                privateCtx.wasOpen = true;
+
                 if (isCallable(privateCtx.onconnectnect)) {
                     privateCtx.onconnectnect.call(publicCtx, e);
                 }
@@ -356,13 +359,21 @@ function Socket(target) {
                 }
 
                 if (!event.wasClean) {
-                    clearTimeout(privateCtx.reconnectHndl);
-                    privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
-                    console.warn("trigger reconnect")
+                    if ( privateCtx.sess !== emptyFn && privateCtx.wasAuthorizedOnce && privateCtx.wasOpen &&
+                        privateCtx.lastOpenAt && new Date() - privateCtx.lastOpenAt <= 1000)
+                    {
+                        privateCtx.sess().then(() => {
+                            clearTimeout(privateCtx.reconnectHndl);
+                            privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
+                        });
+                    } else {
+                        clearTimeout(privateCtx.reconnectHndl);
+                        privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
+                        console.warn("trigger reconnect")
+                    }
                 } else {
                     console.warn("socket closed clean");
                 }
-
             };
 
             socket.onmessage = function(evt, ...args) {
@@ -485,10 +496,13 @@ function Socket(target) {
         },
         taskId: 0,
         status: SocketInit,
+        wasOpen: false,
+        wasAuthorizedOnce: false,
         lastError: {},
         lastDisconnectReason: {},
         connectAttempts: 0,
         lastConnectTime: null,
+        lastOpenAt: null,
         onconnectnect: null,
         ondisconnect: null,
         onauthorized: null,
@@ -500,6 +514,7 @@ function Socket(target) {
         auth: () => {
             return indentity;
         },
+        sess: emptyFn(),
         connect: ()=> {
             console.info("trigger connect")
             if (privateCtx.tasks.connect) {
@@ -521,6 +536,8 @@ function Socket(target) {
             privateCtx.tasks.connect = null;
         },
         reconnect: () => {
+            privateCtx.wasOpen = false;
+            privateCtx.lastOpenAt = null;
             clearTimeout(privateCtx.reconnectHndl); //privateCtx.reconnectHndl is shared betwen reconnect impl and reconnect itself
             let passes = (new Date) - privateCtx.lastConnectTime;
             let time = 1000 *  Math.min(Math.floor(privateCtx.connectAttempts / 5)+1, 10);
@@ -604,6 +621,7 @@ function Socket(target) {
                 console.info("successful auth");
                 if (privateCtx.status === SocketOpen) {
                     privateCtx.status = SocketAuthorized;
+                    privateCtx.wasAuthorizedOnce = true;
                 } else {
                     console.warn("SocketAuthorized of socket that no open!");
                 }
@@ -754,6 +772,9 @@ function Socket(target) {
         },
         identity(callback) {
             privateCtx.auth = callback;
+        },
+        session(callback) {
+            privateCtx.sess = callback;
         },
         ns(namespace, callback = function (){}, async = true, ...args) {
             let ctrl;

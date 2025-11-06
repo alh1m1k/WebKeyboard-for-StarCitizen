@@ -94,6 +94,10 @@ namespace http {
 			
 			cookies& getCookies();
 
+			inline const request& getRequest() const {
+				return _request;
+			}
+
             std::shared_ptr<session::iSession> getSession() const;
 
 			const network& getRemote() const;
