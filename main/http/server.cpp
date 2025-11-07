@@ -282,6 +282,21 @@ namespace http {
 		return ESP_OK;
 	}
 
+    struct jobWrapper {
+        const server::job_type job;
+    };
+    static void staticJobProcessor(void *arg) {
+        auto wrapper = static_cast<jobWrapper*>(arg);
+        try {
+            wrapper->job();
+        } catch (const std::exception& e) {
+            error("staticJobProcessorEx", e.what());
+        } catch (...) {
+            error("staticJobProcessorEx", "undefined exception");
+        };
+        delete wrapper;
+    }
+
 	resBool server::begin(uint16_t port) {
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 	= 20;
@@ -385,6 +400,19 @@ namespace http {
             }
         }
         return _sessions;
+    }
+
+    resBool server::scheduleJob(job_type&& job) {
+        if (handler == nullptr) {
+            throw std::logic_error("server not start");
+        }
+        auto wrapper = new jobWrapper{std::move(job)};
+        if (auto code = httpd_queue_work(handler, staticJobProcessor, (void*)wrapper); code != ESP_OK) {
+            delete wrapper;
+            return code;
+        } else {
+            return code;
+        }
     }
 
 }

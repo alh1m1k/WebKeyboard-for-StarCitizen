@@ -23,6 +23,8 @@ idf_component_register(
     					. ./exception
     					./http ./http/exception ./http/resource ./http/session ./http/resource/memory ./http/lib/httpparser
     					./http/socket
+						./syncing
+						./crypto
     					./dns
     					./hid
     					./wifi

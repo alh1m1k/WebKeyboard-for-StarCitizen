@@ -32,7 +32,42 @@ namespace http::session {
 
         generator<uint32_t, false> _generator = {0};
 
-        std::shared_ptr<iSession> findBy(const sid_type& sid) const {
+        result<session_ptr_type> placeNew(std::shared_ptr<iSession>& session, int64_t timestamp) {
+
+            std::shared_ptr<iSession>* slot = nullptr;
+            std::shared_ptr<iSession> expireSession;
+            for (size_t i = 0; i < storage.data.size(); ++i) {
+                if (storage.data[i] != nullptr) {
+                    if (!storage.data[i]->expired(timestamp)) {
+                        if (storage.data[i]->sid() == session->sid()) {
+                            return COLLISION_SESSION_ERROR;
+                        }
+                    } else if (slot == nullptr) {
+                        slot            = &storage.data[i];
+                        expireSession   = std::move(storage.data[i]);
+                    }
+                } else if (slot == nullptr) {
+                    slot = &storage.data[i];
+                }
+            }
+
+            if (slot == nullptr) {
+                return NO_SLOT_SESSION_ERROR;
+            } else {
+                if (expireSession == nullptr) {
+                    storage.count++;
+                }
+                *slot = session;
+            }
+
+            if (expireSession != nullptr) {
+                return expireSession;
+            }
+
+            return ESP_OK;
+        }
+
+        session_ptr_type findBy(const sid_type& sid) const {
 
             if (storage.count == 0) {
                 return nullptr;
@@ -49,7 +84,13 @@ namespace http::session {
             return nullptr;
         }
 
-        std::shared_ptr<iSession> findBy(const index_type& index) const {
+        inline session_ptr_type findBy(const index_type& index) const {
+            return findBy([&index](const session_ptr_type& sess) -> bool  {
+                return sess->index() == index;
+            });
+        }
+
+        session_ptr_type findBy(const std::function<bool(const session_ptr_type& sess)>& callback) const {
 
             if (storage.count == 0) {
                 return nullptr;
@@ -57,7 +98,7 @@ namespace http::session {
 
             for (size_t i = 0; i < total; ++i) {
                 if (storage.data[i] != nullptr) {
-                    if (storage.data[i]->index() == index) {
+                    if (callback(storage.data[i])) {
                         return storage.data[i];
                     }
                 }
@@ -66,20 +107,47 @@ namespace http::session {
             return nullptr;
         }
 
-        bool removeBy(const session_ptr_type& session) {
+        inline session_ptr_type removeBy(const sid_type& sid) {
+            return removeBy([&sid](const session_ptr_type& sess) -> bool  {
+                return sess->sid() == sid;
+            });
+        }
+
+        session_ptr_type removeBy(const session_ptr_type& sess) {
 
             if (storage.count == 0) {
-                return false;
+                return nullptr;
             }
 
             for (size_t i = 0; i < total; ++i) {
-                if (storage.data[i] == session) {
-                    storage.data[i] = nullptr;
-                    return true;
+                if (storage.data[i] != nullptr) {
+                    if (storage.data[i] == sess) {
+                        storage.data[i] = nullptr;
+                        return sess;
+                    }
                 }
             }
 
-            return false;
+            return nullptr;
+        }
+
+        session_ptr_type removeBy(const std::function<bool(const session_ptr_type& sess)>& callback) {
+
+            if (storage.count == 0) {
+                return nullptr;
+            }
+
+            for (size_t i = 0; i < total; ++i) {
+                if (storage.data[i] != nullptr) {
+                    if (callback(storage.data[i])) {
+                        auto& prev = storage.data[i];
+                        storage.data[i] = nullptr;
+                        return prev;
+                    }
+                }
+            }
+
+            return nullptr;
         }
 
         protected:
@@ -145,50 +213,23 @@ namespace http::session {
                     }
             };
 
-            esp_err_t place(std::shared_ptr<iSession>& session, int64_t timestamp) {
-                auto guardian = std::unique_lock(storage.rwMutex);
-
-                std::shared_ptr<iSession>* slot = nullptr;
-                std::shared_ptr<iSession> expireSession;
-                for (size_t i = 0; i < storage.data.size(); ++i) {
-                    if (storage.data[i] != nullptr) {
-                        if (!storage.data[i]->expired(timestamp)) {
-                            if (storage.data[i]->sid() == session->sid()) {
-                                return COLLISION_SESSION_ERROR;
-                            }
-                        } else if (slot == nullptr) {
-                            slot            = &storage.data[i];
-                            expireSession   = storage.data[i];
-                        }
-                    } else if (slot == nullptr) {
-                        slot = &storage.data[i];
-                    }
-                }
-
-                if (slot == nullptr) {
-                    return NO_SLOT_SESSION_ERROR;
-                } else {
-                    if (expireSession == nullptr) {
-                        storage.count++;
-                    }
-                    *slot = session;
-                }
-
-                if (expireSession != nullptr) {
-                    guardian.unlock();
-                    invalidateSessionPtr(expireSession);
-                }
-
-                return ESP_OK;
-            }
-
             template<class LockT>
             inline LockT guard() const {
                 return LockT(storage.rwMutex);
             }
 
+            template<class LockT>
+            inline result<std::shared_ptr<iSession>> place(std::shared_ptr<iSession>& session, int64_t timestamp, [[maybe_unused]] LockT&& _g) {
+                if constexpr (std::is_rvalue_reference<LockT&&>::value) {
+                    LockT guardian = std::move(_g);
+                    return placeNew(session, timestamp);
+                } else {
+                    return placeNew(session, timestamp);
+                }
+            }
+
             template<class indexT, class LockT>
-            inline std::shared_ptr<iSession> find(const indexT& index, LockT&& guardian) const {
+            inline std::shared_ptr<iSession> find(const indexT& index, [[maybe_unused]] LockT&& _g) const {
                 //this concept on opt locking api for private storage
                 //if guardian is moved than find is owning lock (take ownership) and release it after function ending
                 //if guardian is referenced lock is no owning, ie no lock released by find
@@ -197,25 +238,36 @@ namespace http::session {
 
                 //after inlining it must look like this
 /*              {
+                    //if ownership is moved
                     guardianT guardian = std::move(outerGuardian);
                     auto result = findBy(index);
                 }
                 or
                 {
-                    guardianT& guardian = outerGuardian;
+                    //if no ownership
                     auto result = findBy(index);
                 }
 */
-                using vType = typename std::conditional<std::is_rvalue_reference<LockT&&>::value, LockT, LockT&>::type;
-                [[maybe_unused]]  vType lock = std::forward<LockT>(guardian);
-                return findBy(index);
+                if constexpr (std::is_rvalue_reference<LockT&&>::value) {
+                    LockT guardian = std::move(_g);
+                    return findBy(index);
+                } else {
+                    return findBy(index);
+                }
+
+                //alternate way that may produce additional var
+                //using vType = typename std::conditional<std::is_rvalue_reference<LockT&&>::value, LockT, LockT&>::type;
+                //[[maybe_unused]]  vType lock = std::forward<LockT>(_g);
             }
 
-            template<class LockT>
-            inline bool remove(const session_ptr_type& session, LockT&& guardian) {
-                using vType = typename std::conditional<std::is_rvalue_reference<LockT&&>::value, LockT, LockT&>::type;
-                [[maybe_unused]] vType lock = std::forward<LockT>(guardian);
-                return removeBy(session);
+            template<class indexT, class LockT>
+            inline auto remove(const indexT& index, [[maybe_unused]] LockT&& _g) {
+                if constexpr (std::is_rvalue_reference<LockT&&>::value) {
+                    LockT guardian = std::move(_g);
+                    return removeBy(index);
+                } else {
+                    return removeBy(index);
+                }
             }
 
             virtual std::string generateSID(const request* context = nullptr) {
@@ -227,8 +279,8 @@ namespace http::session {
                 return _generator();
             }
 
-            virtual manager::session_type* makeSession(const request* context = nullptr) {
-                return new TSession(generateSID(context), index());
+            virtual manager::session_type* makeSession(const request* context = nullptr, int64_t timestamp = 0) {
+                return new TSession(generateSID(context), index(), timestamp ? timestamp : esp_timer_get_time());
             }
 
             virtual bool validateSession(std::shared_ptr<iSession>& session, const request* context = nullptr) const {
@@ -269,53 +321,69 @@ namespace http::session {
                 auto guardian = guard<rw_lock_type>();
                 for (int i = 0; i < storage.data.size(); ++i) {
                     if (storage.data[i] != nullptr) {
-                        invalidateSessionPtr(storage.data[i], (int)closeReason::NORMAL_TERM);
                         storage.data[i] = nullptr;
+                        manager::invalidateSessionPtr(storage.data[i], (int)closeReason::NORMAL_TERM);
                     }
                 }
                 storage.count = 0;
             }
 
+            //thread safe
             result_type open(const request* context = nullptr) override {
                 auto timestamp = esp_timer_get_time();
                 for (int i = 0; i < 3; ++i) {
-                    //this one is for allowing to call private/protected constructor via frendship
-                    manager::session_ptr_type sess(makeSession(context));
-                    if (auto code = place(sess, timestamp); code == ESP_OK) {
-                        updateSessionPtr(sess, timestamp);
+                    manager::session_ptr_type sess(makeSession(context, timestamp));
+                    if (auto result = place(sess, timestamp, guard<rw_lock_type>()); result) {
+                        //invalidate expired session whose place we took
+                        if (std::holds_alternative<manager::session_ptr_type>(result)) {
+                            invalidateSessionPtr(std::get<manager::session_ptr_type>(result));
+                        }
                         return sess;
-                    } else if (code == NO_SLOT_SESSION_ERROR) {
-                        error("sessions: no slots");
-                        return code;
                     } else {
-                        errorIf(LOG_SESSION, "session placement error", code, " ", sess->sid().c_str(), " ", i);
+                        invalidateSessionPtr(sess); //invalidate temporal session
+                        if constexpr (LOG_SESSION) {
+                            error("session placement error", result.code(), " ", sess->sid().c_str(), " ", i);
+                        } else {
+                            if (result.code() == NO_SLOT_SESSION_ERROR) {
+                                error("session no slots", result.code(), " ", sess->sid().c_str(), " ", i);
+                            }
+                        }
                     }
                 }
                 return (esp_err_t)COLLISION_SESSION_ERROR;
             }
 
+            //thread safe
             result_type open(const std::string& sid, const request* context = nullptr) override {
                 auto timestamp = esp_timer_get_time();
-                if (auto sess = find(sid, guard<ro_lock_type>()); sess != nullptr) {
-                    if (validateSession(sess, context)) {
-                        if (!sess->expired(timestamp)) {
-                            updateSessionPtr(sess, timestamp);
-                            return sess;
+                session_ptr_type sess;
+                {
+                    auto guardian = guard<ro_lock_type>();
+                    if (sess = find(sid, guardian); sess != nullptr) {
+                        if (validateSession(sess, context)) {
+                            if (!sess->expired(timestamp)) {
+                                updateSessionPtr(sess, timestamp);
+                                return sess;
+                            }
                         } else {
-                            invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
-                            remove(sess, guard<rw_lock_type>()); //do no block both rwMutex
-                            infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
-                            return ESP_ERR_NOT_FOUND;
+                            errorIf(LOG_SESSION, "invalid session", sess->sid().c_str());
+                            return INVALID_SESSION_ERROR;
                         }
                     } else {
-                        errorIf(LOG_SESSION, "invalid session", sess->sid().c_str());
-                        return INVALID_SESSION_ERROR;
+                        return ESP_ERR_NOT_FOUND;
                     }
-                } else {
-                    return ESP_ERR_NOT_FOUND;
                 }
+                //reach it only if session expired
+                //check if invariant
+                if (auto removed = remove(sess, guard<rw_lock_type>()); sess == removed) {
+                    //we must delete exactly the same pointer
+                    invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
+                    infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
+                }
+                return ESP_ERR_NOT_FOUND;
             }
 
+            //thread safe
             result_type renew(session_ptr_type& sess, const request* context = nullptr) override {
                 auto sid = generateSID(context);
                 auto guardian   = guard<rw_lock_type>();
@@ -328,36 +396,48 @@ namespace http::session {
                 return COLLISION_SESSION_ERROR;
             }
 
+            //thread safe
             resBool close(const std::string& sid) override {
                 if (storage.count > 0) { //suppose that read and write are atomic
-                    if (auto sess = find(sid, guard<ro_lock_type>()); sess != nullptr) {
+                    if (auto sess = remove(sid, guard<rw_lock_type>()); sess != nullptr) {
+                        //at this point no way to get another ptr to removed session, it no wat to prolong it
                         invalidateSessionPtr(sess, (int)closeReason::NORMAL_TERM);
-                        remove(sess, guard<rw_lock_type>());
                         return ESP_OK;
                     }
                 }
                 return ESP_ERR_NOT_FOUND;
             }
 
+
+            //thread safe
             result_type fromIndex(index_type index, bool markAlive = false) override {
                 auto timestamp = esp_timer_get_time();
-                if (auto sess = find(index, guard<ro_lock_type>()); sess != nullptr) {
-                    if (!sess->expired(timestamp)) {
-                        if (markAlive) {
-                            updateSessionPtr(sess, timestamp);
+                session_ptr_type sess;
+                {
+                    auto guardian = guard<ro_lock_type>();
+                    if (sess = find(index, guardian); sess != nullptr) {
+                        if (!sess->expired(timestamp)) {
+                            if (markAlive) {
+                                updateSessionPtr(sess, timestamp);
+                            }
+                            return sess;
                         }
-                        return sess;
                     } else {
-                        invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
-                        remove(sess, guard<rw_lock_type>()); //do no block both rwMutex
-                        infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
                         return ESP_ERR_NOT_FOUND;
                     }
-                } else {
-                    return ESP_ERR_NOT_FOUND;
                 }
+                //reach it only if session expired
+                //check if invariant
+                if (auto removed = remove(sess, guard<rw_lock_type>()); sess == removed) {
+                    //we must delete exactly the same pointer
+                    invalidateSessionPtr(sess, (int) closeReason::EXPIRED);
+                    infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
+
+                }
+                return ESP_ERR_NOT_FOUND;
             }
 
+            //thread safe
             size_t count() const final {
                 if (storage.count > 0) {
                     auto timestamp = esp_timer_get_time();
@@ -377,31 +457,21 @@ namespace http::session {
                 return storage.count;
             }
 
-        //this method collect all expired session
-        //it move it out storage before invalidate
-        //in order to do not block booth session and manager
-        void collect() override {
-            //mark is used to move invalidateSessionPtr out of
-            std::vector<std::shared_ptr<iSession>> mark = {};
-            if (storage.count > 0) {
-                auto timestamp = esp_timer_get_time();
-                auto guardian = guard<rw_lock_type>();
-                for (size_t i = 0; i < total; ++i) {
-                    if (storage.data[i] != nullptr && storage.data[i]->expired(timestamp)) {
-                        debugIf(LOG_SERVER_GC, storage.data[i]->sid().c_str(), " expired and collected: i: ", storage.data[i]->index());
-                        mark.emplace_back(storage.data[i]);
-                        storage.data[i] = nullptr;
-                        storage.count--;
+            //thread safe
+            void collect() override {
+                if (storage.count > 0) {
+                    auto timestamp = esp_timer_get_time();
+                    auto guardian = guard<rw_lock_type>();
+                    for (size_t i = 0; i < total; ++i) {
+                        if (storage.data[i] != nullptr && storage.data[i]->expired(timestamp)) {
+                            storage.data[i] = nullptr;
+                            storage.count--;
+                            invalidateSessionPtr(storage.data[i], (int)closeReason::EXPIRED);
+                            debugIf(LOG_SERVER_GC, storage.data[i]->sid().c_str(), " expired and collected: i: ", storage.data[i]->index());
+                        }
                     }
                 }
             }
-            if (mark.size() > 0) {
-                info("server gc collected", mark.size(), " sessions");
-                for (auto it = mark.begin(); it != mark.end(); ++it) {
-                    invalidateSessionPtr(*it, (int)closeReason::EXPIRED);
-                }
-            }
-        }
 
             void* neighbour(uint32_t traitId) override {
                 switch (traitId) {

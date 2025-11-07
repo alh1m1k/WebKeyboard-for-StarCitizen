@@ -23,7 +23,7 @@ class sessionManager: public http::session::manager<class session> {
 
         void processMemberNotification(int type, http::session::iSession* context, void* data) const;
 
-        manager<session>::session_type* makeSession(const http::request *context = nullptr) override;
+        manager<session>::session_type* makeSession(const http::request *context = nullptr, int64_t timestamp = 0) override;
 
         void updateSessionPtr(session_ptr_type& sessionPtr, int64_t timestamp) const override;
 

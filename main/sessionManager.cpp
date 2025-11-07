@@ -2,6 +2,8 @@
 
 #include <mbedtls/base64.h>
 
+#include "syncing/dummy.h"
+
 std::string sessionManager::generateSID(const http::request *context) {
     if (context == nullptr) {
         throw std::logic_error("context must be provided");
@@ -45,15 +47,17 @@ bool sessionManager::validateSession(std::shared_ptr<http::session::iSession> &s
 }
 
 void sessionManager::processMemberNotification(int type, http::session::iSession* context, void* data) const {
-    if (auto sess = find(context->sid(), guard<ro_lock_type>()); sess != nullptr) {
+    if (auto sess = find([context](const session_ptr_type& sess) -> bool {
+            return sess.get() == context;
+        }, std::shared_lock<syncing::dummy>()); sess != nullptr) {
         notification(type, sess, data);
     } else {
         error("session that emit event does not exist", context->sid().c_str());
     }
 }
 
-sessionManager::session_type* sessionManager::makeSession(const http::request *context)  {
-    auto sess = new session(generateSID(context), index());
+sessionManager::session_type* sessionManager::makeSession(const http::request *context, int64_t timestamp)  {
+    auto sess = new session(generateSID(context), index(), timestamp ? timestamp : esp_timer_get_time());
     if (notification != nullptr) {
         sess->notification = memberNotification;
     }

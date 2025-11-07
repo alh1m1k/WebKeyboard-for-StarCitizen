@@ -19,7 +19,6 @@ namespace http::session {
 
             virtual const sid_type&     sid()                       const = 0;
             virtual       bool          valid()                     const = 0; //this session is garbage, there is no turned back
-            virtual       bool          expired( int64_t timestamp) const = 0; //this session is expired, it will-be ::invalidate at next open or at gc cycle
 			virtual       bool          outdated(int64_t timestamp) const = 0;
             virtual       index_type    index()                     const = 0;
 

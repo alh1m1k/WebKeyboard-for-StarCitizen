@@ -39,6 +39,7 @@ namespace http {
             typedef result<codes> handler_res_type;
             typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
             typedef std::unique_ptr<session::iManager> sessions_ptr_type;
+			typedef std::function<void()> job_type;
 
 
 			server() = default;
@@ -69,6 +70,9 @@ namespace http {
             inline void attachSessions(Args&&... args) { //todo init vector
                 setSessions(std::make_unique<TSessionManager>(std::forward<Args>(args)...));
             }
+
+			resBool scheduleJob(job_type&& job);
+
 
             const sessions_ptr_type& getSessions() const;
 

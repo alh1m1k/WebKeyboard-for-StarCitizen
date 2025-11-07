@@ -469,6 +469,7 @@ class wsproto {
                 clientName  = r->clientName;
                 clientId    = r->index;
             }
+
             switch (type) {
                 case (int)managerT::OPEN:
                     infoIf(LOG_SESSION_EVT, "evt session open", sess->sid().c_str(), " reason: ", ((sessionManager::note_open_type*)data)->reason);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <atomic>
 #include <functional>
 
 #include "task.h"
@@ -19,8 +20,6 @@ namespace http::session {
     template<class TSessionData = extendedSessionData>
     class session: public iSession, virtual public iSocksCntSession {
 
-        portMUX_TYPE _spin = portMUX_INITIALIZER_UNLOCKED;
-
         protected:
 
             struct sharedData : public TSessionData {
@@ -28,26 +27,26 @@ namespace http::session {
                 size_t index          = 0;
             };
 
-            template<class T>
+            template<class LockT, bool ConstType>
             class guardian {
                 protected:
                     session* const owner;
-                    T        lock;
+                    LockT          lock;
                 public:
-                    guardian(session* owner, T&& lock) : owner(owner), lock(std::move(lock)) {}
-                    explicit inline operator bool() {
+                    guardian(session* owner, LockT&& lock) : owner(owner), lock(std::move(lock)) {}
+                    explicit inline operator bool() const {
                         return true;
                     }
-                    inline const std::string sid() const {
+                    inline const std::string sid()  const {
                         return owner->sid();
                     }
-                    virtual sharedData* operator->() {
+                    virtual std::conditional<ConstType, const sharedData, sharedData>::type* operator->() const {
                         return owner->data();
                     }
             };
 
             uint32_t _updatedExpiredS   = 0;
-            uint32_t _updatedOutdatedS  = 0;
+            std::atomic<uint32_t> _updatedOutdatedS  = 0;
             std::string _sid;
             std::shared_mutex _mux;
             sharedData _data = {};
@@ -57,29 +56,27 @@ namespace http::session {
                 return &_data;
             }
 
+            //must be called only by manager
             inline void invalidate(int reason = 0) noexcept override {
                 _valid = false;
             }
 
-            //allow to update _updatedS atomically
-            //this allow fast non block keepAlive where .expire called on session manager
+            //must be called only by manager
             void update(int64_t timestamp) noexcept override {
-                taskENTER_CRITICAL(&_spin);
                 auto _t = (uint32_t)(timestamp / 1000000);
                 _updatedExpiredS = _t;
-                taskEXIT_CRITICAL(&_spin);
             }
 
+            //must be called only by manager
             void renew(const sid_type& sid, int64_t timestamp) noexcept override {
-                taskENTER_CRITICAL(&_spin);
                 auto _t = (uint32_t)(timestamp / 1000000);
                 _sid = sid;
                 _updatedOutdatedS = _t;
-                taskEXIT_CRITICAL(&_spin);
             }
 
-            session(std::string&& sid, uint32_t index) noexcept : _sid(sid), _valid(true) {
+            session(std::string&& sid, uint32_t index, int64_t timestamp) noexcept : _sid(sid), _valid(true) {
                 _data.index = index;
+                _updatedOutdatedS = _updatedExpiredS = (uint32_t)(timestamp / 1000000);
             }
 
         public:
@@ -87,8 +84,8 @@ namespace http::session {
             static constexpr uint32_t TRAIT_ID = (uint32_t)traits::SESSION;
 
             typedef sharedData                                     shared_data_type;
-            typedef guardian<std::shared_lock<std::shared_mutex>>  read_guardian_type;
-            typedef guardian<std::unique_lock<std::shared_mutex>>  write_guardian_type;
+            typedef guardian<std::shared_lock<std::shared_mutex>, true>   read_guardian_type;
+            typedef guardian<std::unique_lock<std::shared_mutex>, false>  write_guardian_type;
 
 
             friend class manager<session<TSessionData>>;
@@ -106,8 +103,7 @@ namespace http::session {
                 return _valid;
             }
 
-            //warning using this not thread safe, there is no proper locking and int64 not atomic on esp32
-            //use ::valid instead, this one for manager thread
+            //not safe to call outside manager
             [[nodiscard]]
             bool expired(int64_t timestamp) const noexcept override {
                 if (timestamp > 4294967295000000) {
@@ -123,7 +119,8 @@ namespace http::session {
                     error("session impl reach it's limit");
                     esp_restart();
                 }
-                return (timestamp - (int64_t )_updatedOutdatedS * 1000000) > ((int64_t )refreshInterval() * 1000000);
+                auto timemark = _updatedOutdatedS.load();
+                return (timestamp - (int64_t )timemark * 1000000) > ((int64_t )refreshInterval() * 1000000);
             }
 
             [[nodiscard]]
