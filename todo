@@ -23,8 +23,15 @@ action -> purpure
 13 improve Probe.move with variable precision
 14 allow ping to disable echo(questionable)
 15 make main settings are joint element (icon + title are all clickable)
-16bajust color for overlay
+16 ajust color for overlay
+17 refactor js socket
+18 reduce session sid size
+19 fix wssocket bug, when server close session it looks like open connection(101) and immediately close it(1006)
+    it produce problem on client and break socket opening flow, when socket unable to close immediately after open
+    as it already resolve, and then fail only after authorize task fail due to timeout. That produce delay big enough to
+    reconnect attempt fail due to already existing connectTask (as it not cleaned itself yet)
 
+impl session manager secret store
 
 RC1 BUGS
 1 move element to trash broke overlay aligment
@@ -32,3 +39,6 @@ RC1 BUGS
 3 change submit btn decouple size of button and line-height, set line-height = 2.5rem
 4 check that when multipixel line in use border clip work correctly, most likely it is not.
 5 check widget head at higth dpi
+
+
+

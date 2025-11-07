@@ -94,8 +94,6 @@ namespace http {
 
         using session_ptr_type = session::iManager::session_ptr_type;
 
-        debug("sessionOpen t ", esp_timer_get_time(), " sock:", httpd_req_to_sockfd(req.native()));
-
         session::iManager::result_type sessionResult = ESP_FAIL;
         //try reuse if cookie exist
         infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " t ", esp_timer_get_time());
@@ -129,7 +127,7 @@ namespace http {
                     }
                 }
             } else {
-                info("session open(reuse) fail", req.native()->uri, " t ", esp_timer_get_time(), " code ", sessionResult.code());
+                infoIf(LOG_SESSION, "session open(reuse) fail", req.native()->uri, " t ", esp_timer_get_time(), " code ", sessionResult.code());
             }
         } else {
             error("cookie get", req.native()->uri, " t ", esp_timer_get_time(), " ", cookieReadResult.code());
@@ -207,9 +205,9 @@ namespace http {
 		}
 
         if (req.getRemote().version() == 6) {
-            std::cout << "info: clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
+            std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
         } else if (req.getRemote().version() == 4) {
-            std::cout << "info: clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
+            std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
         }
 		
 		debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());

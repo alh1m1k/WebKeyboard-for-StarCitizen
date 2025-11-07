@@ -365,6 +365,7 @@ function Socket(target) {
                         privateCtx.sess().then(() => {
                             clearTimeout(privateCtx.reconnectHndl);
                             privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
+                            //temporal fix race of socket open/close
                         });
                     } else {
                         clearTimeout(privateCtx.reconnectHndl);
@@ -655,6 +656,12 @@ function Socket(target) {
             if (indentity.trim().length === 0) {
                 throw new Error("invalid identity");
             }
+            let immediateClose = new Promise((resolve, reject) => {
+                privateCtx._internalWait.set("close", {
+                    resolve: () => reject("socket closed"),
+                });
+                setTimeout(resolve, 250);
+            });
             return new Promise((resolve, reject) => {
                 privateCtx.socket = DeadSocket;
                 privateCtx._internalWait.set("open", {
@@ -666,6 +673,10 @@ function Socket(target) {
                 console.log("connection attempt: ", privateCtx.connectAttempts);
                 privateCtx.socket = new WebSocket("ws://" + location.hostname + target);
             }).then((status) => {
+                return immediateClose; //fixme todo19
+            }).then((status) => {
+                //when server close session it first open and emediatly close
+                //this not work as reject not work after resolve
                 return privateCtx.authorizeTask();
             }).then((status) => {
                 if (isCallable(privateCtx.onauthorized)) {
@@ -676,7 +687,8 @@ function Socket(target) {
                 }
                 return status;
             }).catch((e) => {
-                if (privateCtx.status === SocketOpen) {
+                console.debug("catch on connect")
+                if (privateCtx.status === SocketAuthorized) {
                     console.info("fail2connect execute disconnect");
                     return privateCtx.disconnectTask().then(status => {
                         throw new Error(e);

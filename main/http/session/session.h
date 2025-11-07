@@ -45,7 +45,7 @@ namespace http::session {
                     }
             };
 
-            uint32_t _updatedExpiredS   = 0;
+            std::atomic<uint32_t> _updatedExpiredS   = 0;
             std::atomic<uint32_t> _updatedOutdatedS  = 0;
             std::string _sid;
             std::shared_mutex _mux;
@@ -110,7 +110,8 @@ namespace http::session {
                     error("session impl reach it's limit");
                     esp_restart();
                 }
-                return (timestamp - (int64_t )_updatedExpiredS * 1000000) > ((int64_t )duration() * 1000000);
+                auto timeMark = _updatedExpiredS.load();
+                return (timestamp - (int64_t )timeMark * 1000000) > ((int64_t )duration() * 1000000);
             }
 
             [[nodiscard]]
@@ -119,8 +120,8 @@ namespace http::session {
                     error("session impl reach it's limit");
                     esp_restart();
                 }
-                auto timemark = _updatedOutdatedS.load();
-                return (timestamp - (int64_t )timemark * 1000000) > ((int64_t )refreshInterval() * 1000000);
+                auto timeMark = _updatedOutdatedS.load();
+                return (timestamp - (int64_t )timeMark * 1000000) > ((int64_t )refreshInterval() * 1000000);
             }
 
             [[nodiscard]]

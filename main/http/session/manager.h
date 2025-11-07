@@ -44,7 +44,7 @@ namespace http::session {
                         }
                     } else if (slot == nullptr) {
                         slot            = &storage.data[i];
-                        expireSession   = std::move(storage.data[i]);
+                        expireSession   = storage.data[i]; //better don't move from array, even if it valid
                     }
                 } else if (slot == nullptr) {
                     slot = &storage.data[i];
@@ -458,17 +458,25 @@ namespace http::session {
             }
 
             //thread safe
+            //close compatible
             void collect() override {
+                std::vector<std::shared_ptr<iSession>> pending = {};
                 if (storage.count > 0) {
                     auto timestamp = esp_timer_get_time();
                     auto guardian = guard<rw_lock_type>();
                     for (size_t i = 0; i < total; ++i) {
                         if (storage.data[i] != nullptr && storage.data[i]->expired(timestamp)) {
+                            debugIf(LOG_SERVER_GC, storage.data[i]->sid().c_str(), " expired and collected: i: ", storage.data[i]->index());
+                            pending.emplace_back(storage.data[i]);
                             storage.data[i] = nullptr;
                             storage.count--;
-                            invalidateSessionPtr(storage.data[i], (int)closeReason::EXPIRED);
-                            debugIf(LOG_SERVER_GC, storage.data[i]->sid().c_str(), " expired and collected: i: ", storage.data[i]->index());
                         }
+                    }
+                }
+                if (!pending.empty()) {
+                    info("server gc collected", pending.size(), " sessions");
+                    for (auto it = pending.begin(); it != pending.end(); ++it) {
+                        invalidateSessionPtr(*it, (int)closeReason::EXPIRED);
                     }
                 }
             }

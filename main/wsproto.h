@@ -156,7 +156,7 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED);
+                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED) || IS(flags, (uint32_t)sessionFlags::AUTHODIZED);
                 clientName = std::string(trim(pack.body));
                 if (!clientName.size()) {
                     error("auth block fail2clientid");
