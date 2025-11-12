@@ -20,6 +20,8 @@
 #include "sessionManager.h"
 #include "session.h"
 #include "storage.h"
+#include "crypto/hash/sha256Engine.h"
+#include "crypto/base64Helper.h"
 
 hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_type& stream, const std::string_view& byteStream) {
     stream.copyFrom(&byteStream[0], byteStream.size());
@@ -33,6 +35,14 @@ hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_typ
 
 class wsproto {
 
+    static std::string base64Hash(const std::string& val) {
+        auto engine = crypto::hash::sha256Engine();
+        if (auto hash = engine.hash({reinterpret_cast<const uint8_t*>(val.data()),  val.size()}); hash != crypto::hash::sha256Engine::invalidHash) {
+            return crypto::base64Helper::toBase64(hash);
+        }
+        throw std::logic_error("error in hash op");
+    }
+
     public:
 
         typedef parsers::keyboard 	                                                        kb_parser_type;
@@ -43,6 +53,7 @@ class wsproto {
         typedef generator<uint32_t, true> 													packet_seq_generator_type;
         typedef scheduler<std::string> 	  												    scheduler_type;
         typedef ctrlmap<std::string, std::string> 	  										ctrl_map_type;
+        typedef hwrandom<uint32_t> 	  										                entropy_generator_type;
         typedef std::string	  										                        sing_type;
 
         kb_parser_type& 			parser;
@@ -52,9 +63,12 @@ class wsproto {
         notifications_type&	        notifications;
         packet_seq_generator_type&  packetCounter;
         ctrl_map_type&              ctrl;
+        scheduler_type&             tailScheduler;
+        entropy_generator_type&     entropySource;
         sing_type&                  persistenceSign;
         sing_type&                  bootingSign;
-        scheduler_type&             tailScheduler;
+
+
 
         wsproto(
                 parsers::keyboard& 			    parser,
@@ -64,9 +78,11 @@ class wsproto {
                 notifications_type&	            notifications,
                 packet_seq_generator_type&      packetCounter,
                 ctrl_map_type&                  ctrl,
+                scheduler_type&                 tailScheduler,
+                entropy_generator_type&         entropySource,
                 sing_type&                      persistenceSign,
-                sing_type&                      bootingSign,
-                scheduler_type&                 tailScheduler
+                sing_type&                      bootingSign
+
         ) :
                 parser(parser),
                 keyboard(keyboard),
@@ -75,11 +91,12 @@ class wsproto {
                 notifications(notifications),
                 packetCounter(packetCounter),
                 ctrl(ctrl),
+                tailScheduler(tailScheduler),
+                entropySource(entropySource),
                 persistenceSign(persistenceSign),
-                bootingSign(bootingSign),
-                tailScheduler(tailScheduler)
+                bootingSign(bootingSign)
+
         {
-            info("wsproto.wsproto");
             sessions.notification = [proto= this](int type, sessionManager::session_ptr_type& context, void* data) -> void  {
                 proto->handleEvents(type, context, data);
             };
@@ -95,14 +112,15 @@ class wsproto {
                 notifications(copy.notifications),
                 packetCounter(copy.packetCounter),
                 ctrl(copy.ctrl),
+                tailScheduler(copy.tailScheduler),
+                entropySource(copy.entropySource),
                 persistenceSign(copy.persistenceSign),
-                bootingSign(copy.bootingSign),
-                tailScheduler(copy.tailScheduler)
+                bootingSign(copy.bootingSign)
         {
             error("wsproto must be newer copy");
         }
 
-        wsproto(wsproto&& move) :
+        wsproto(wsproto&& move) noexcept :
             parser(move.parser),
             keyboard(move.keyboard),
             joystick(move.joystick),
@@ -110,9 +128,10 @@ class wsproto {
             notifications(move.notifications),
             packetCounter(move.packetCounter),
             ctrl(move.ctrl),
+            tailScheduler(move.tailScheduler),
+            entropySource(move.entropySource),
             persistenceSign(move.persistenceSign),
-            bootingSign(move.bootingSign),
-            tailScheduler(move.tailScheduler)
+            bootingSign(move.bootingSign)
         {
 
         }
@@ -158,7 +177,7 @@ class wsproto {
 
                 bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED) || IS(flags, (uint32_t)sessionFlags::AUTHODIZED);
                 clientName = std::string(trim(pack.body));
-                if (!clientName.size()) {
+                if (clientName.empty()) {
                     error("auth block fail2clientid");
                     return ESP_FAIL;
                 }
@@ -173,10 +192,11 @@ class wsproto {
                 debugIf(LOG_MESSAGES, "respond", pack.taskId, " ", resultMsg("auth", pack.taskId, true));
                 socket.write(resultMsg("auth", pack.taskId, true));
 
-                if (auto ret = notifications.notify(signNotify(packetCounter(), "storageSign", persistenceSign), clientId); !ret) {
+                if (auto ret = notifications.notify(signNotify(packetCounter(), "storageSign", base64Hash(persistenceSign)), clientId); !ret) {
                     error("unable send notifications (storageSign)", ret.code());
                 }
-                if (auto ret = notifications.notify(signNotify(packetCounter(), "bootingSign", bootingSign), clientId); !ret) {
+
+                if (auto ret = notifications.notify(signNotify(packetCounter(), "bootingSign", base64Hash(bootingSign)), clientId); !ret) {
                     error("unable send notifications (bootingSign)", ret.code());
                 }
 

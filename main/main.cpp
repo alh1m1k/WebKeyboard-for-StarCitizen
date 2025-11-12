@@ -179,14 +179,14 @@ void app_main(void)
 		trap("unable setup mode", statusCode.code());
 	}
 	
-	std::string persistanceSign;
+	std::string persistenceSign;
 	std::string bootingSign;
 	
 	{
 		
 		storage persistence = storage();
 				 
-		if (WIFI_MODE == wifi_mode_t::WIFI_MODE_STA) {
+		if constexpr (WIFI_MODE == wifi_mode_t::WIFI_MODE_STA) {
 			while (wifi::status() != wifi::status_e::CONNECTED) {
 				if (!wifi::connect(persistence.getWifiSSID(), persistence.getWifiPWD())) {
 					vTaskDelay(pdMS_TO_TICKS(delay));
@@ -202,16 +202,16 @@ void app_main(void)
 			}
 		}
 		
-		if (persistanceSign = persistence.getStorageSign(); persistanceSign == "") {
-			persistanceSign = randomString(32);
-			infoIf(LOG_ENTROPY, "generate new storage sign", persistanceSign.c_str());
-			if (auto status = persistence.setStorageSign(persistanceSign); status) {
+		if (persistenceSign = persistence.getStorageSign(); persistenceSign.empty()) {
+			persistenceSign = randomString(32);
+			infoIf(LOG_ENTROPY, "generate new storage sign", persistenceSign.c_str());
+			if (auto status = persistence.setStorageSign(persistenceSign); status) {
 				debug("new storage sign is set");
 			} else {
 				error("fail to set new storage sign", status.code());
 			}
 		} else {
-			infoIf(LOG_ENTROPY, "storage sign", persistanceSign.c_str());
+			infoIf(LOG_ENTROPY, "storage sign", persistenceSign.c_str());
 		}
 	
 	}
@@ -272,7 +272,7 @@ void app_main(void)
 
 	std::cout << "starting webServer " << std::endl;
 	http::server webServer = {};
-    webServer.attachSessions<sessionManager>("magic words");
+    webServer.attachSessions<sessionManager>(persistenceSign);
 	
 	if (auto status = webServer.begin(80); !status) {
 		trap("fail 2 setup webServer", status.code());
@@ -336,6 +336,8 @@ void app_main(void)
 	}
 
 
+
+
     auto  kbMessageParser    = typename wsproto::kb_parser_type();
     auto  packetCounter 	 = typename wsproto::packet_seq_generator_type();
     auto  ctrl               = typename wsproto::ctrl_map_type();
@@ -354,9 +356,10 @@ void app_main(void)
             notifications,
             packetCounter,
             ctrl,
-            persistanceSign,
-            bootingSign,
-            tailScheduler
+            tailScheduler,
+            randomCtx.generator,
+            persistenceSign,
+            bootingSign
         )
     )); !status) {
 		webServer.end();

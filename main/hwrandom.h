@@ -35,9 +35,9 @@ class hwrandom {
 			return buffer;
 		}
 
-        using trait_fill_buffer = std::true_type;
+        typedef std::true_type trait_fill_buffer;
 		void fill(void* ptr, size_t size) {
-			esp_fill_random(&ptr, size);
+			esp_fill_random(ptr, size);
 		}
 		
 		void discard(unsigned long long z) {

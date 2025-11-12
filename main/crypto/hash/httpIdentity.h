@@ -26,7 +26,7 @@ namespace crypto::hash {
                 if (buffer.size() < size) {
                     return false;
                 }
-                if constexpr (have_trait_fill_buffer<hashEngineT>::value) {
+                if constexpr (have_trait_fill_buffer<rndFnT>::value) {
                     _rnd.fill((void*)buffer.data(), size);
                 } else {
                     constexpr int bytes = sizeof(typename rndFnT::result_type);
@@ -65,10 +65,9 @@ namespace crypto::hash {
             static constexpr size_t ident_size       = hash_size + salt_size;
 
             typedef std::vector<uint8_t> data_type;
+            typedef hashEngineT engine_type;
 
-            httpIdentity(const std::string& secret) : _secret(hashEngineT().hash({ (uint8_t*)secret.data(), secret.size() })) {
-                info("_secret", secret, " ", std::string(_secret.begin(), _secret.end()));
-            }
+            httpIdentity(const std::string& secret) : _secret(hashEngineT().hash({ (uint8_t*)secret.data(), secret.size() })) {}
 
             virtual ~httpIdentity() = default;
 

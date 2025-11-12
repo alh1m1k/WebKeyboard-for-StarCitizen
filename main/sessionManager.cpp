@@ -1,49 +1,28 @@
 #include "sessionManager.h"
-
-#include <mbedtls/base64.h>
-
+#include "crypto/base64Helper.h"
 #include "syncing/dummy.h"
 
 std::string sessionManager::generateSID(const http::request *context) {
     if (context == nullptr) {
         throw std::logic_error("context must be provided");
     }
-    constexpr size_t b64_buffer_size = ((sid_generator_type::ident_size + 2) / 3) * 4 + 1; //+1 for '=' at end;
-
-    auto inBuffer = identity.generate(*context);
-    std::string outBuffer = {};
-    outBuffer.resize(b64_buffer_size);
-    size_t outSize = 0;
-
-    if (mbedtls_base64_encode((unsigned char*)outBuffer.data(), outBuffer.size(), &outSize, (const unsigned char*)inBuffer.data(), inBuffer.size()) != 0) {
-        outBuffer.resize(0);
+    if (auto sidBuffer = identity.generate(*context); sidBuffer != sid_generator_type::engine_type::invalidHash) {
+        return crypto::base64Helper::toBase64(sidBuffer);
     } else {
-        outBuffer.resize(outSize);
+        throw std::logic_error("hash op error");
     }
-
-    return outBuffer;
 }
 
 bool sessionManager::validateSession(std::shared_ptr<http::session::iSession> &session, const http::request *context) const {
     if (context == nullptr) {
         throw std::logic_error("context must be provided");
     }
-
-    auto inBuffer = session->sid();
-    std::vector<uint8_t> outBuffer(sid_generator_type::ident_size);
-    size_t outSize = 0;
-
-    if (mbedtls_base64_decode((unsigned char*)outBuffer.data(), outBuffer.size(), &outSize, (const unsigned char*)inBuffer.data(), inBuffer.size()) != 0) {
-        return false;
+    if (auto sidBuffer = crypto::base64Helper::fromBase64(session->sid()); sidBuffer.size() == sid_generator_type::ident_size) {
+        return identity.validate(*context, sidBuffer);
     } else {
-        if (outSize != sid_generator_type::ident_size) {
-            error("invalid ident size");
-            return false;
-        }
-        outBuffer.resize(outSize);
+        error("invalid ident size");
+        return false;
     }
-
-    return identity.validate(*context, outBuffer);
 }
 
 void sessionManager::processMemberNotification(int type, http::session::iSession* context, void* data) const {
