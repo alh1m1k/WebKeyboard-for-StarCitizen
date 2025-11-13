@@ -298,7 +298,7 @@ namespace http {
 	resBool server::begin(uint16_t port) {
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 	= 20;
-		config.max_open_sockets 	= 12;
+		config.max_open_sockets 	= 42;
 		config.stack_size 		   += 1024; //temporaly fix of sovf
         config.open_fn  = &socketOpen;
         config.close_fn = &socketClose;
