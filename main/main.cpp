@@ -373,12 +373,17 @@ void app_main(void)
 
     tailScheduler.begin();
 
-    tailScheduler.schedule("server gc", [&webServer]() -> void {
+	struct {
+		http::server& 			webServer;
+		wsproto::ctrl_map_type& ctrl;
+	} collectable = {webServer, ctrl};
+    tailScheduler.schedule("server gc", [&collectable]() -> void {
         infoIf(LOG_SERVER_GC, "server gc start");
-        webServer.collect();
+		collectable.webServer.collect();
+		collectable.ctrl.collect();
         infoIf(LOG_SERVER_GC, "server gc end");
     }, 10000, -1);
-	
+
 	
 	//todo fix schedule faild before .begin
 /*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {

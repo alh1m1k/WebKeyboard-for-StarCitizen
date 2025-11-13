@@ -1,11 +1,10 @@
 #pragma once
 
-#include <cstddef>
-#include <stddef.h>
 #include <unordered_map>
 #include <shared_mutex>
 #include <iterator>
-#include  <algorithm>
+#include <algorithm>
+#include <limits>
 
 #include "bad_api_call.h"
 #include "not_found.h"
@@ -18,14 +17,20 @@ template<typename KEY, typename VALUE>
 class ctrlmap {
 	
 	using size_type = std::vector<std::string>::size_type;
+
+    enum class stateOp {
+        NO_OP,
+        PUSH,
+        POP,
+    };
 	
 	std::unordered_map<KEY, size_type> m = {};
 	std::vector<VALUE> v = {};
+    ssize_t collectThreshold = 25;
 	
 	mutable std::shared_mutex rwLock = {};
-	
-	
-	size_type index(const VALUE& value) {
+
+	size_type index(VALUE&& value) {
 		if (auto it = std::find(v.begin(), v.end(), value); it == v.end()) {
 			v.push_back(std::move(value));
 			return v.size() - 1;
@@ -34,6 +39,19 @@ class ctrlmap {
 		}
 		return 0;
 	}
+
+    inline void deindex(const VALUE& value) { /*this is noop*/ }
+
+    //template helper
+    stateOp actionOpType(const VALUE& value) {
+        if (value == "click"sv || value.starts_with("activate-"sv)) {
+            return stateOp::NO_OP;
+        }
+        if (value == "switched-off"sv) {
+            return stateOp::POP;
+        }
+        return stateOp::PUSH;
+    }
 	
 	class ctrlmap_iterator {
 		
@@ -53,7 +71,6 @@ class ctrlmap {
 			ctrlmap_iterator(std::unordered_map<KEY, size_type>::const_iterator&& it, const std::vector<VALUE>& index): it(it), index(index) {};
 			
 			const value_type operator*() const {
-				//debug("it", it->first, index[it->second]);
 				return std::make_pair(std::ref(it->first), std::ref(index[it->second]));
 			} 
 			/*
@@ -84,8 +101,10 @@ class ctrlmap {
 		using const_iterator = ctrlmap_iterator;
 		using iterator 		 = ctrlmap_iterator;
 		
-		typedef KEY 	key;
-		typedef VALUE 	value;
+		typedef KEY 	key_type;
+		typedef VALUE 	value_type;
+
+        static constexpr ssize_t collectThresholdSteep = 25;
 			
 		void lockShared() const {
 			rwLock.lock_shared();
@@ -115,30 +134,44 @@ class ctrlmap {
 		size_t count() const {
 			std::shared_lock guardian(rwLock);
 			return m.size();
-		} 
-		
-		void nextState(const KEY& key, VALUE&& value) {
-			if (value == "click"s || value.starts_with("activate-"sv)) {
-				return;
-			}
-			std::unique_lock guardian(rwLock);
-			if (value == "switched-off"s) {
-				m.erase(key);
-				return;
-			}
-			m[key] = index(value);
-		}	
-		
-		//in case we want to move both key and value
-		void nextState(KEY&& key, VALUE&& value) {
-			if (value == "click"s || value.starts_with("activate-"sv)) {
-				return;
-			}
-			std::unique_lock guardian(rwLock);
-			if (value == "switched-off"s) {
-				m.erase(key);
-				return;
-			}
-			m[key] = index(value);
 		}
+
+        template<class KeyRefT>
+		void nextState(KeyRefT&& key, VALUE&& value) {
+			std::unique_lock guardian(rwLock);
+            switch (actionOpType(value)) {
+                case stateOp::PUSH:
+                    m[std::forward<KeyRefT>(key)] = index(std::move(value));
+                    break;
+                case stateOp::POP:
+                    m.erase(key);
+                    deindex(value);
+                    break;
+                case stateOp::NO_OP:
+                default:
+                    break;
+            }
+		}
+
+        void collect() {
+            std::unique_lock guardian(rwLock);
+            ssize_t size = v.size();
+            if (size > collectThreshold) {
+                ssize_t vi = 0;
+                for (auto it = m.begin(); it != m.end(); ++it) {
+                    v[it->second = vi++] = std::move(v[it->second]);
+                }
+				if constexpr (LOG_SERVER_GC) {
+					info("collected ctrlmap", size - vi);
+				}
+                v.resize(size = vi);
+                if (size > collectThreshold) {
+                    collectThreshold = std::min(std::numeric_limits<ssize_t>::max(), collectThreshold + collectThresholdSteep);
+                } else if (size < (collectThreshold - collectThresholdSteep)) {
+                    collectThreshold -= collectThresholdSteep;
+                }
+
+            }
+        }
+
 };
