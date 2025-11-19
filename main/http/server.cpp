@@ -7,7 +7,7 @@
 
 
 #include "esp_err.h"
-
+#include "sdkconfig.h"
 
 #include "bad_api_call.h"
 #include "headers_sended.h"
@@ -296,12 +296,21 @@ namespace http {
     }
 
 	resBool server::begin(uint16_t port) {
+        static_assert(SYSTEM_SOCKET_RESERVED > 0, "SYSTEM_SOCKET_RESERVED > 0");
+#ifdef ASSERT_IF_SOCKET_COUNT_LESS
+        static_assert(CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED >= ASSERT_IF_SOCKET_COUNT_LESS, "ASSERT_IF_MIN_SOCKET_COUNT_LESS");
+#endif
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 	= 20;
-		config.max_open_sockets 	= 42;
+		config.max_open_sockets 	= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
 		config.stack_size 		   += 1024; //temporaly fix of sovf
         config.open_fn  = &socketOpen;
         config.close_fn = &socketClose;
+#ifdef SOCKET_RECYCLE_USE_LRU_COUNTER
+        config.lru_purge_enable = true;
+#else
+        config.lru_purge_enable = false;
+#endif
         return  httpd_start(&handler, &config);
 	}
 

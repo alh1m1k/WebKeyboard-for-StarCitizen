@@ -15,11 +15,12 @@
 #include <sys/_stdint.h>
 #include <sys/types.h>
 
-
 namespace http {
-	
-	const ssize_t response::MAX_UNCHUNKED_SIZE = 1024 * 10;
-		
+
+	#ifndef RESPONSE_MAX_UNCHUNKED_SIZE
+	#define RESPONSE_MAX_UNCHUNKED_SIZE 10*1024
+	#endif
+
 	//response::response(const httpd_req_t* esp_req){}
 	response::response(request& req) : _request(req) {}
 	
@@ -37,6 +38,7 @@ namespace http {
 	}
 	
 	void response::done() {
+		debug("response::done()");
 		if (_sended) {
 			return;
 		}
@@ -70,7 +72,7 @@ namespace http {
 	resBool response::write(const uint8_t* buffer, ssize_t size) noexcept {
 		
 		ssize_t 	cursor 		= 0;
-		ssize_t 	chunkSize 	= std::min(size, response::MAX_UNCHUNKED_SIZE);
+		ssize_t 	chunkSize 	= std::min(size, RESPONSE_MAX_UNCHUNKED_SIZE);
 		
 		do {
 			debugIf(LOG_HTTP, "response::write", cursor, " ", chunkSize);
@@ -84,7 +86,7 @@ namespace http {
 			}
 			
 			cursor += chunkSize;
-			chunkSize 	= std::min(size-cursor, MAX_UNCHUNKED_SIZE);
+			chunkSize 	= std::min(size-cursor, RESPONSE_MAX_UNCHUNKED_SIZE);
 		
 		} while(cursor < size);
 		
@@ -110,7 +112,7 @@ namespace http {
 	}
 	
 	resBool response::writeResp(const uint8_t* buffer, ssize_t size, bool split) noexcept {
-		if (split && size > MAX_UNCHUNKED_SIZE) {
+		if (split && size > RESPONSE_MAX_UNCHUNKED_SIZE) {
 			return write(buffer, size);
 		}
 		if (auto code = httpd_resp_send((httpd_req_t*)_request.native(), (const char*)buffer, size); code == ESP_OK) {
@@ -134,17 +136,6 @@ namespace http {
 			 return (esp_err_t)HTTP_ERR_HEADERS_ARE_SENDED;
 		 }
 		 return httpd_resp_set_status((httpd_req_t*)_request.native(), codes2Symbols(code));
-	}
-	
-	resBool response::contentType(const enum contentType ct) noexcept {
-		 return contentType(contentType2Symbols(ct));
-	}
-	
-	resBool response::contentType(const char* ct) noexcept {
-		 if (_headerSended || _sended) {
-			 return (esp_err_t)HTTP_ERR_HEADERS_ARE_SENDED;
-		 }
-		 return httpd_resp_set_type((httpd_req_t*)_request.native(), ct);
 	}
 
     headers& response::getHeaders() {

@@ -18,3 +18,5 @@ static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s discon
 
 #define BOARD_LEAD NO_LED
 #define BOARD_BOOT GPIO_NUM_0
+
+#define RESPONSE_MAX_UNCHUNKED_SIZE (1024 * 10)

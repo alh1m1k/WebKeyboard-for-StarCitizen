@@ -49,21 +49,40 @@
 #define WIFI_AP_DNS_SERVICE_DESCRIPTION 	"StarCitizen WebKeyboard"
 
 //factory reset trigger btn pin and led pin (if not addressable)
-//values included from define.h and board depended, change it there if other pin needed
+//values included from define.h and board depended, change it there if other pin needed.
 #define RESET_TRIGGER_BTN					BOARD_BOOT
 #define RESET_LED_INDICATOR					BOARD_LEAD
+
+//SOCKET MANAGEMENT
+//Exact socket count controlled by menuconfig via CONFIG_LWIP_MAX_SOCKETS define
+//httpd server socket poolSize = CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
+#define SYSTEM_SOCKET_RESERVED 5
+
+//when socket pool became empty system will stall ~30s until some of the socket became available.
+//SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER reduce chance of such event by closing every non essential connection
+//SOCKET_RECYCLE_USE_LRU_COUNTER allow to close some old connection to free socket if such event occur
+//peek socket consumption = SESSION_MAX_CLIENT_COUNT + (number of pending files * number of concurrent clients)
+//in general, SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER work better when most of socket pool already utilized, but increase
+//pressure on net layer due to continues open/close op.
+//SOCKET_RECYCLE_USE_LRU_COUNTER work better with large pool of sockets, but it can ruin app if socket pool not big enough to handle persistent connections + new one
+//as it began to drop persistent connection and force client to reconnect which will lead to the need to open new connections.
+
+
+//every static file request will processed with "connection: close" header applied.
+//forcing the client to close the connection immediately after receiving the file, without waiting for the socket timeout
+//freeing up the socket for subsequent requests
+#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
+
+//use lwip "last recently used" counter for every socket. when socket pool depleted least recently socket will-be used
+//to process incoming connection
+//WARNING: this may close persistent ws connection in some condition.
+#define SOCKET_RECYCLE_USE_LRU_COUNTER
 
 
 #define SID_COOKIE_TTL                      3600*24
 #define SESSION_TIMEOUT                     60*30
 #define SESSION_SID_REFRESH_INTERVAL        3600
-//maximum number of clients, no point in increasing.
-//The network stack probably won't be able to handle even that amount.
 #define SESSION_MAX_CLIENT_COUNT 			10
-
-//do not change
-#define NOTIFICATION_ENABLE
-
 
 
 //USB STUFF, this is override of default values,
@@ -77,6 +96,9 @@
 #define DEVICE_KB_PRODUCT		"DSProbe"
 //#define DEVICE_KB_SERIALS     if comment it be hash of chipid
 #define DEVICE_KB_HID 			"WebKeyboard for StarCitizen"
+
+
+//#define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7)
 
 
 //JTAG DEBUG

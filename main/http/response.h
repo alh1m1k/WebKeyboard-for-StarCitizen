@@ -11,9 +11,9 @@
 #include "../exception/bad_api_call.h"
 #include "../exception/not_implemented.h"
 
+
 #include "result.h"
 #include "codes.h"
-#include "contentType.h"
 #include "cookies.h"
 #include "request.h"
 
@@ -45,9 +45,7 @@ namespace http {
 		//explicit response(const httpd_req_t* esp_req);
 		
 		public:
-		
-			static const ssize_t MAX_UNCHUNKED_SIZE;
-		
+
 			explicit response(request& req);
 						
 			response(const response&& resp);
@@ -58,8 +56,6 @@ namespace http {
 			
 			void done();
 
-
-									
 			resBool writeChunk(const uint8_t* buffer, ssize_t size) noexcept; //most low lvl write
 			
 			resBool write(const uint8_t* buffer, ssize_t size) noexcept; //generic write (write or cycle write)
@@ -85,10 +81,6 @@ namespace http {
 			inline resBool encoding(const codes code) noexcept {
 				throw not_impleneted();
 			}
-			
-			resBool contentType(const contentType ct) noexcept;
-			
-			resBool contentType(const char* ct) noexcept;
 
             headers& getHeaders();
 			
@@ -131,6 +123,14 @@ namespace http {
 			inline size_t bytesTotal() const noexcept { //direct+indirectBytes
 				return bytesDirect() + bytesIndirect();
 			}
+
+            inline resBool contentType(const enum contentType& ct) {
+                return getHeaders().contentType(ct);
+            }
+
+            inline resBool contentType(const std::string& ct) {
+                return getHeaders().contentType(ct);
+            }
 			
 	};	
 }

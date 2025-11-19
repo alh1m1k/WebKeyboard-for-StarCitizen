@@ -1,5 +1,7 @@
-
 #include "file.h"
+#include "generated.h"
+
+
 #include "contentType.h"
 #include "resource.h"
 #include "util.h"
@@ -28,8 +30,16 @@ namespace http::resource::memory {
 	}
 	
 	handlerRes file::operator()(request& req, response& resp, server& serv) {
-		
-		resp.contentType(this->contentType);
+
+        ssize_t size = addressEnd - addressStart;
+		resp.getHeaders().contentType(this->contentType);
+        if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
+            //if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
+            resp.getHeaders().contentLength(addressEnd - addressStart - (ending == (int)endings::TEXT ? 1 : 0));
+        }
+#ifdef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
+		resp.getHeaders().connection("close");
+#endif
 
 		resp << *this;
 		
@@ -38,12 +48,9 @@ namespace http::resource::memory {
 				
 		
 	handlerRes file::handle(request& req, response& resp, server& serv) {
-
-		
 		return (esp_err_t)ESP_OK;
 	}
-		
-					
+
 	int file::type() const {
 		return (int)map::MEMORY;
 	}

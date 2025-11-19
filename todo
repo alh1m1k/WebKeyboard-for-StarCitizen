@@ -9,7 +9,6 @@ action -> purpure
 
 
 1 additional axis (probably not needed)
-2 add server session
 3 additional joystick
 4 implement delta invalidate and redraw for header
 5 implement staticRenderer in buffer draw bypass for animating backgrounds(direct draw if possible)
@@ -30,8 +29,10 @@ action -> purpure
     it produce problem on client and break socket opening flow, when socket unable to close immediately after open
     as it already resolve, and then fail only after authorize task fail due to timeout. That produce delay big enough to
     reconnect attempt fail due to already existing connectTask (as it not cleaned itself yet)
-
-impl session manager secret store
+20 report bug getpeername&getsockname do not report valid size if used with invalid buffer size
+21 report/notreport mbedtls_base64_encode have buffer like interface but behave like c-string processing function
+    it want buffer of size (n+1) (probably for nil) and return error if buffer is (n) but it use only (n) bytes and return size of writed bytes as (n)
+    mbedtls_base64_encode have 4 bytes align and requirements for (x*4)+1 buffer size is little unexpected.
 
 RC1 BUGS
 1 move element to trash broke overlay aligment
