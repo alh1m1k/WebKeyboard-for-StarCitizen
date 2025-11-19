@@ -78,7 +78,7 @@ namespace http {
 				return status(codes::INTERNAL_SERVER_ERROR);
 			}
 			
-			inline resBool encoding(const codes code) noexcept {
+			inline resBool encoding(const codes code) {
 				throw not_impleneted();
 			}
 

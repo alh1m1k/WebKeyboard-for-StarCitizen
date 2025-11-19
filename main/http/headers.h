@@ -25,70 +25,120 @@ namespace http {
 		
 		httpd_req_t* handler;
 		
-		mutable std::unique_ptr<uri> 		_uri;  //todo make defered object mutable and const
+		mutable std::unique_ptr<uri> 		_uri;
 		mutable std::unique_ptr<cookies> 	_cookies;
-
-		bool populated = false;
 
 		public: 
 
-			explicit headers(httpd_req_t* handler);
+			explicit headers(httpd_req_t* handler) noexcept;
 			
 			bool has(const char* headerId) const noexcept;
 								
 			result<std::string> getResult(const char* headerId) const noexcept;
+
+            result<std::string> getResult(const char* headerId) noexcept;
 			
 			std::string get(const char* headerId) const noexcept;
 
+            std::string get(const char* headerId);
+
 			resBool set(const char* headerId, const char* str) noexcept;
+
+            const uri& getUri() const;
+
+            uri& getUri();
 			
-			uri& getUri() const;
-			
-			cookies& getCookies() const;
+			const cookies& getCookies() const;
+
+            cookies& getCookies();
 			
 			inline std::string accept() const noexcept {
 				return get("Accept");
 			}
+
+            inline std::string accept() noexcept {
+                return get("Accept");
+            }
 			
 			inline std::string acceptEncoding() const noexcept {
 				return get("Accept-Encoding");
 			}
+
+            inline std::string acceptEncoding() noexcept {
+                return get("Accept-Encoding");
+            }
 			
 			inline std::string acceptLanguage() const noexcept {
 				return get("Accept-Language");
 			}
+
+            inline std::string acceptLanguage() noexcept {
+                return get("Accept-Language");
+            }
 			
 			inline std::string cacheControl() const noexcept {
 				return get("Cache-Control");
 			}
+
+            inline std::string cacheControl() noexcept {
+                return get("Cache-Control");
+            }
 			
 			inline std::string connection() const noexcept {
 				return get("connection");
 			}
+
+            inline std::string connection() noexcept {
+                return get("connection");
+            }
 			
 			inline std::string dht() const noexcept {
 				return get("DHT");
 			}
+
+            inline std::string dht() noexcept {
+                return get("DHT");
+            }
 			
 			inline std::string host() const noexcept {
 				return get("Host");
 			}
+
+            inline std::string host() noexcept {
+                return get("Host");
+            }
 			
 			inline std::string cookies_v() const noexcept {
 				return get("Cookies");
 			}
+
+            inline std::string cookies_v() noexcept {
+                return get("Cookies");
+            }
 			
 			inline std::string pragma() const noexcept {
 				return get("Pragma");
 			}
+
+            inline std::string pragma() noexcept {
+                return get("Pragma");
+            }
 			
 			inline std::string referer() const noexcept {
 				return get("Referer");
 			}
+
+            inline std::string referer() noexcept {
+                return get("Referer");
+            }
 			
 			inline std::string userAgent() const noexcept {
 				return get("User-Agent");
 			}
+
+            inline std::string userAgent() noexcept {
+                return get("User-Agent");
+            }
 
             inline resBool contentEncoding(const std::string& str) noexcept {
                 return set("Content-Encoding", str.c_str());

@@ -45,13 +45,13 @@ namespace http {
 		public:
 		
 			//explicit request(httpd_req_t* esp_req);
-			explicit request(httpd_req_t* esp_req, action& action);
+			explicit request(httpd_req_t* esp_req, action& action) noexcept;
 						
 			const headers& getHeaders() const;
 
-			httpd_method_t getMethod() const;
+			httpd_method_t getMethod() const noexcept;
 
-			const char* getUriRaw() const; //todo remove me after proper implementing defered object
+			const char* getUriRaw() const noexcept; //todo remove me after proper implementing defered object
 			
 			const uri& getUri() const;
 
@@ -68,17 +68,17 @@ namespace http {
 			const network& getLocal() const;
 
 
-            inline bool isGet() const {
+            inline bool isGet() const noexcept  {
                 return getMethod() == httpd_method_t::HTTP_GET;
             }
 
-            inline bool isPost() const {
+            inline bool isPost() const noexcept {
                 return getMethod() == httpd_method_t::HTTP_POST;
             }
 
 			//method needed to expose private handler in order to successfuly build sub object like sockets or headers
 			//without using friend decl as it make linking impossible to manage
-			inline httpd_req_t* native() const {
+			inline httpd_req_t* native() const noexcept {
 				return handler;
 			}
 			

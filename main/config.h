@@ -69,7 +69,7 @@
 
 
 //every static file request will processed with "connection: close" header applied.
-//forcing the client to close the connection immediately after receiving the file, without waiting for the socket timeout
+//instructing the client to close the connection immediately after receiving the file, without waiting for the socket timeout
 //freeing up the socket for subsequent requests
 #define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
 

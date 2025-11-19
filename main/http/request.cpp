@@ -5,7 +5,7 @@
 namespace http {
 			
 	//request::request(httpd_req_t* esp_req) : handler(esp_req) {}
-	request::request(httpd_req_t* esp_req, action& action) : handler(esp_req), _action(action) {}
+	request::request(httpd_req_t* esp_req, action& action) noexcept : handler(esp_req), _action(action) {}
 				
 	const headers& request::getHeaders() const {
 		if (_headers == nullptr) {
@@ -26,7 +26,7 @@ namespace http {
         return getHeaders().getUri();
 	}
 	
-	const char* request::getUriRaw() const {
+	const char* request::getUriRaw() const noexcept {
 		return handler->uri;
 	}
 	
@@ -34,7 +34,7 @@ namespace http {
         return getHeaders().getCookies();
 	}
 
-	httpd_method_t request::getMethod() const {
+	httpd_method_t request::getMethod() const noexcept {
 		return (httpd_method_t)handler->method;
 	}
 
