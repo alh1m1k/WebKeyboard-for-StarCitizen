@@ -65,7 +65,7 @@ decl_memory_file(index_js, 				http::resource::memory::endings::TEXT, 		"index.j
 decl_memory_file(index_css,				http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS		);
 decl_memory_file(symbols_svg,			http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG		);
 
- 
+
 using namespace std::literals;
 
 const uint32_t DELAY_INITAL 		= 1000;
@@ -126,15 +126,15 @@ void app_main(void)
 {
 
 	info("app init");
-	
+
 	bootloader_random_enable();
 	srand(esp_random()); //todo replace srand with c++ analog
 	bootloader_random_disable();
-	
-	
+
+
 	info("wait for possible factory reset", "hold \"RESET_TRIGGER_BTN\" for more than second to perform reset");
 	{
-		
+
 		gpio_config_t trigger = {
 		    .pin_bit_mask 	 = (1ULL << RESET_TRIGGER_BTN),
 		    .mode 			 = GPIO_MODE_INPUT,
@@ -143,7 +143,7 @@ void app_main(void)
 			.intr_type       = GPIO_INTR_DISABLE,
 		};
 		gpio_config(&trigger);
-		
+
 		if (RESET_LED_INDICATOR != NO_LED) {
 		    gpio_config_t ledConfig = {
 			    .pin_bit_mask 	 = (1ULL << RESET_LED_INDICATOR),
@@ -155,7 +155,7 @@ void app_main(void)
 	 		gpio_config(&ledConfig);
 		}
 
-		
+
 		int64_t startTime 	= esp_timer_get_time();
 		int64_t pressedTime = 0;
 		bool    done = false;
@@ -170,22 +170,22 @@ void app_main(void)
 	}
 
   	info("factory reset interval passed");
-			
+
 	if (auto wifiStatus = wifi::init(); !wifiStatus) {
 		trap("fail to init wifi", wifiStatus.code());
 	}
-		
+
 	if (auto statusCode = wifi::mode(WIFI_MODE); !statusCode) {
 		trap("unable setup mode", statusCode.code());
 	}
-	
+
 	std::string persistenceSign;
 	std::string bootingSign;
-	
+
 	{
-		
+
 		storage persistence = storage();
-				 
+
 		if constexpr (WIFI_MODE == wifi_mode_t::WIFI_MODE_STA) {
 			while (wifi::status() != wifi::status_e::CONNECTED) {
 				if (!wifi::connect(persistence.getWifiSSID(), persistence.getWifiPWD())) {
@@ -201,7 +201,7 @@ void app_main(void)
 				trap("fail to begin wifi hotspot", status.code());
 			}
 		}
-		
+
 		if (persistenceSign = persistence.getStorageSign(); persistenceSign.empty()) {
 			persistenceSign = randomString(32);
 			infoIf(LOG_ENTROPY, "generate new storage sign", persistenceSign.c_str());
@@ -213,15 +213,15 @@ void app_main(void)
 		} else {
 			infoIf(LOG_ENTROPY, "storage sign", persistenceSign.c_str());
 		}
-	
+
 	}
-	
+
 	{
 		bootingSign = randomString(32);
 	}
-	
-	
-	
+
+
+
 #ifdef WIFI_AP_DNS
 	std::cout << "starting mdns " << std::endl;
 	auto dns = dns::server(WIFI_AP_DNS_SERVICE_NAME, WIFI_AP_DNS_SERVICE_DESCRIPTION);
@@ -232,7 +232,7 @@ void app_main(void)
 #endif
 
 	std::cout << "starting rnd generator " << std::endl;
-	
+
 	struct  {
 		hwrandom<uint32_t> generator;
 		std::normal_distribution<float> distribution;
@@ -240,44 +240,44 @@ void app_main(void)
 		.generator 		= {},
 		.distribution 	= std::normal_distribution<float>(0, 1.0),
 	};
-	
-	
-	
+
+
+
 	std::cout << "starting usb Stack " << std::endl;
 	hid::UsbDevice = std::make_unique<hid::UsbDeviceImpl>();
-	
+
 	std::cout << "starting keyboard " << std::endl;
 	auto kb = hid::keyboard();
-	
+
 	if (!kb.install()) {
 		trap("fail 2 setup keyboard", ESP_FAIL);
 	}
 	kb.entroySource([&randomCtx]() -> float { return randomCtx.distribution(randomCtx.generator); });
-	
+
 	std::cout << "starting joystick " << std::endl;
 	auto joy = hid::joystick();
-	
+
 	if (!joy.install()) {
 		trap("fail 2 setup joystick", ESP_FAIL);
 	}
-	
+
 	std::cout << "installing usb driver" << std::endl;
 	if (!hid::UsbDevice->install()) { //mustbe called after all usb device
 		trap("fail 2 install usb driver", ESP_FAIL);
 	}
 	std::cout << "starting of usb stack complete" << std::endl;
-	
-	
-	
+
+
+
 
 	std::cout << "starting webServer " << std::endl;
 	http::server webServer = {};
     webServer.attachSessions<sessionManager>(persistenceSign);
-	
+
 	if (auto status = webServer.begin(80); !status) {
 		trap("fail 2 setup webServer", status.code());
 	}
-				
+
 	resBool status = ESP_OK;
 
 	if (status = webServer.addHandler("/", httpd_method_t::HTTP_GET, index_html_memory_file); !status) {

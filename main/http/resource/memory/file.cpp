@@ -31,6 +31,14 @@ namespace http::resource::memory {
 	
 	handlerRes file::operator()(request& req, response& resp, server& serv) {
 
+#ifdef RESOURCE_COMPRESSED
+		if (req.getHeaders().acceptEncoding().contains("gzip")) {
+			resp.getHeaders().contentEncoding("gzip");
+		} else {
+			throw not_impleneted("runtime decompression");
+		}
+#endif
+
         ssize_t size = addressEnd - addressStart;
 		resp.getHeaders().contentType(this->contentType);
         if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {

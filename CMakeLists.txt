@@ -5,18 +5,25 @@ cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(WebKeyboard)
 
-target_add_binary_data(WebKeyboard.elf "resource/lib.js" TEXT)
+option(RESOURCE_COMPRESSION_ENABLE "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
+set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)
 
-target_add_binary_data(WebKeyboard.elf "resource/widget.js" TEXT)
+message("RESOURCE_COMPRESSION_ENABLE=${RESOURCE_COMPRESSION_ENABLE}")
 
-target_add_binary_data(WebKeyboard.elf "resource/overlay.js" TEXT)
+if(RESOURCE_COMPRESSION_ENABLE)
+    file(MAKE_DIRECTORY "${RESOURCE_BIN_DIR}")
+    function(resource file type)
+        message(STATUS "Processing resource: ${file}")
+        file(ARCHIVE_CREATE PATHS "${RESOURCE_SRC_DIR}/${file}" OUTPUT "${RESOURCE_BIN_DIR}/${file}.gz" FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
+        target_add_binary_data(WebKeyboard.elf ${RESOURCE_BIN_DIR}/${file}.gz  BINARY)
+    endfunction()
+else()
+    function(resource file type)
+        message(STATUS "Processing resource: ${file}")
+        target_add_binary_data(WebKeyboard.elf ${RESOURCE_SRC_DIR}/${file} ${type})
+    endfunction()
+endif()
 
-target_add_binary_data(WebKeyboard.elf "resource/favicon.ico" BINARY)
 
-target_add_binary_data(WebKeyboard.elf "resource/index.html" TEXT)
-
-target_add_binary_data(WebKeyboard.elf "resource/index.css" TEXT)
-
-target_add_binary_data(WebKeyboard.elf "resource/index.js" TEXT)
-
-target_add_binary_data(WebKeyboard.elf "resource/symbols.svg" TEXT)
+include(resource/CMakeLists.txt)

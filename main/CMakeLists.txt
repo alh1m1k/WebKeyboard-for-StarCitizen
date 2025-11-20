@@ -35,4 +35,7 @@ idf_component_register(
     PRIV_REQUIRES       # optional, list the private requirements
 )
 
+configure_file(${COMPONENT_PATH}/make.h.template ${CMAKE_BINARY_DIR}/make.h @ONLY)
+#[[include_directories(${CMAKE_BINARY_DIR}/make.h)]]
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-terminate)
+

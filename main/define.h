@@ -2,6 +2,7 @@
 
 
 #include "esp_wifi_types.h"
+#include "make.h"
 
 
 static constexpr const char* MSG_OK 	= "ok";
