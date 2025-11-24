@@ -36,7 +36,7 @@ namespace http {
     }
 
 	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
-		if (resp.isHeaderSent()) {
+		if (resp.isHeadersSent()) {
 			//nothing we can do as this moment
 			info("handler callback return error but headers already send do nothing ", HTTP_ERR_HEADERS_ARE_SENT);
 			return;
@@ -233,7 +233,7 @@ namespace http {
 				return ESP_FAIL;
 			} else {
 				if (std::holds_alternative<codes>(result)) {
-					if (resp.isHeaderSent()) {
+					if (resp.isHeadersSent()) {
 						info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 						return ESP_OK;

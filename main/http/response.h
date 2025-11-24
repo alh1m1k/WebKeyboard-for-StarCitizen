@@ -118,7 +118,7 @@ namespace http {
                 }
 			}
 
-			inline bool isHeaderSent() const noexcept {
+			inline bool isHeadersSent() const noexcept {
                 //std::variant<std::monostate, bunchSend, chunkSend> _backend;
                 switch (_backend.index()) {
                     case 1:
