@@ -23,6 +23,6 @@ class headers_sended: public std::exception {
 		}
 		
 		virtual esp_err_t code() const noexcept {
-			return HTTP_ERR_HEADERS_ARE_SENDED;
+			return HTTP_ERR_HEADERS_ARE_SENT;
 		}
 };

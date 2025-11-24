@@ -70,9 +70,9 @@ namespace http::resource::memory {
 		info("dumping memory file: ", f.name, " ", (void*)f.addressStart, " ", (void*)f.addressEnd, " sizeof ", size);
 		
 		if (f.ending == (int)endings::TEXT) {
-			stream.writeResp((const char*)f.addressStart);
+			stream.write((const char*)f.addressStart);
 		} else {
-			stream.writeResp((const uint8_t*)f.addressStart, f.addressEnd - f.addressStart);
+			stream.write((const uint8_t*)f.addressStart, f.addressEnd - f.addressStart);
 		}		
 	
 		return stream;

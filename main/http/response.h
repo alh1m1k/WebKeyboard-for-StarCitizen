@@ -30,44 +30,54 @@ namespace http {
 
 	class response {
 
+        class bunchSend {
+            httpd_req_t* handler;
+            public:
+                uint8_t     state = 0; //0 init, 1 begin(header sent), 2 done (sent)
+
+                bunchSend(httpd_req_t* handler) noexcept;
+                ~bunchSend();
+
+                resBool write(const uint8_t* buffer, ssize_t size) noexcept;
+        };
+
+        class chunkSend {
+            httpd_req_t* handler;
+            public:
+                uint8_t state = 0; //0 init, 1 begin(header sent), 2 done (sent)
+
+                chunkSend(httpd_req_t* handler) noexcept;
+                ~chunkSend();
+
+                resBool write(const uint8_t* buffer, ssize_t size) noexcept;
+        };
+
 		const request& _request;
-		
-		bool _chunked 		= false;
-		
-		bool _sended  		= false;
-		
-		bool _headerSended  = false;
-		
-		size_t _bytes = 0;
 
         mutable std::unique_ptr<headers> _headers;
-				
-		//explicit response(const httpd_req_t* esp_req);
-		
+
+        std::variant<std::monostate, bunchSend, chunkSend> _backend;
+
+        resBool writeChunks(chunkSend& backend, const uint8_t* buffer, ssize_t size) noexcept;
+
 		public:
 
-			explicit response(request& req);
-						
-			response(const response&& resp);
-			
-			virtual ~response();
-			
-			response& operator=(const response& resp);
-			
-			void done();
+			response(const request& req) noexcept;
 
-			resBool writeChunk(const uint8_t* buffer, ssize_t size) noexcept; //most low lvl write
+			virtual ~response();
+
+			response(const response&) = delete;
 			
-			resBool write(const uint8_t* buffer, ssize_t size) noexcept; //generic write (write or cycle write)
+			response& operator=(const response& resp) = delete;
+
+            bunchSend& bunch();
+
+            chunkSend& chunk();
+
+			resBool write(const uint8_t* buffer, ssize_t size) noexcept;
 			
 			resBool write(const char* str) noexcept; //proxy to write
-			
-			resBool writeDone() noexcept; //complete chunk tx
-						
-			resBool writeResp(const uint8_t* buffer, ssize_t size, bool split = true) noexcept; //single write, split - allow to split tx on chunks (write used as backend)
-			
-			resBool writeResp(const char* buffer, bool split = true) noexcept; //proxy to writeResp
-			
+
 			resBool status(const codes code) noexcept;
 			
 			inline resBool status404() noexcept {
@@ -96,42 +106,33 @@ namespace http {
 
 			const network& getLocal() const;
 
-			inline bool isSended() const noexcept {
-				return _sended;
+			inline bool isSent() const noexcept {
+                //std::variant<std::monostate, bunchSend, chunkSend> _backend;
+                switch (_backend.index()) {
+                    case 1:
+                        return std::get<bunchSend>(_backend).state == 2;
+                    case 2:
+                        return std::get<chunkSend>(_backend).state == 2;
+                    default:
+                        return false;
+                }
 			}
-			
-			inline bool isHeaderSended() const noexcept {
-				return _headerSended;
+
+			inline bool isHeaderSent() const noexcept {
+                //std::variant<std::monostate, bunchSend, chunkSend> _backend;
+                switch (_backend.index()) {
+                    case 1:
+                        return std::get<bunchSend>(_backend).state >= 1;
+                    case 2:
+                        return std::get<chunkSend>(_backend).state >= 1;
+                    default:
+                        return false;
+                }
 			}
-			
+
 			inline bool isChunked() const noexcept {
-				return _chunked;
+				return std::holds_alternative<chunkSend>(_backend);
 			}
-			
-			inline size_t bytesDirect() const noexcept {
-				return _bytes;
-			}
-			
-			inline size_t bytesIndirect() const noexcept {
-				if (isHeaderSended()) {
-					return 1; //todo fix me
-				} else {
-					return 0;
-				}
-			}
-			
-			inline size_t bytesTotal() const noexcept { //direct+indirectBytes
-				return bytesDirect() + bytesIndirect();
-			}
-
-            inline resBool contentType(const enum contentType& ct) {
-                return getHeaders().contentType(ct);
-            }
-
-            inline resBool contentType(const std::string& ct) {
-                return getHeaders().contentType(ct);
-            }
-			
 	};	
 }
 

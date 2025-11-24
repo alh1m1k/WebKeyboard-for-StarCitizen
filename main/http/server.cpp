@@ -36,9 +36,9 @@ namespace http {
     }
 
 	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
-		if (resp.isHeaderSended()) {
+		if (resp.isHeaderSent()) {
 			//nothing we can do as this moment
-			info("handler callback return error but headers already send do nothing ",  HTTP_ERR_HEADERS_ARE_SENDED);
+			info("handler callback return error but headers already send do nothing ", HTTP_ERR_HEADERS_ARE_SENT);
 			return;
 		} else {
             code = code < http::codes::BAD_REQUEST ? http::codes::INTERNAL_SERVER_ERROR : code;
@@ -47,7 +47,7 @@ namespace http {
 			if (auto res = newResp.status(code); !res) {
 				error("send api unavailable ", res.code());
 			} 
-			if (auto res = newResp.writeResp(codes2Symbols(code)); !res) {
+			if (auto res = newResp.write(codes2Symbols(code)); !res) {
 				error("send api unavailable ", res.code());
 			}
 		};
@@ -233,20 +233,17 @@ namespace http {
 				return ESP_FAIL;
 			} else {
 				if (std::holds_alternative<codes>(result)) {
-					if (resp.isHeaderSended()) {
-						resp.done();
-						info("handler callback return http-code but headers already send, do nothing",  HTTP_ERR_HEADERS_ARE_SENDED);
+					if (resp.isHeaderSent()) {
+						info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 						return ESP_OK;
 					} else {
 						resp.status(std::get<codes>(result));
-						resp.done();
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
 						return ESP_OK;
 					}
 				} else if (std::holds_alternative<esp_err_t>(result)) {
 					if (esp_err_t code = std::get<esp_err_t>(result); code == ESP_OK) {
-						resp.done();
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 						return ESP_OK;
 					} else {
