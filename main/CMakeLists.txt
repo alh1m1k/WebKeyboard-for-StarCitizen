@@ -22,7 +22,7 @@ idf_component_register(
     					# list the source files of this component
     INCLUDE_DIRS        
     					. ./exception
-    					./http ./http/exception ./http/resource ./http/session ./http/resource/memory ./http/lib/httpparser
+    					./http ./http/exception ./http/resource ./http/session ./http/resource/memory
     					./http/socket
 						./syncing
 						./crypto

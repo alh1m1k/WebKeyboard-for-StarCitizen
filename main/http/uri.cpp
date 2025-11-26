@@ -5,13 +5,9 @@
 namespace http {
 		
 	uri::uri(){};
-	
-	uri::uri(const char* str): httpparser::UrlParser(std::string(str))  {};
-	
-	uri::uri(std::string str): httpparser::UrlParser(str) {};
-				
-	uri::uri(httpd_req_t* handler, const char* schema): httpparser::UrlParser(true){
-		
+
+	uri::uri(httpd_req_t* handler){
+/*
 		size_t querySize 	= strlen(handler->uri);
 		size_t schemaSize 	= strlen(schema);
 		
@@ -55,7 +51,7 @@ namespace http {
 				parse(std::string("host"));
 			}
 		}
-		debugIf(LOG_HTTP, "uri::uri::httpd_req_t", handler->uri);		
+		debugIf(LOG_HTTP, "uri::uri::httpd_req_t", handler->uri);	*/
 			
 	};
 

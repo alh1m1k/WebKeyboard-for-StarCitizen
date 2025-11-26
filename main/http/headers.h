@@ -13,8 +13,6 @@
 #include "contentType.h"
 #include "result.h"
 #include "util.h"
-#include "lib/httpparser/httprequestparser.h"
-#include "lib/httpparser/request.h"
 #include "uri.h"
 #include "cookies.h"
 
