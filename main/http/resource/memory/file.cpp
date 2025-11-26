@@ -7,16 +7,15 @@
 #include "util.h"
 #include <sys/_stdint.h>
 
-
 namespace http::resource::memory {
 
 	//file::file(int addressStart, int addressEnd, endings end, const char * name) : addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name) {};
 	
-	file::file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType) 
-		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType) {};
+	file::file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum)
+		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType), checksum(checksum) {};
 		
-	file::file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct) 
-		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType2Symbols(ct)) {};
+	file::file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum)
+		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType2Symbols(ct)), checksum(checksum) {};
 	
 	bool file::operator==(const file& other) const {
 		return other.name == this->name;
@@ -33,11 +32,18 @@ namespace http::resource::memory {
 	handlerRes file::operator()(request& req, response& resp, server& serv) {
 
 		ssize_t size = addressEnd - addressStart;
-
 		//headers
 #ifdef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
 		resp.getHeaders().connection("close");
 #endif
+
+		if (checksum != nullptr) {
+			if (req.getHeaders().ifNoneMatch() == checksum) {
+				return codes::NOT_MODIFIED;
+			}
+		}
+
+
 		resp.getHeaders().contentType(this->contentType);
 #ifdef RESOURCE_COMPRESSED
 		if (req.getHeaders().acceptEncoding().contains("gzip")) {
@@ -53,12 +59,16 @@ namespace http::resource::memory {
 			throw not_impleneted("runtime decompression");
 		}
 #endif
-
         if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
             resp.getHeaders().contentLength(addressEnd - addressStart - (ending == (int)endings::TEXT ? 1 : 0));
 		} else {
 			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
 		}
+
+		if (checksum != nullptr) {
+			resp.getHeaders().eTag(checksum);
+		}
+
 
 		resp << *this;
 

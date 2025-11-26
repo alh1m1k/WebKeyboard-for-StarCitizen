@@ -20,7 +20,8 @@ http::resource::memory::file PPCAT(varname, _memory_file) = { \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
 	humanName, \
-	contentTypeValue \
+	contentTypeValue, \
+    PPCAT(name, _checksum) \
 };
 
 #define __return_res(name, endingsValue, humanName, contentTypeValue) \
@@ -29,7 +30,8 @@ http::resource::memory::file( \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
 	humanName, \
-	contentTypeValue \
+	contentTypeValue, \
+	PPCAT(name, _checksum)  \
 );
 
 #ifdef RESOURCE_COMPRESSED

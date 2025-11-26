@@ -23,6 +23,7 @@ namespace http::resource::memory {
 		const int 	ending;
 		const char* name;
 		const char* contentType;
+		const char* checksum;
 		
 		protected:
 		
@@ -34,9 +35,9 @@ namespace http::resource::memory {
 
 			//file(int addressStart, int addressEnd, endings end, const char * name);
 			
-			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType);
+			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum = nullptr);
 			
-			file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct);
+			file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum = nullptr);
 
             //is override needed, for now its for unification with other virtual function?
             ~file() override = default;

@@ -9,6 +9,7 @@ namespace http {
 		OK 						= 200,
 		NO_CONTENT 				= 204,
 		MULTI_STATUS 			= 207,
+	 	NOT_MODIFIED  			= 304,
 		BAD_REQUEST 			= 400,
 		UNAUTHORIZED 			= 401,
 		NOT_FOUND 				= 404,
@@ -23,6 +24,7 @@ namespace http {
             case codes::OK: 					return "200 OK";
 			case codes::NO_CONTENT: 			return "204 No Content";
 			case codes::MULTI_STATUS:  			return "207 Multi-Status";
+			case codes::NOT_MODIFIED:  			return "304 Not Modified";
 			case codes::BAD_REQUEST:  			return "400 Bad Request";
 		    case codes::UNAUTHORIZED:  			return "401 Unauthorized";
 			case codes::NOT_FOUND:  			return "404 Not Found";

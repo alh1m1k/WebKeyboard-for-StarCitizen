@@ -244,6 +244,7 @@ namespace http {
 						return ESP_OK;
 					} else {
 						resp.status(std::get<codes>(result));
+						resp << ""; //todo fix me
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
 						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 						return ESP_OK;

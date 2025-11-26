@@ -55,6 +55,7 @@ extern "C" {
 	void app_main(void);
 }
 
+#include "resourceChecksum.h"
 //http::resource::memory::file will be created and stored in hello_js_memory_file
 decl_memory_file(widget_js, 			http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS		);
 decl_memory_file(overlay_js, 			http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS		);

@@ -31,7 +31,9 @@ namespace http {
 			}
 			
 			std::string ret = std::string("", size); //c++11 will handle null at end of str
-			if (auto code = httpd_req_get_hdr_value_str(handler, headerId, ret.data(), size); code != ESP_OK) {
+			//httpd_req_get_hdr_value_str want nil at end so size + 1
+			//todo refactor to resize
+			if (auto code = httpd_req_get_hdr_value_str(handler, headerId, ret.data(), size+1); code != ESP_OK) {
 				return {};
 			} else {
 				return ret;

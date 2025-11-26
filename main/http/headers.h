@@ -138,6 +138,14 @@ namespace http {
                 return get("User-Agent");
             }
 
+			inline std::string ifNoneMatch() const noexcept {
+				return get("If-None-Match");
+			}
+
+			inline std::string ifNoneMatch() noexcept {
+				return get("If-None-Match");
+			}
+
             inline resBool contentEncoding(const std::string& str) noexcept {
                 return set("Content-Encoding", str.c_str());
             }
@@ -173,6 +181,20 @@ namespace http {
             inline resBool connection(const std::string& str) noexcept {
                 return set("Connection", str.c_str());
             }
+
+			//temporal workaround until header not prolong live time of str
+			inline resBool connection(const char* str) noexcept {
+				return set("Connection", str);
+			}
+
+			inline resBool eTag(const std::string& str) noexcept {
+				return set("ETag", str.c_str());
+			}
+
+			//temporal workaround until header not prolong live time of str
+			inline resBool eTag(const char* str) noexcept {
+				return set("ETag", str);
+			}
 	};
 	
 }
