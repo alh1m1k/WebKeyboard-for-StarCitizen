@@ -31,7 +31,7 @@ namespace http::resource::memory {
 		public:
 				
 			friend response& operator<<(response& stream, const file& result);
-			
+
 			//file(int addressStart, int addressEnd, endings end, const char * name);
 			
 			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType);

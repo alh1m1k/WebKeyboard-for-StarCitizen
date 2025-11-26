@@ -2,7 +2,8 @@
 # for more information about component CMakeLists.txt files.
 
 idf_component_register(
-    SRCS 				
+    SRCS
+
     					resultStream.cpp http/uri.cpp http/network.cpp http/headers.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
 						http/socket/socket.cpp http/socket/asyncSocket.cpp
     					http/resource/memory/file.cpp http/server.cpp http/action.cpp http/cookie.cpp
@@ -15,8 +16,8 @@ idf_component_register(
     					parsers/keyboard.cpp
     					wifi/wifi.cpp
 						sessionManager.cpp
-    					main.cpp  
-    					
+    					main.cpp
+
     					
     					# list the source files of this component
     INCLUDE_DIRS        
@@ -29,6 +30,9 @@ idf_component_register(
     					./hid
     					./wifi
     					./parsers
+
+						compression
+
     					 # optional, add here public include directories
     PRIV_INCLUDE_DIRS   # optional, add here private include directories
     REQUIRES            freertos nvs_flash esp_event esp_netif esp_wifi esp_https_server esp_timer tinyusb mdns driver bootloader_support mbedtls	# optional, list the public requirements (component names)

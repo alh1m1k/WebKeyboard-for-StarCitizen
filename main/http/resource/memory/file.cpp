@@ -7,6 +7,7 @@
 #include "util.h"
 #include <sys/_stdint.h>
 
+
 namespace http::resource::memory {
 
 	//file::file(int addressStart, int addressEnd, endings end, const char * name) : addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name) {};
@@ -28,29 +29,39 @@ namespace http::resource::memory {
 	bool file::operator<(const file& other) const {
 		return other.name < this->name;
 	}
-	
+
 	handlerRes file::operator()(request& req, response& resp, server& serv) {
 
+		ssize_t size = addressEnd - addressStart;
+
+		//headers
+#ifdef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
+		resp.getHeaders().connection("close");
+#endif
+		resp.getHeaders().contentType(this->contentType);
 #ifdef RESOURCE_COMPRESSED
 		if (req.getHeaders().acceptEncoding().contains("gzip")) {
 			resp.getHeaders().contentEncoding("gzip");
 		} else {
+			//decompressor interface  { std::span<uin8_t> decompress() }
+			//attachDecompressorBuilder()
+			//getDecompressor(*this, MEMORY_LIMIT)
+			// while(auto nextBuffer = decompressor.decompress(); nextBuffer != decompressor::eof ) {
+			// resp << nextBuffer;
+			// }
+			//or refactor file to template
 			throw not_impleneted("runtime decompression");
 		}
 #endif
 
-        ssize_t size = addressEnd - addressStart;
-		resp.getHeaders().contentType(this->contentType);
         if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
-            //if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
             resp.getHeaders().contentLength(addressEnd - addressStart - (ending == (int)endings::TEXT ? 1 : 0));
-        }
-#ifdef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
-		resp.getHeaders().connection("close");
-#endif
+		} else {
+			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
+		}
 
 		resp << *this;
-		
+
 		return (esp_err_t)ESP_OK;
 	}
 				

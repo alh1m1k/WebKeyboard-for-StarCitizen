@@ -72,7 +72,7 @@ namespace crypto::hash {
             virtual ~httpIdentity() = default;
 
 
-            const data_type generate(const http::request& req) {
+            data_type generate(const http::request& req) {
 
                 data_type out(ident_size);
                 salt(out, salt_size);
