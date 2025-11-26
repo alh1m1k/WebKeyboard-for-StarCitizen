@@ -44,7 +44,7 @@ struct pack {
 	bool success = false;
 };
 
-const pack unpackMsg(const http::socket::socket::message& rawMessage, const char separator = ':') {
+pack unpackMsg(const http::socket::socket::message& rawMessage, const char separator = ':') {
 	
 	auto idItStart= std::find(rawMessage.begin(), rawMessage.end(), separator);
 	if (idItStart == rawMessage.end()) {
@@ -78,7 +78,7 @@ struct kbPack {
 };
 
 //todo refactor remove inverse
-const kbPack unpackKb(const std::string_view rawMessage, const char separator = ':') {
+kbPack unpackKb(const std::string_view rawMessage, const char separator = ':') {
 		
     auto idItStart= std::find(rawMessage.rbegin(), rawMessage.rend(), separator);
 	if (idItStart == rawMessage.rend()) {
@@ -134,7 +134,7 @@ struct kbRepeatPack {
 	bool 			validInput	   	   = false;
 };
 
-const kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char separator = ':') {
+kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char separator = ':') {
 		
     auto repeatItStart= std::find(rawMessage.rbegin(), rawMessage.rend(), separator);
 	if (repeatItStart == rawMessage.rend()) {
@@ -249,13 +249,13 @@ const kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const c
 			valid = false;
 			validIntervalMS = false;
 		} 
-		if (!inputView.size()) {
+		if (!inputView.empty()) {
 			valid = false;
 			validActionId = false;
 		}
 	}
 	
-	if (!actionIdView.size()) {
+	if (!actionIdView.empty()) {
 		valid = false;
 		validActionId = false;
 	}
@@ -311,7 +311,7 @@ struct settignsPack {
 	bool validPWD  		  = false;
 };
 
-const settignsPack unpackSettings(const std::string_view rawMessage, const char separator = ':') {
+settignsPack unpackSettings(const std::string_view rawMessage, const char separator = ':') {
 	
 	if (auto resSSID = unpackNs(rawMessage, "SSID:", separator); !resSSID) {
 		return { };

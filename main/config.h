@@ -98,7 +98,7 @@
 #define DEVICE_KB_HID 			"WebKeyboard for StarCitizen"
 
 
-//#define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7)
+#define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7)
 
 
 //JTAG DEBUG
@@ -136,6 +136,9 @@
 #define LOG_COOKIE_BUILD false
 
 #define LOG_SERVER_GC    false
+
+#define LOG_HTTPD_TASK_STACK false
+
 
 
 

@@ -194,6 +194,8 @@ namespace http {
     //this method must process any exception and hold them inside fn border;
 	static esp_err_t staticRouter(httpd_req_t *esp_req) {
 
+		debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
+
         action&  path   = *static_cast<action*>(esp_req->user_ctx);
 		request  req 	= http::request(esp_req, path);
 		response resp 	= http::response(req);
@@ -221,6 +223,7 @@ namespace http {
                     error("session open", req.native()->uri, " t ", esp_timer_get_time(), " code ", code);
                     serverError(req, resp, err2code(code));
                     debugIf(LOG_HTTP, "<--- static routing complete", req.native()->uri, " t ", esp_timer_get_time());
+					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
                     return ESP_FAIL;
                 }
             }
@@ -230,32 +233,38 @@ namespace http {
 				serverError(req, resp);
 				error("internal error", esp_req->uri, " t ", esp_timer_get_time(), " code ", result.code());
 				debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+				debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 				return ESP_FAIL;
 			} else {
 				if (std::holds_alternative<codes>(result)) {
 					if (resp.isHeadersSent()) {
 						info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 						return ESP_OK;
 					} else {
 						resp.status(std::get<codes>(result));
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
+						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 						return ESP_OK;
 					}
 				} else if (std::holds_alternative<esp_err_t>(result)) {
 					if (esp_err_t code = std::get<esp_err_t>(result); code == ESP_OK) {
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 						return ESP_OK;
 					} else {
 						serverError(req, resp);
 						error("handler return error code", esp_req->uri, " t ", esp_timer_get_time(), " code ", code);
 						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 						return ESP_FAIL;
 					}
 				} else {
 					serverError(req, resp);
 					error("handler undefined behavior", esp_req->uri, " t ", esp_timer_get_time());
 					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return ESP_FAIL;
 				}
 			}
@@ -267,12 +276,15 @@ namespace http {
 			serverException(req, resp, &e);
 			error("server exception", e.what(), ESP_FAIL);
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 			return ESP_FAIL;
 		} catch (...) {
             error("server exception",ESP_FAIL);
+			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
             return ESP_FAIL;
         }
-				
+
+		debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 		debugIf(LOG_HTTP, "<--- static routing complete (nothing)", esp_req->uri, " t ", esp_timer_get_time());
 		return ESP_OK;
 	}
@@ -300,7 +312,7 @@ namespace http {
 		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 	= 20;
 		config.max_open_sockets 	= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
-		config.stack_size 		   += 1024; //temporaly fix of sovf
+		config.stack_size 		    = HTTPD_TASK_STACK_SIZE;
         config.open_fn  = &socketOpen;
         config.close_fn = &socketClose;
 #ifdef SOCKET_RECYCLE_USE_LRU_COUNTER

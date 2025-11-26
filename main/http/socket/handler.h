@@ -29,7 +29,7 @@ namespace http::socket {
 				
 		protected:
 		
-			std::function<resBool(socket& remote, const socket::message msg, const context& ctx)> hndl;
+			std::function<resBool(socket& remote, const socket::message& msg, const context& ctx)> hndl;
 						
 			inline resBool handle(request& req, response& resp, server& serv) {
 				

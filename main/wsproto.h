@@ -35,12 +35,13 @@ hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_typ
 
 class wsproto {
 
+	//consume almost 500-600b of stack, most of theme is hash ctx + exceptions
     static std::string base64Hash(const std::string& val) {
         auto engine = crypto::hash::sha256Engine();
         if (auto hash = engine.hash({reinterpret_cast<const uint8_t*>(val.data()),  val.size()}); hash != crypto::hash::sha256Engine::invalidHash) {
             return crypto::base64Helper::toBase64(hash);
         }
-        throw std::logic_error("error in hash op");
+        throw std::logic_error("error in hash op"); //consume 144bytes of stack
     }
 
     public:
@@ -165,7 +166,7 @@ class wsproto {
                 flags = UNSET(pSession->write()->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHODIZED);
             }
 
-            info("session credits", pSession->sid().c_str(), " i: ", pSession->index(), " n: ", clientName.c_str());
+            info("session credits", pSession->sid().c_str(), " i: ", pSession->index(), " n: ", clientName.c_str(), " stack: ", uxTaskGetStackHighWaterMark(nullptr));
 
             if (rawMessage.starts_with("auth:")) {
 

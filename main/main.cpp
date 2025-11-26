@@ -179,8 +179,8 @@ void app_main(void)
 		trap("unable setup mode", statusCode.code());
 	}
 
-	std::string persistenceSign;
-	std::string bootingSign;
+	static std::string persistenceSign;
+	static std::string bootingSign;
 
 	{
 
@@ -224,7 +224,7 @@ void app_main(void)
 
 #ifdef WIFI_AP_DNS
 	std::cout << "starting mdns " << std::endl;
-	auto dns = dns::server(WIFI_AP_DNS_SERVICE_NAME, WIFI_AP_DNS_SERVICE_DESCRIPTION);
+	static auto dns = dns::server(WIFI_AP_DNS_SERVICE_NAME, WIFI_AP_DNS_SERVICE_DESCRIPTION);
 	dns.addService("_http", "_tcp", 80);
 	if (auto status = dns.begin(); !status) {
 		trap("fail 2 setup mDNS", status.code());
@@ -236,7 +236,7 @@ void app_main(void)
 	struct  {
 		hwrandom<uint32_t> generator;
 		std::normal_distribution<float> distribution;
-	} randomCtx = {
+	} static randomCtx = {
 		.generator 		= {},
 		.distribution 	= std::normal_distribution<float>(0, 1.0),
 	};
@@ -247,15 +247,15 @@ void app_main(void)
 	hid::UsbDevice = std::make_unique<hid::UsbDeviceImpl>();
 
 	std::cout << "starting keyboard " << std::endl;
-	auto kb = hid::keyboard();
+	static auto kb = hid::keyboard();
 
 	if (!kb.install()) {
 		trap("fail 2 setup keyboard", ESP_FAIL);
 	}
-	kb.entroySource([&randomCtx]() -> float { return randomCtx.distribution(randomCtx.generator); });
+	kb.entroySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
 
 	std::cout << "starting joystick " << std::endl;
-	auto joy = hid::joystick();
+	static auto joy = hid::joystick();
 
 	if (!joy.install()) {
 		trap("fail 2 setup joystick", ESP_FAIL);
@@ -271,7 +271,7 @@ void app_main(void)
 
 
 	std::cout << "starting webServer " << std::endl;
-	http::server webServer = {};
+	static http::server webServer = {};
     webServer.attachSessions<sessionManager>(persistenceSign);
 
 	if (auto status = webServer.begin(80); !status) {
@@ -314,7 +314,7 @@ void app_main(void)
 	}
 
 	if (status = webServer.addHandler("/leave", httpd_method_t::HTTP_POST,
-	  [&webServer](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
+	  [](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
 		if (auto absSess = req.getSession(); absSess != nullptr) {
 			if (webServer.getSessions()->close(absSess->sid())) {
 				return ESP_OK;
@@ -338,14 +338,14 @@ void app_main(void)
 
 
 
-    auto  kbMessageParser    = typename wsproto::kb_parser_type();
-    auto  packetCounter 	 = typename wsproto::packet_seq_generator_type();
-    auto  ctrl               = typename wsproto::ctrl_map_type();
-    auto  tailScheduler		 = typename wsproto::scheduler_type();
+    static auto  kbMessageParser    = typename wsproto::kb_parser_type();
+	static auto  packetCounter 	 	= typename wsproto::packet_seq_generator_type();
+	static auto  ctrl               = typename wsproto::ctrl_map_type();
+	static auto  tailScheduler		= typename wsproto::scheduler_type();
 
     //this is little ugly but save until we not close server forcely
     auto& sessions     = *(sessionManager*)webServer.getSessions().get();
-    auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
+	static auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
 
 	if (status = webServer.addHandler("/socks", httpd_method_t::HTTP_GET, http::socket::handler(
         wsproto(

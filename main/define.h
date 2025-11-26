@@ -21,3 +21,5 @@ static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s discon
 #define BOARD_BOOT GPIO_NUM_0
 
 #define RESPONSE_MAX_UNCHUNKED_SIZE (1024 * 10)
+
+#define HTTPD_TASK_STACK_SIZE (4096+1024)
