@@ -1,3 +1,6 @@
 #pragma once
 
+//"@DISCLAIMER@"
+
 #cmakedefine01 RESOURCE_COMPRESSION
+#cmakedefine01 RESOURCE_CHECKSUM

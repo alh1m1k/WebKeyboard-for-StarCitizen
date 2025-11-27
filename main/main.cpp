@@ -55,7 +55,10 @@ extern "C" {
 	void app_main(void);
 }
 
+#if RESOURCE_CHECKSUM
 #include "resourceChecksum.h"
+#endif
+
 //http::resource::memory::file will be created and stored in hello_js_memory_file
 decl_memory_file(widget_js, 			http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS		);
 decl_memory_file(overlay_js, 			http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS		);
@@ -329,7 +332,6 @@ void app_main(void)
 
 	if (status = webServer.addHandler("/renew", httpd_method_t::HTTP_POST,
 	  [](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
-		  response << ""; //currently needed to complete query
 		  return ESP_OK;  //rest will handle server
 	  }); !status) {
 		webServer.end();

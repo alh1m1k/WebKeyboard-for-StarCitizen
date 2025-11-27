@@ -35,6 +35,14 @@ namespace http {
         }
     }
 
+	static void finishRequest(request& req, response& resp, http::codes code = http::codes::OK) {
+		if (resp.isHeadersSent()) {
+			return;
+		} else {
+			resp << code << "";
+		};
+	}
+
 	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
 		if (resp.isHeadersSent()) {
 			//nothing we can do as this moment
@@ -42,7 +50,6 @@ namespace http {
 			return;
 		} else {
             code = code < http::codes::BAD_REQUEST ? http::codes::INTERNAL_SERVER_ERROR : code;
-            debug("serverError", (int)code);
 			auto newResp = http::response(req); //move not implemented
 			if (auto res = newResp.status(code); !res) {
 				error("send api unavailable ", res.code());
@@ -237,33 +244,25 @@ namespace http {
 				return ESP_FAIL;
 			} else {
 				if (std::holds_alternative<codes>(result)) {
-					if (resp.isHeadersSent()) {
-						info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
-						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-						return ESP_OK;
-					} else {
-						resp.status(std::get<codes>(result));
-						resp << ""; //todo fix me
-						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
-						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-						return ESP_OK;
-					}
+					info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
+					finishRequest(req, resp);
+					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
+					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
+					return ESP_OK;
 				} else if (std::holds_alternative<esp_err_t>(result)) {
-					if (esp_err_t code = std::get<esp_err_t>(result); code == ESP_OK) {
-						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-						return ESP_OK;
+					esp_err_t code;
+					if (code = std::get<esp_err_t>(result); code == ESP_OK) {
+						finishRequest(req, resp);
 					} else {
-						serverError(req, resp);
 						error("handler return error code", esp_req->uri, " t ", esp_timer_get_time(), " code ", code);
-						debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-						debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-						return ESP_FAIL;
+						serverError(req, resp);
 					}
+					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
+					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
+					return code;
 				} else {
-					serverError(req, resp);
 					error("handler undefined behavior", esp_req->uri, " t ", esp_timer_get_time());
+					serverError(req, resp);
 					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return ESP_FAIL;
@@ -274,17 +273,20 @@ namespace http {
 			error("handler throw error", e.what(), e.code());
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 		} catch (std::exception& e) {
-			serverException(req, resp, &e);
 			error("server exception", e.what(), ESP_FAIL);
+			serverException(req, resp, &e);
 			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 			return ESP_FAIL;
 		} catch (...) {
-            error("server exception",ESP_FAIL);
+			error("server exception", ESP_FAIL);
+			serverError(req, resp);
+			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
             return ESP_FAIL;
         }
 
+		finishRequest(req, resp);
 		debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 		debugIf(LOG_HTTP, "<--- static routing complete (nothing)", esp_req->uri, " t ", esp_timer_get_time());
 		return ESP_OK;
@@ -316,11 +318,7 @@ namespace http {
 		config.stack_size 		    = HTTPD_TASK_STACK_SIZE;
         config.open_fn  = &socketOpen;
         config.close_fn = &socketClose;
-#ifdef SOCKET_RECYCLE_USE_LRU_COUNTER
-        config.lru_purge_enable = true;
-#else
-        config.lru_purge_enable = false;
-#endif
+        config.lru_purge_enable 	= SOCKET_RECYCLE_USE_LRU_COUNTER;
         return  httpd_start(&handler, &config);
 	}
 

@@ -33,42 +33,46 @@ namespace http::resource::memory {
 
 		ssize_t size = addressEnd - addressStart;
 		//headers
-#ifdef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
-		resp.getHeaders().connection("close");
-#endif
+		if constexpr (SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER) {
+			resp.getHeaders().connection("close");
+		}
 
-		if (checksum != nullptr) {
-			if (req.getHeaders().ifNoneMatch() == checksum) {
-				return codes::NOT_MODIFIED;
+		if constexpr (HTTP_CACHE_USE_ETAG) {
+			if (checksum != nullptr) {
+				if (req.getHeaders().ifNoneMatch() == checksum) {
+					return codes::NOT_MODIFIED;
+				}
 			}
 		}
 
-
 		resp.getHeaders().contentType(this->contentType);
-#ifdef RESOURCE_COMPRESSED
-		if (req.getHeaders().acceptEncoding().contains("gzip")) {
-			resp.getHeaders().contentEncoding("gzip");
-		} else {
-			//decompressor interface  { std::span<uin8_t> decompress() }
-			//attachDecompressorBuilder()
-			//getDecompressor(*this, MEMORY_LIMIT)
-			// while(auto nextBuffer = decompressor.decompress(); nextBuffer != decompressor::eof ) {
-			// resp << nextBuffer;
-			// }
-			//or refactor file to template
-			throw not_impleneted("runtime decompression");
+
+		if constexpr (RESOURCE_COMPRESSION) {
+			if (req.getHeaders().acceptEncoding().contains("gzip")) {
+				resp.getHeaders().contentEncoding("gzip");
+			} else {
+				//decompressor interface  { std::span<uin8_t> decompress() }
+				//attachDecompressorBuilder()
+				//getDecompressor(*this, MEMORY_LIMIT)
+				// while(auto nextBuffer = decompressor.decompress(); nextBuffer != decompressor::eof ) {
+				// resp << nextBuffer;
+				// }
+				//or refactor file to template
+				throw not_impleneted("runtime decompression");
+			}
 		}
-#endif
+
         if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
             resp.getHeaders().contentLength(addressEnd - addressStart - (ending == (int)endings::TEXT ? 1 : 0));
 		} else {
 			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
 		}
 
-		if (checksum != nullptr) {
-			resp.getHeaders().eTag(checksum);
+		if constexpr (HTTP_CACHE_USE_ETAG) {
+			if (checksum != nullptr) {
+				resp.getHeaders().eTag(checksum);
+			}
 		}
-
 
 		resp << *this;
 

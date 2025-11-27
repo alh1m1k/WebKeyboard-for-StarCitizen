@@ -47,9 +47,12 @@ namespace crypto::hash {
 
                 hashEngineT engine = {};
                 data_type aux(hash_size);
+				auto usrAgt = req.getHeaders().userAgent();
 
                 ensure(engine.begin());
                 ensure(engine.hash({ req.getRemote().mac().addr, 6 }, aux));
+				engine.chunk(aux);
+				ensure(engine.hash({ (const uint8_t*)usrAgt.data(), usrAgt.size() }, aux));
                 engine.chunk(aux);
                 engine.chunk(_secret);
                 ensure(engine.hash(_salt, aux));

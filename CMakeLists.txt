@@ -6,41 +6,55 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(WebKeyboard)
 
 option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
 set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)
+set (DISCLAIMER "do not touch! content is auto generated on every build!")
 
 message("RESOURCE_COMPRESSION=${RESOURCE_COMPRESSION}")
+message("RESOURCE_CHECKSUM=${RESOURCE_CHECKSUM}")
 
 #[[configure_file(${COMPONENT_PATH}/make.h.template ${CMAKE_BINARY_DIR}/make.h @ONLY)]]
 configure_file(${PROJECT_DIR}/main/make.h.template ${PROJECT_DIR}/main/make.h @ONLY)
 #[[include_directories(${CMAKE_BINARY_DIR}/make.h)]]
 
 file(REMOVE "${PROJECT_DIR}/main/resourceChecksum.h")
-file(APPEND "${PROJECT_DIR}/main/resourceChecksum.h" "#pragma once \n\n \/\/do not touch! content is auto generated on every build!\n\n")
-
-function(resourceHash file out)
-    get_filename_component(name "${file}" NAME)
-    string(MAKE_C_IDENTIFIER "${name}_checksum" varname)
-    file(SHA256 ${file} "${varname}")
-    file(APPEND "${PROJECT_DIR}/main/resourceChecksum.h" "#define ${varname} \"${${varname}}\"\n")
-    set(${out} "${${varname}}" PARENT_SCOPE)
-endfunction()
-
+file(APPEND "${PROJECT_DIR}/main/resourceChecksum.h" "#pragma once \n\n \/\/${DISCLAIMER}\n\n")
 if(RESOURCE_COMPRESSION)
     file(MAKE_DIRECTORY "${RESOURCE_BIN_DIR}")
-    function(resource file type)
-        file(ARCHIVE_CREATE PATHS "${RESOURCE_SRC_DIR}/${file}" OUTPUT "${RESOURCE_BIN_DIR}/${file}.gz" FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
-        resourceHash("${RESOURCE_BIN_DIR}/${file}.gz" hashVal)
-        target_add_binary_data(WebKeyboard.elf ${RESOURCE_BIN_DIR}/${file}.gz  BINARY)
-        message(STATUS "Processing resource: ${file} hash: ${hashVal}")
-    endfunction()
-else()
-    function(resource file type)
-        resourceHash("${RESOURCE_SRC_DIR}/${file}" hashVal)
-        target_add_binary_data(WebKeyboard.elf ${RESOURCE_SRC_DIR}/${file} ${type})
-        message(STATUS "Processing resource: ${file} hash: ${hashVal}")
-    endfunction()
-endif()
+endif ()
+
+function(appendHashValue file value)
+    get_filename_component(name "${file}" NAME)
+    string(MAKE_C_IDENTIFIER "${name}_checksum" varname)
+    file(APPEND "${PROJECT_DIR}/main/resourceChecksum.h" "#define ${varname} ${value}\n")
+endfunction()
+
+function(resourceHash file out)
+    file(SHA256 ${file} hashValue)
+    appendHashValue(${file} \"${hashValue}\")
+    set(${out} ${hashValue} PARENT_SCOPE)
+endfunction()
+
+function(resource file type)
+    if (RESOURCE_COMPRESSION)
+        set(embedFile "${RESOURCE_BIN_DIR}/${file}.gz")
+        set(embedType BINARY)s
+        file(ARCHIVE_CREATE PATHS "${RESOURCE_SRC_DIR}/${file}" OUTPUT ${embedFile} FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
+    else ()
+        set(embedFile "${RESOURCE_SRC_DIR}/${file}")
+        set(embedType ${type})
+    endif ()
+    target_add_binary_data(WebKeyboard.elf "${embedFile}" ${embedType})
+    if (RESOURCE_CHECKSUM)
+        resourceHash(${embedFile} hashVal)
+        get_filename_component(embedName "${embedFile}" NAME)
+        message(STATUS "Processing resource: ${file}(${embedName}) hash: ${hashVal}")
+    else ()
+        appendHashValue(${embedFile} nullptr)
+        message(STATUS "Processing resource: ${file}")
+    endif ()
+endfunction()
 
 
 include(resource/CMakeLists.txt)

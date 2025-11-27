@@ -71,18 +71,21 @@
 //every static file request will processed with "connection: close" header applied.
 //instructing the client to close the connection immediately after receiving the file, without waiting for the socket timeout
 //freeing up the socket for subsequent requests
-#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
+#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
 
 //use lwip "last recently used" counter for every socket. when socket pool depleted least recently socket will-be used
 //to process incoming connection
 //WARNING: this may close persistent ws connection in some condition.
-#define SOCKET_RECYCLE_USE_LRU_COUNTER
+#define SOCKET_RECYCLE_USE_LRU_COUNTER true
 
 
 #define SID_COOKIE_TTL                      3600*24
 #define SESSION_TIMEOUT                     60*30
 #define SESSION_SID_REFRESH_INTERVAL        3600
 #define SESSION_MAX_CLIENT_COUNT 			10
+
+
+#define HTTP_CACHE_USE_ETAG true
 
 
 //USB STUFF, this is override of default values,

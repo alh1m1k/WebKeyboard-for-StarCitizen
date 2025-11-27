@@ -167,10 +167,10 @@ http::response& operator<<(http::response& resp, const char* str)	{
 
 http::response& operator<<(http::response& resp, const http::codes code)	{
     if (auto result = resp.status(code); !result) {
-		if (auto code = result.code(); code == HTTP_ERR_HEADERS_ARE_SENT) {
+		if (auto error = result.code(); error == HTTP_ERR_HEADERS_ARE_SENT) {
 			throw headers_sended("setting status code");
 		} else {
-			throw bad_api_call("httpd_resp_set_status", code);
+			throw bad_api_call("httpd_resp_set_status", error);
 		}
 	}
     return resp;

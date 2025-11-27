@@ -39,14 +39,6 @@
 #define SESSION_MAX_CLIENT_COUNT 10
 #endif
 
-#ifdef SESSION_ENABLE
-#define _SESSION_ENABLE
-#endif
-
-#if defined(_SESSION_ENABLE) && defined(NOTIFICATION_ENABLE)
-#define _NOTIFICATION_ENABLE
-#endif
-
 #ifndef WIFI_MIN_SSID_LEN
 #define WIFI_MIN_SSID_LEN 3
 #endif
@@ -107,6 +99,30 @@
 #define LOG_WIFI_AP_PWD	false
 #endif
 
+#ifndef LOG_SESSION
+#define LOG_SESSION	false
+#endif
+
+#ifndef LOG_SESSION_EVT
+#define LOG_SESSION_EVT	false
+#endif
+
+#ifndef LOG_COOKIES
+#define LOG_COOKIES	false
+#endif
+
+#ifndef LOG_COOKIE_BUILD
+#define LOG_COOKIE_BUILD	false
+#endif
+
+#ifndef LOG_SERVER_GC
+#define LOG_SERVER_GC	false
+#endif
+
+#ifndef LOG_HTTPD_TASK_STACK
+#define LOG_HTTPD_TASK_STACK	false
+#endif
+
 #ifndef SESSION_TIMEOUT
 SESSION_TIMEOUT 60*20
 #endif
@@ -115,10 +131,16 @@ SESSION_TIMEOUT 60*20
 SID_COOKIE_TTL 3600*24
 #endif
 
-#if RESOURCE_COMPRESSION == 1
-#define RESOURCE_COMPRESSED
-#else
-#define RESOURCE_UNCOMPRESSED
+#ifndef HTTP_CACHE_USE_ETAG
+	HTTP_CACHE_USE_ETAG false
+#endif
+
+#ifndef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
+#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER false
+#endif
+
+#ifndef SOCKET_RECYCLE_USE_LRU_COUNTER
+#define SOCKET_RECYCLE_USE_LRU_COUNTER false
 #endif
 
 

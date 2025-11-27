@@ -34,7 +34,11 @@ http::resource::memory::file( \
 	PPCAT(name, _checksum)  \
 );
 
-#ifdef RESOURCE_COMPRESSED
+#if RESOURCE_COMPRESSION
+#define _RESOURCE_COMPRESSED
+#endif
+
+#ifdef _RESOURCE_COMPRESSED
 
 #include "file.h"
 #define decl_memory_file(fileV, endingV, nameV, contentTypeV) \
