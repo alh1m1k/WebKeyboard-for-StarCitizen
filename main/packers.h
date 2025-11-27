@@ -149,7 +149,7 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 			std::reverse_iterator<std::string_view::reverse_iterator>(rawMessage.rbegin())
 		)
     );
-	
+
 	auto intervalMSItEnd = std::find(++repeatItStart, rawMessage.rend(), separator);
 	if (intervalMSItEnd == rawMessage.rend()) {
 		debugIf(LOG_MESSAGES, "failt2");
@@ -249,13 +249,13 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 			valid = false;
 			validIntervalMS = false;
 		} 
-		if (!inputView.empty()) {
+		if (inputView.empty()) {
 			valid = false;
 			validActionId = false;
 		}
 	}
 	
-	if (!actionIdView.empty()) {
+	if (actionIdView.empty()) {
 		valid = false;
 		validActionId = false;
 	}

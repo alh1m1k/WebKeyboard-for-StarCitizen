@@ -203,9 +203,10 @@ namespace http {
 
 		debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
 
-        action&  path   = *static_cast<action*>(esp_req->user_ctx);
-		request  req 	= http::request(esp_req, path);
-		response resp 	= http::response(req);
+        action&  path    = *static_cast<action*>(esp_req->user_ctx);
+		request  req 	 = http::request(esp_req, path);
+		response resp 	 = http::response(req);
+		bool isWebSocket = path.isWebSocket();
 
 		if (esp_req->method == 0) {
 			info("handle request (websocket)");
@@ -223,7 +224,7 @@ namespace http {
 
 		try {
 
-            if (!(esp_req->method == 0 && path.isWebSocket())) {
+            if (!(esp_req->method == 0 && isWebSocket)) {
                 //auto start session only if it not ongoing websocket com
                 //because ws not have cookies, but initial Get have, so socket will rcv it session on protocol upgrade stage until it closes
                 if (auto code = sessionOpen(req, resp, path); code != ESP_OK) {
@@ -243,9 +244,16 @@ namespace http {
 				debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 				return ESP_FAIL;
 			} else {
-				if (std::holds_alternative<codes>(result)) {
+				if (isWebSocket) {
+					if (std::holds_alternative<esp_err_t>(result)) {
+						return result.code();
+					} else {
+						error("ws handler invalid return", esp_req->uri, " t ", esp_timer_get_time());
+						return ESP_FAIL;
+					}
+				} else if (std::holds_alternative<codes>(result)) {
 					info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
-					finishRequest(req, resp);
+					finishRequest(req, resp, std::get<codes>(result));
 					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
 					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return ESP_OK;
