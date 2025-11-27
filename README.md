@@ -460,5 +460,4 @@ And I will leave it to its end users.
 ## Dependencies 
 - idf >= 5.1.4
   - espressif/esp_tinyusb >= 0.17.0~2
-  - espressif/mdns        >= 1.4.2
 - main logo created with MockUPhone

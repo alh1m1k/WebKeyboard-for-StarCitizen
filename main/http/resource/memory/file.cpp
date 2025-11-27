@@ -84,10 +84,6 @@ namespace http::resource::memory {
 		return (esp_err_t)ESP_OK;
 	}
 
-	int file::type() const {
-		return (int)map::MEMORY;
-	}
-	
 	response& operator<<(response& stream, const file& f) {
 		
 		ssize_t size =	(ssize_t)(f.addressEnd - f.addressStart);

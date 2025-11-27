@@ -35,7 +35,7 @@ idf_component_register(
 
     					 # optional, add here public include directories
     PRIV_INCLUDE_DIRS   # optional, add here private include directories
-    REQUIRES            freertos nvs_flash esp_event esp_netif esp_wifi esp_https_server esp_timer tinyusb mdns driver bootloader_support mbedtls	# optional, list the public requirements (component names)
+    REQUIRES            freertos nvs_flash esp_event esp_netif esp_wifi esp_https_server esp_timer tinyusb driver bootloader_support mbedtls	# optional, list the public requirements (component names)
     PRIV_REQUIRES       # optional, list the private requirements
 )
 

@@ -6,7 +6,6 @@
 #include "contentType.h"
 #include "esp_err.h"
 #include "resource.h"
-#include "map.h"
 #include "response.h"
 
 namespace http::resource::memory {
@@ -47,9 +46,7 @@ namespace http::resource::memory {
 			bool operator!=(const file& other) const;
 			
 			bool operator<(const file& other) const;
-				
-			int type() const override;
-			
+
 			handlerRes operator()(request& req, response& resp, server& serv);
 			
 	};

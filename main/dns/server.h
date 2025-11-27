@@ -2,7 +2,6 @@
 
 #include "result.h"
 #include "service.h"
-#include <mdns.h>
 
 
 namespace dns {
