@@ -10,26 +10,30 @@
 namespace http::resource::memory {
 
 	//file::file(int addressStart, int addressEnd, endings end, const char * name) : addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name) {};
-	
-	file::file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum)
-		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType), checksum(checksum) {};
+
+	const file::cache_control_type file::noControl = {};
+
+	file::file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum, const cache_control_type& cache) noexcept
+		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end),
+		  name(name), contentType(contentType), cacheControl(cache), checksum(checksum) {};
 		
-	file::file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum)
-		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end), name(name), contentType(contentType2Symbols(ct)), checksum(checksum) {};
+	file::file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum, const cache_control_type& cache) noexcept
+		: addressStart(addressStart), addressEnd(addressEnd), ending((int)end),
+		  name(name), contentType(contentType2Symbols(ct)), cacheControl(cache), checksum(checksum) {};
 	
-	bool file::operator==(const file& other) const {
+	bool file::operator==(const file& other) const noexcept {
 		return other.name == this->name;
 	}
 	
-	bool file::operator!=(const file& other) const {
+	bool file::operator!=(const file& other) const noexcept {
 		return other.name != this->name;
 	}
 	
-	bool file::operator<(const file& other) const {
+	bool file::operator<(const file& other) const noexcept {
 		return other.name < this->name;
 	}
 
-	handlerRes file::operator()(request& req, response& resp, server& serv) {
+	resource::handler_res_type file::operator()(request& req, response& resp, server& serv) const noexcept {
 
 		ssize_t size = addressEnd - addressStart;
 		//headers
@@ -37,12 +41,10 @@ namespace http::resource::memory {
 			resp.getHeaders().connection("close");
 		}
 
-		if constexpr (HTTP_CACHE_USE_ETAG) {
-			if (checksum != nullptr) {
-				if (req.getHeaders().ifNoneMatch() == checksum) {
-					return codes::NOT_MODIFIED;
-				}
-			}
+		if (auto result = cacheControl(*this, req, resp, serv); !result) {
+			return ESP_FAIL;
+		} else if (std::holds_alternative<codes>(result)) {
+			return std::get<codes>(result);
 		}
 
 		resp.getHeaders().contentType(this->contentType);
@@ -58,7 +60,8 @@ namespace http::resource::memory {
 				// resp << nextBuffer;
 				// }
 				//or refactor file to template
-				throw not_impleneted("runtime decompression");
+				error("fixme", "runtime decompression", " ", req.getHeaders().acceptEncoding());
+				return codes::UNSUPPORTED_MEDIA;
 			}
 		}
 
@@ -68,19 +71,13 @@ namespace http::resource::memory {
 			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
 		}
 
-		if constexpr (HTTP_CACHE_USE_ETAG) {
-			if (checksum != nullptr) {
-				resp.getHeaders().eTag(checksum);
-			}
-		}
-
 		resp << *this;
 
 		return (esp_err_t)ESP_OK;
 	}
 				
 		
-	handlerRes file::handle(request& req, response& resp, server& serv) {
+	resource::handler_res_type file::handle(request& req, response& resp, server& serv) const noexcept {
 		return (esp_err_t)ESP_OK;
 	}
 

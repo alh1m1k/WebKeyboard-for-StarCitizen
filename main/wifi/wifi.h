@@ -7,7 +7,6 @@
 #include <string>
 
 #include "result.h"
-#include "generated.h"
 
 namespace wifi {
 	

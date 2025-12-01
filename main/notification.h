@@ -70,7 +70,7 @@ class notificationManager {
 	
 	resBool queue(message* msg) {
 		 debugIf(LOG_MESSAGES, "msg counter", messageCounter++);
-		 return  httpd_queue_work(handler, &staticHandler, (void*)msg);
+		 return httpd_queue_work(handler, &staticHandler, (void*)msg);
 	}
 
     result<std::shared_ptr<session>> resolve(TSessions::index_type& address) {

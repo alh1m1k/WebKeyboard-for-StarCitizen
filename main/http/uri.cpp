@@ -3,10 +3,8 @@
 #include "util.h"
 
 namespace http {
-		
-	uri::uri(){};
 
-	uri::uri(httpd_req_t* handler){
+	uri::uri(httpd_req_t* handler): handler(handler){
 /*
 		size_t querySize 	= strlen(handler->uri);
 		size_t schemaSize 	= strlen(schema);
@@ -54,5 +52,9 @@ namespace http {
 		debugIf(LOG_HTTP, "uri::uri::httpd_req_t", handler->uri);	*/
 			
 	};
+
+	const char* uri::raw() const {
+		return handler->uri;
+	}
 
 }

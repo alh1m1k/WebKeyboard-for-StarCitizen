@@ -3,9 +3,8 @@
 #include "session/pointer.h"
 
 namespace http {
-			
-	//request::request(httpd_req_t* esp_req) : handler(esp_req) {}
-	request::request(httpd_req_t* esp_req, action& action) noexcept : handler(esp_req), _action(action) {}
+
+	request::request(httpd_req_t* esp_req, bool isWebsocket) noexcept : handler(esp_req), _isWebSocket(isWebsocket) {}
 				
 	const headers& request::getHeaders() const {
 		if (_headers == nullptr) {
@@ -51,5 +50,6 @@ namespace http {
 		}
 		return *_localNetwork;
 	}
+
 }
 

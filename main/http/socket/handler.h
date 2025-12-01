@@ -8,9 +8,8 @@
 
 #include "result.h"
 #include "request.h"
-#include "response.h"
 #include "socket.h"
-#include "server.h"
+#include "codes.h"
 #include "session/interfaces/iWebSocketSession.h"
 #include "session/session.h"
 #include "session/pointer.h"

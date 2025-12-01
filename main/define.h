@@ -23,3 +23,8 @@ static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s discon
 #define RESPONSE_MAX_UNCHUNKED_SIZE (1024 * 10)
 
 #define HTTPD_TASK_STACK_SIZE (4096+1024)
+
+#define DEFAULT_WIFI_AP_DHCP_STATIC_IP	 "192.168.5.1"
+#define DEFAULT_WIFI_AP_DHCP_STATIC_MASK "225.255.255.0"
+#define DEFAULT_WIFI_AP_DNS_DOMAIN		 "wkb.local"
+

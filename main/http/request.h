@@ -20,7 +20,6 @@ namespace http {
 
 	class cookies;
 	class headers;
-	class action;
 
 	class request {
 						
@@ -31,8 +30,8 @@ namespace http {
 		mutable std::unique_ptr<network> _remoteNetwork;
 
 		mutable std::unique_ptr<network> _localNetwork;
-		
-		action& _action;
+
+		bool _isWebSocket = false;
 
 		inline int tryFileDescriptor() const {
 			if (auto sock = httpd_req_to_sockfd(handler); sock > 0) {
@@ -43,9 +42,8 @@ namespace http {
 		}
 
 		public:
-		
-			//explicit request(httpd_req_t* esp_req);
-			explicit request(httpd_req_t* esp_req, action& action) noexcept;
+
+			explicit request(httpd_req_t* esp_req, bool isWebSocket = false) noexcept;
 						
 			const headers& getHeaders() const;
 
@@ -59,14 +57,9 @@ namespace http {
 
 			std::shared_ptr<session::iSession> getSession() const;
 
-			inline const action& getRoute() const {
-				return _action;
-			}
-
 			const network& getRemote() const;
 
 			const network& getLocal() const;
-
 
             inline bool isGet() const noexcept  {
                 return getMethod() == httpd_method_t::HTTP_GET;
@@ -75,6 +68,10 @@ namespace http {
             inline bool isPost() const noexcept {
                 return getMethod() == httpd_method_t::HTTP_POST;
             }
+
+			inline bool isWebsocket() const noexcept {
+				return _isWebSocket;
+			}
 
 			//method needed to expose private handler in order to successfuly build sub object like sockets or headers
 			//without using friend decl as it make linking impossible to manage

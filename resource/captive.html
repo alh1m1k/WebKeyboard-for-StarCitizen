@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=overlays-content">
+  <title>WebKeyboard captive portal</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding:    0px;
+      margin:     0px;
+      user-select: none;
+    }
+    body {
+      background-color: rgb(13, 38, 53);
+      width: 100vw;
+      height: 100vh;
+    }
+    .viewport {
+      display: grid;
+      height: 100%;
+      width: 100%;
+      grid-template-rows: 2.5rem calc(100% - 2.5rem) 0px;
+      min-width: 24rem;
+      min-height: 17rem;
+      position: relative;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      background-color: rgb(15,44,62);
+    }
+    .title {
+      padding:  0px 1rem 0px .5rem;
+      color:    rgb(255,255,255);
+      font-family: "univia-pro", arial, sans-serif;
+      font-size: 1rem;
+    }
+    .breadcrumb {
+      list-style: none;
+      position: relative;
+      font-weight: 400;
+      line-height: 1rem;
+      font-size: 0.75rem;
+      height: 1em;
+    }
+    .breadcrumb::before {
+      content:  "";
+      display:  block;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: calc(100% + 0.5rem);
+      background-color: rgb(25,73,103);
+      transform: translateY(-50%);
+      width: 0.0625rem;
+      min-width: 1px;
+    }
+    .content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: min(calc(80vw / 25 * 2/*1.618*/), 5rem); /* 80% of viewport for 25 symbols * "pretty look" modifier */
+        min-height: calc(3em * 1.3 + 2rem);
+    }
+    .message {
+      padding: 1rem;
+      background-color: rgb(15,44,62);
+      border: 1px solid;
+      border-radius: .2rem;
+      text-align: center;
+      color: rgb(255,255,255);
+      max-width: 80%;
+      max-height: 80%;
+      overflow-wrap: anywhere;
+    }
+    a {
+      color: rgb(84, 173, 247);
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport" id="display">
+    <div class="header">
+      <span class="title">StarCitizen CaptivePortal</span>
+      <ul class="breadcrumb"> </ul>
+      <ul class="toolbar"></ul>
+    </div>
+    <div class="content">
+      <div class="message">
+        <div id="target-uri" class="uri"></div>
+        <script> document.getElementById("target-uri").textContent = window.location.host  </script>
+        <div class="description">is not valid destination</div>
+        <a class="go-back-uri" href="http://@CAPTIVE_PORTAL_BACK_URL@">Go back</a>
+      </div>
+    </div>
+    <div class="footer"></div>
+  </div>
+</body>
+</html>

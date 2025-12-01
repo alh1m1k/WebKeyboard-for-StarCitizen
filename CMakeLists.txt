@@ -7,6 +7,7 @@ project(WebKeyboard)
 
 option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+
 set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
 set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)
 set (DISCLAIMER "do not touch! content is auto generated on every build!")
@@ -39,7 +40,9 @@ endfunction()
 function(resource file type)
     if (RESOURCE_COMPRESSION)
         set(embedFile "${RESOURCE_BIN_DIR}/${file}.gz")
-        set(embedType BINARY)s
+        set(embedType BINARY)
+        get_filename_component(path "${embedFile}" PATH)
+        file(MAKE_DIRECTORY ${path})
         file(ARCHIVE_CREATE PATHS "${RESOURCE_SRC_DIR}/${file}" OUTPUT ${embedFile} FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
     else ()
         set(embedFile "${RESOURCE_SRC_DIR}/${file}")

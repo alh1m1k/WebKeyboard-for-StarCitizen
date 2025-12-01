@@ -1,0 +1,13 @@
+#pragma once 
+
+ //do not touch! content is auto generated on every build!
+
+#define lib_js_gz_checksum "1ca899c645d7ae0f13ba78017b759a4968f99794095ebd2851b5b816d496c64c"
+#define widget_js_gz_checksum "a382b700670b9a1015837e27efdc51ebf020dc03a738451b4e14bd3fe87abbf2"
+#define overlay_js_gz_checksum "8019649808bfdb758439c437003dc2472dd8030ad58082efe5c7b09f041c0bbb"
+#define favicon_ico_gz_checksum "f142ac73bd2d345c9ed282e4e772edc0c96a0aa8598462f473d50a6aa66950de"
+#define index_html_gz_checksum "9862e6d6fd8510144852c45b4965a0915c22a5180c36c647052fafc333036327"
+#define index_css_gz_checksum "699fddb69db5a05dbd60c84c3a961f8256c19aa95feb72f78ea4b90f5c60ee8e"
+#define index_js_gz_checksum "e847acc01059ebd1aa737a773cb387dae39f3261271f8d1a10ae7d518b4525ff"
+#define symbols_svg_gz_checksum "cf140c981366264e1ef8c45914e0a7acf0ab3511360fb92c5eabc94d6e744d15"
+#define captive_html_gz_checksum "45ab3cbae262a712fc48740953ae4856a03f79aae011ea7fd458dac01761913e"

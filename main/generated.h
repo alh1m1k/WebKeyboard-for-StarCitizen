@@ -15,12 +15,63 @@
 #define WIFI_PWD  "test"
 #endif
 
-#if defined(WIFI_AP_DHCP_STATIC_IP) && !defined(WIFI_AP_DHCP_STATIC_MASK)
-#define WIFI_AP_DHCP_STATIC_MASK 225.255.255.0
+#ifndef WIFI_MIN_SSID_LEN
+#define WIFI_MIN_SSID_LEN 3
+#endif
+
+#ifndef WIFI_MAX_SSID_LEN
+#define WIFI_MAX_SSID_LEN 31
+#endif
+
+#ifndef WIFI_MIN_PWD_LEN
+#define WIFI_MIN_PWD_LEN 7
+#endif
+
+#ifndef WIFI_MAX_PWD_LEN
+#define WIFI_MAX_PWD_LEN 63
+#endif
+
+#ifdef WIFI_AP_DNS
+#if WIFI_MODE != WIFI_MODE_AP
+#undef  WIFI_MODE;
+#define WIFI_MODE false
+#endif
+#else
+#define WIFI_AP_DNS true
+#endif
+
+#ifndef WIFI_AP_DHCP_STATIC_IP
+#define WIFI_AP_DHCP_STATIC_IP false
+#endif
+
+#ifndef WIFI_AP_DHCP_STATIC_IP
+#define WIFI_AP_DHCP_STATIC_IP DEFAULT_WIFI_AP_DHCP_STATIC_IP
+#endif
+
+#ifndef WIFI_AP_DHCP_STATIC_IP
+#define WIFI_AP_DHCP_STATIC_IP DEFAULT_WIFI_AP_DHCP_STATIC_IP
 #endif
 
 #if defined(WIFI_AP_DHCP_STATIC_IP) && !defined(WIFI_AP_DHCP_STATIC_GATEWAY)
 #define WIFI_AP_DHCP_STATIC_GATEWAY WIFI_AP_DHCP_STATIC_IP
+#endif
+
+#ifndef WIFI_AP_DHCP_STATIC_MASK
+#define WIFI_AP_DHCP_STATIC_MASK DEFAULT_WIFI_AP_DHCP_STATIC_MASK
+#endif
+
+#ifndef WIFI_AP_DNS_DOMAIN
+#define WIFI_AP_DNS_DOMAIN  "wkb.local"
+#endif
+
+#ifndef WIFI_AP_DNS_CAPTIVE
+#define WIFI_AP_DNS_CAPTIVE true
+#endif
+
+#if WIFI_AP_DNS_CAPTIVE
+#define APP_DNS_DOMAIN "*"
+#else
+#define APP_DNS_DOMAIN WIFI_AP_DNS_DOMAIN
 #endif
 
 #if defined(DEVICE_KB_VENDORID) || defined(DEVICE_KB_PRODUCTID) 
@@ -37,22 +88,6 @@
 
 #ifndef SESSION_MAX_CLIENT_COUNT
 #define SESSION_MAX_CLIENT_COUNT 10
-#endif
-
-#ifndef WIFI_MIN_SSID_LEN
-#define WIFI_MIN_SSID_LEN 3
-#endif
-
-#ifndef WIFI_MAX_SSID_LEN
-#define WIFI_MAX_SSID_LEN 31
-#endif
-
-#ifndef WIFI_MIN_PWD_LEN
-#define WIFI_MIN_PWD_LEN 7
-#endif
-
-#ifndef WIFI_MAX_PWD_LEN
-#define WIFI_MAX_PWD_LEN 63
 #endif
 
 ///LOGS
@@ -132,17 +167,16 @@ SID_COOKIE_TTL 3600*24
 #endif
 
 #ifndef HTTP_CACHE_USE_ETAG
-	HTTP_CACHE_USE_ETAG false
+HTTP_CACHE_USE_ETAG true
 #endif
 
 #ifndef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
-#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER false
+#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
 #endif
 
 #ifndef SOCKET_RECYCLE_USE_LRU_COUNTER
-#define SOCKET_RECYCLE_USE_LRU_COUNTER false
+#define SOCKET_RECYCLE_USE_LRU_COUNTER true
 #endif
-
 
 
 

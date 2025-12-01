@@ -1,11 +1,14 @@
 #include "wifi.h"
 
-#include <cstring>
 #include <future>
 #include <memory>
-#include <mutex>
 #include <atomic>
-#include "config.h"
+#include <optional>
+#include <iostream>
+#include <string>
+
+#include "esp_mac.h"
+#include "esp_netif_ip_addr.h"
 #include "esp_err.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -13,23 +16,15 @@
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "esp_wifi_types.h"
-#include "generated.h"
-#include "result.h"
-#include <optional>
-#include <iostream>
-#include <string>
-#include <sys/_stdint.h>
-#include "esp_mac.h"
-#include "esp_netif_ip_addr.h"
-#include "nvsRes.h"
 
+#include "nvsRes.h"
 #include "util.h"
 
 namespace wifi {
 	
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 
-#if defined(WIFI_AP_DHCP_STATIC_IP) && defined(WIFI_AP_DHCP_STATIC_MASK)
+#if WIFI_AP_DHCP_USE_STATIC_IP
 	static esp_netif_ip_info_t static_ip = {};
 #endif
 
@@ -416,7 +411,9 @@ namespace wifi {
 	}
 		
 	resBool mode(wifi_mode_t mode) {
+#if WIFI_AP_DHCP_USE_STATIC_IP
 		esp_netif_ip_info_t ip_info = {};
+#endif
 		//esp_netif_dhcp_status_t s = {};
 		std::lock_guard<std::mutex> guardian {client.m};
 		if (client.netif != nullptr) {
@@ -428,20 +425,17 @@ namespace wifi {
 			switch (mode) {
 				case WIFI_MODE_AP:
 					client.netif = esp_netif_create_default_wifi_ap();
-					
-					
-#ifdef WIFI_AP_DHCP_STATIC_IP
-						CHECK_CALL_RET(esp_netif_dhcps_stop(client.netif));
-											 	
-						esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_IP, &static_ip.ip);
-						esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_MASK, &static_ip.netmask);
-						esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_GATEWAY, &static_ip.gw);
-						
-						esp_netif_get_ip_info(client.netif, &ip_info);
-						infoIf(LOG_WIFI, "default dhcpc ip", IP2STR(&ip_info.ip), " ", IP2STR(&ip_info.netmask), " ", IP2STR(&ip_info.gw));
-						info("static ip", IP2STR(&static_ip.ip), " ", IP2STR(&static_ip.netmask), " ", IP2STR(&static_ip.gw));
-	 					CHECK_CALL_RET(esp_netif_set_ip_info(client.netif, &static_ip));
-						CHECK_CALL_RET(esp_netif_dhcps_start(client.netif));
+#if WIFI_AP_DHCP_USE_STATIC_IP //constexpr wont work until it inside template
+					CHECK_CALL_RET(esp_netif_dhcps_stop(client.netif));
+					esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_IP, &static_ip.ip);
+					esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_MASK,  &static_ip.netmask);
+					esp_netif_str_to_ip4(WIFI_AP_DHCP_STATIC_GATEWAY,  &static_ip.gw);
+
+					esp_netif_get_ip_info(client.netif, &ip_info);
+					infoIf(LOG_WIFI, "default dhcpc ip", IP2STR(&ip_info.ip), " ", IP2STR(&ip_info.netmask), " ", IP2STR(&ip_info.gw));
+					info("static ip", IP2STR(&static_ip.ip), " ", IP2STR(&static_ip.netmask), " ", IP2STR(&static_ip.gw));
+					CHECK_CALL_RET(esp_netif_set_ip_info(client.netif, &static_ip));
+					CHECK_CALL_RET(esp_netif_dhcps_start(client.netif));
 #endif
 					break;
 				case WIFI_MODE_STA:

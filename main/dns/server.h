@@ -1,44 +1,33 @@
 #pragma once
 
+#include "generated.h"
 #include "result.h"
-#include "service.h"
+#include "dns_server.h"
+#include "esp_netif.h"
 
 
 namespace dns {
-	
+
 	class server {
-		
-		const char* hostname;
-		const char* descr;
-		
+		static inline dns_server_handle_t handle = nullptr; //valid?
 		public:
-		
-			server(const char* hostname, const char* descr = ""): hostname(hostname), descr(descr) {
-				
-			} 
-			
-			resBool begin() {
-				
-				CHECK_CALL_RET(mdns_init());
-				CHECK_CALL_RET(mdns_hostname_set(hostname));
-				CHECK_CALL_RET(mdns_instance_name_set(descr));
-				
-				return ESP_OK;
-			}
-			
-			resBool end() {
-				mdns_free();
-				return ESP_OK;
-			}
-			
-			resBool addService(service&& serv) {
-				return mdns_service_add(NULL, serv.getType(), serv.getProtocol(), serv.getPort(), NULL, 0);
-			}
-			
-			template<typename ...T>
-			resBool addService(T... args) {
-				return addService(service(args...));
-			}
+			server() = delete;
+			static resBool begin() {
+				//dns_server_config_t config = { 1, {	{ APP_DNS_DOMAIN, nullptr, { esp_ip4addr_aton( WIFI_AP_DHCP_STATIC_IP ) } } } };
+				dns_server_config_t config = { 1, {	{ APP_DNS_DOMAIN, "WIFI_AP_DEF", {} } } };
+				if (handle = start_dns_server(&config); handle != nullptr) {
+					return ResBoolOK;
+				} else {
+					return ResBoolFAIL;
+				}
+			};
+			static resBool end()   {
+				if (handle != nullptr) {
+					stop_dns_server(handle);
+					return ResBoolOK;
+				}
+				return ResBoolFAIL;
+			};
 	};
 	
 }

@@ -30,15 +30,20 @@
 #include "contentType.h"
 #include "http/server.h"
 #include "socket/handler.h"
-#include "resource/memory/shortcut.h"
 #include "sessionManager.h"
+
 #include "resource/memory/file.h"
+#include "resource/memory/shortcut.h"
+#include "resource/cache/eTag.h"
+#include "resource/cache/noCache.h"
+#include "resource/cache/dymmy.h"
 
 #include "ctrlmap.h"
-#include "scheduler.h"
-#include "storage.h"
+#include "make.h"
 #include "notification.h"
 #include "parsers/keyboard.h"
+#include "scheduler.h"
+#include "storage.h"
 #include "wsproto.h"
 
 #ifdef WIFI_AP_DNS
@@ -59,15 +64,26 @@ extern "C" {
 #include "resourceChecksum.h"
 #endif
 
+auto noCache = http::resource::cache::noCache();
+#if HTTP_CACHE_USE_ETAG
+	auto defaultCacheControl = http::resource::cache::eTag();
+#else
+	auto defaultCacheControl = http::resource::cache::dymmy();
+#endif
+
 //http::resource::memory::file will be created and stored in hello_js_memory_file
-decl_memory_file(widget_js, 			http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS		);
-decl_memory_file(overlay_js, 			http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS		);
-decl_memory_file(lib_js, 				http::resource::memory::endings::TEXT, 		"lib.js", 			http::contentType::JS		);
-decl_memory_file(index_html, 			http::resource::memory::endings::TEXT, 		"index.html", 		http::contentType::TEXT		);
-decl_memory_file(favicon_ico, 			http::resource::memory::endings::BINARY, 	"favicon.ico", 		"image/x-icon"				);
-decl_memory_file(index_js, 				http::resource::memory::endings::TEXT, 		"index.js", 		http::contentType::JS		);
-decl_memory_file(index_css,				http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS		);
-decl_memory_file(symbols_svg,			http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG		);
+decl_memory_file(widget_js, 	http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl	);
+decl_memory_file(overlay_js, 	http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl );
+decl_memory_file(lib_js, 		http::resource::memory::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl	);
+decl_memory_file(index_html, 	http::resource::memory::endings::TEXT, 		"index.html", 		http::contentType::TEXT,  	defaultCacheControl	);
+decl_memory_file(favicon_ico, 	http::resource::memory::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl	);
+decl_memory_file(index_js, 		http::resource::memory::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl	);
+decl_memory_file(index_css,		http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl	);
+decl_memory_file(symbols_svg,	http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl	);
+
+#ifdef EMBED_CAPTIVE
+decl_memory_file(captive_html,	http::resource::memory::endings::TEXT, 		"captive.html", 	http::contentType::TEXT,    noCache	);
+#endif
 
 
 using namespace std::literals;
@@ -125,6 +141,11 @@ void trap(const char* msg, esp_err_t code = ESP_FAIL) {
 	}
 	throw std::runtime_error("trap func must newer ended");
 }
+
+#if (WIFI_AP_DNS && WIFI_AP_DNS_CAPTIVE)
+static_assert(strings_equal(CAPTIVE_PORTAL_BACK_URL, WIFI_AP_DNS_DOMAIN), "PORTAL_BACK_URL != WIFI_AP_DNS_DOMAIN");
+static_assert(EMBED_CAPTIVE, "EMBED_CAPTIVE must be set to use captive portal");
+#endif
 
 void app_main(void)
 {
@@ -225,15 +246,13 @@ void app_main(void)
 	}
 
 
-
 #ifdef WIFI_AP_DNS
-	std::cout << "starting mdns " << std::endl;
-	static auto dns = dns::server(WIFI_AP_DNS_SERVICE_NAME, WIFI_AP_DNS_SERVICE_DESCRIPTION);
-	dns.addService("_http", "_tcp", 80);
-	if (auto status = dns.begin(); !status) {
-		trap("fail 2 setup mDNS", status.code());
+	std::cout << "starting dns" << std::endl;
+	if (auto status = dns::server::begin(); !status) {
+		trap("fail 2 setup dns", status.code());
 	}
 #endif
+
 
 	std::cout << "starting rnd generator " << std::endl;
 
@@ -317,8 +336,12 @@ void app_main(void)
 		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
 	}
 
+	if constexpr (WIFI_AP_DNS_CAPTIVE) {
+		webServer.captiveHandler(captive_html_memory_file);
+	}
+
 	if (status = webServer.addHandler("/leave", httpd_method_t::HTTP_POST,
-	  [](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
+	  [](http::request& req, http::response& response, http::server& serv)-> http::server::handler_res_type {
 		if (auto absSess = req.getSession(); absSess != nullptr) {
 			if (webServer.getSessions()->close(absSess->sid())) {
 				return ESP_OK;
@@ -331,7 +354,7 @@ void app_main(void)
 	}
 
 	if (status = webServer.addHandler("/renew", httpd_method_t::HTTP_POST,
-	  [](http::request& req, http::response& response, http::server& serv)-> http::handlerRes {
+	  [](http::request& req, http::response& response, http::server& serv)-> http::server::handler_res_type {
 		  return ESP_OK;  //rest will handle server
 	  }); !status) {
 		webServer.end();

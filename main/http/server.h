@@ -14,15 +14,18 @@
 #include "action.h"
 #include "http/session/interfaces/iManager.h"
 
-
 namespace http {
 
     namespace session {
         class iManager;
     }
 
-    //this class became a template
+	//im fail to declare {anonimus}::captiveOf
+	action& captiveOf(server& serv);
+
 	class server {
+
+		friend action& captiveOf(server& serv);
 
 		httpd_handle_t  handler = {};
 
@@ -32,17 +35,22 @@ namespace http {
 
         protected:
 
+			action captive;
+
             void setSessions(std::unique_ptr<session::iManager>&& manager);
 
 		public:
 
-            typedef result<codes> handler_res_type;
+			typedef result<codes> handler_res_type;
             typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
             typedef std::unique_ptr<session::iManager> sessions_ptr_type;
 			typedef std::function<void()> job_type;
 
+			static server* of(httpd_handle_t handler);
 
-			server() = default;
+
+
+			server();
 
 			server(const server&) = delete;
 
@@ -64,6 +72,8 @@ namespace http {
 			
 			bool    hasHandler(const char * url, httpd_method_t mode);
 
+			void 	captiveHandler(handler_type&& callback);
+
 			void 	collect();
 
             template<class TSessionManager, typename... Args>
@@ -77,6 +87,8 @@ namespace http {
             const sessions_ptr_type& getSessions() const;
 
 	};
+
+
 }
 
 

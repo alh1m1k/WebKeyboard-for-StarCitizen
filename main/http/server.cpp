@@ -23,7 +23,11 @@
 
 
 namespace http {
-    
+
+	action& captiveOf(server& serv) {
+		return serv.captive;
+	}
+
     static http::codes err2code(esp_err_t err) {
         switch (err) {
             case HTTP_SESSION_RECOVERY:
@@ -58,6 +62,30 @@ namespace http {
 				error("send api unavailable ", res.code());
 			}
 		};
+	}
+
+	static bool isHostSame(const std::string_view& host, const std::string_view& test) {
+		return host == test;
+	}
+
+	static bool isHostValid(const std::string_view& host) {
+		static_assert(!(!WIFI_AP_DNS && !WIFI_AP_DHCP_USE_STATIC_IP && WIFI_AP_DNS_CAPTIVE), "not implemented");
+		if constexpr (WIFI_AP_DNS) {
+			if (isHostSame(host, WIFI_AP_DNS_DOMAIN)) {
+				return true;
+			}
+		}
+		if constexpr (WIFI_AP_DHCP_USE_STATIC_IP) {
+			if (isHostSame(host, WIFI_AP_DHCP_STATIC_IP)) {
+				return true;
+			}
+		}
+		if constexpr (!WIFI_AP_DNS && !WIFI_AP_DHCP_USE_STATIC_IP) {
+			//any host is same, or we must obtain our dynamic ip normalize both (client and server (ipv4 ipv6 ipv6_v4_compatible)) and compare
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	static void serverException(request& req, response& resp, std::exception* e) {
@@ -97,7 +125,7 @@ namespace http {
 #pragma GCC diagnostic pop
 
 
-    static esp_err_t sessionOpen(request& req, response& resp, action& path) {
+    static esp_err_t sessionOpen(request& req, response& resp, server& serv) {
 
         using session_ptr_type = session::iManager::session_ptr_type;
 
@@ -105,11 +133,11 @@ namespace http {
         //try reuse if cookie exist
         infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " t ", esp_timer_get_time());
         if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult) {
-            if (sessionResult = path.owner->getSessions()->open(std::get<const cookie>(cookieReadResult).value, &req); sessionResult) {
+            if (sessionResult = serv.getSessions()->open(std::get<const cookie>(cookieReadResult).value, &req); sessionResult) {
                 infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " t ", esp_timer_get_time(), std::get<const cookie>(cookieReadResult).value);
                 if (auto absSess = std::get<session_ptr_type>(sessionResult); absSess->outdated(esp_timer_get_time())) {
                     infoIf(LOG_SESSION, "session is outdated", req.native()->uri, " t ", esp_timer_get_time());
-                    if (sessionResult = path.owner->getSessions()->renew(absSess, &req); sessionResult) {
+                    if (sessionResult = serv.getSessions()->renew(absSess, &req); sessionResult) {
                         infoIf(LOG_SESSION, "session renew", req.native()->uri, " t ", esp_timer_get_time(), " ", absSess->sid().c_str());
                         auto sidCookie = cookie("wkb-id", absSess->sid(), true);
                         sidCookie.maxAge = SID_COOKIE_TTL;
@@ -117,7 +145,7 @@ namespace http {
                             infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " t ", esp_timer_get_time());
                         } else {
                             error("cookie write", req.native()->uri, " t ", esp_timer_get_time(), " code ", cookieWriteResult.code());
-                            if (auto closeResult = path.owner->getSessions()->close(absSess->sid()); closeResult) {
+                            if (auto closeResult = serv.getSessions()->close(absSess->sid()); closeResult) {
                                 infoIf(LOG_SESSION, "outdated session closed", req.native()->uri, " t ", esp_timer_get_time());
                             } else {
                                 error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ", closeResult.code());
@@ -126,7 +154,7 @@ namespace http {
                         }
                     } else {
                         error("fail to renew outdated session", req.native()->uri, " t ", esp_timer_get_time(), " ", sessionResult.code());
-                        if (auto closeResult = path.owner->getSessions()->close(absSess->sid()); closeResult) {
+                        if (auto closeResult = serv.getSessions()->close(absSess->sid()); closeResult) {
                             infoIf(LOG_SESSION, "outdated session closed", req.native()->uri, " t ", esp_timer_get_time());
                         } else {
                             error("session close", req.native()->uri, " t ", esp_timer_get_time(), " code ", closeResult.code());
@@ -142,9 +170,9 @@ namespace http {
 
         if (!sessionResult) {
             //try open new, cookie not exist or invalid
-            if (!path.isWebSocket()) {
+            if (!req.isWebsocket()) {
                 infoIf(LOG_SESSION, "try session open(new)");
-                if (sessionResult = path.owner->getSessions()->open(&req); sessionResult) {
+                if (sessionResult = serv.getSessions()->open(&req); sessionResult) {
                     infoIf(LOG_SESSION, "session open(new)", req.native()->uri, " t ", esp_timer_get_time(), " ",
                            std::get<session_ptr_type>(sessionResult)->sid().c_str());
                     auto sidCookie = cookie("wkb-id", std::get<session_ptr_type>(sessionResult)->sid(), true);
@@ -153,7 +181,7 @@ namespace http {
                         infoIf(LOG_SESSION, "new cookie write successful", req.native()->uri, " t ", esp_timer_get_time());
                     } else {
                         error("cookie write", req.native()->uri, " t ", esp_timer_get_time(), " code ", cookieWriteResult.code());
-                        if (auto closeResult = path.owner->getSessions()->close(
+                        if (auto closeResult = serv.getSessions()->close(
                                     std::get<session_ptr_type>(sessionResult)->sid()); closeResult) {
                             infoIf(LOG_SESSION, "malformed session closed", req.native()->uri, " t ", esp_timer_get_time());
                         } else {
@@ -185,7 +213,7 @@ namespace http {
                 sessionSocks->socksCntInc();
                 infoIf(LOG_SESSION, "session", sessionSocks->sid().c_str(), " new connection, pendingSockets: ", sessionSocks->socksCnt());
             }
-            //if (path.)
+            //if (act.)
             if (auto sessionWS = pointer_cast<session::iWebSocketSession>(req.getSession()); sessionWS != nullptr) {
                 infoIf(LOG_SESSION, "session", sessionWS->sid().c_str(), " new connection");
             }
@@ -197,107 +225,133 @@ namespace http {
     }
 
     static esp_err_t noop(httpd_req_t *esp_req) { return ESP_OK; };
+	static void nofree(void*) {};
 
-    //this method must process any exception and hold them inside fn border;
-	static esp_err_t staticRouter(httpd_req_t *esp_req) {
-
-		debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
-
-        action&  path    = *static_cast<action*>(esp_req->user_ctx);
-		request  req 	 = http::request(esp_req, path);
-		response resp 	 = http::response(req);
-		bool isWebSocket = path.isWebSocket();
-
-		if (esp_req->method == 0) {
-			info("handle request (websocket)");
-		} else {
-			info("handle request", esp_req->uri, " m: ", esp_req->method);
-		}
-
-        if (req.getRemote().version() == 6) {
-            std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
-        } else if (req.getRemote().version() == 4) {
-            std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
-        }
-		
-		debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
-
+	static esp_err_t runAction(action& act, request& req, response& resp, server& serv) {
 		try {
-
-            if (!(esp_req->method == 0 && isWebSocket)) {
-                //auto start session only if it not ongoing websocket com
-                //because ws not have cookies, but initial Get have, so socket will rcv it session on protocol upgrade stage until it closes
-                if (auto code = sessionOpen(req, resp, path); code != ESP_OK) {
-                    error("session open", req.native()->uri, " t ", esp_timer_get_time(), " code ", code);
-                    serverError(req, resp, err2code(code));
-                    debugIf(LOG_HTTP, "<--- static routing complete", req.native()->uri, " t ", esp_timer_get_time());
-					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-                    return ESP_FAIL;
-                }
-            }
-
-			auto result = path(req, resp);
-			if (!result) {
+			if (auto result = act(req, resp, serv); !result) {
 				serverError(req, resp);
-				error("internal error", esp_req->uri, " t ", esp_timer_get_time(), " code ", result.code());
-				debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-				debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
+				error("internal error", req.getUri().raw(), " t ", esp_timer_get_time(), " code ", result.code());
 				return ESP_FAIL;
 			} else {
-				if (isWebSocket) {
+				if (req.isWebsocket()) {
 					if (std::holds_alternative<esp_err_t>(result)) {
 						return result.code();
 					} else {
-						error("ws handler invalid return", esp_req->uri, " t ", esp_timer_get_time());
+						error("ws handler invalid return", req.getUri().raw(), " t ", esp_timer_get_time());
 						return ESP_FAIL;
 					}
 				} else if (std::holds_alternative<codes>(result)) {
-					info("handler callback return http-code but headers already send, do nothing", HTTP_ERR_HEADERS_ARE_SENT);
+					if (resp.isHeadersSent()) {
+						error("handler callback return http-code but headers already send, do nothing", (int)std::get<codes>(result));
+					}
 					finishRequest(req, resp, std::get<codes>(result));
-					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time(), " with status code ", result);
-					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return ESP_OK;
 				} else if (std::holds_alternative<esp_err_t>(result)) {
 					esp_err_t code;
 					if (code = std::get<esp_err_t>(result); code == ESP_OK) {
 						finishRequest(req, resp);
 					} else {
-						error("handler return error code", esp_req->uri, " t ", esp_timer_get_time(), " code ", code);
+						error("handler return error code", req.getUri().raw(), " t ", esp_timer_get_time(), " code ", code);
 						serverError(req, resp);
 					}
-					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return code;
 				} else {
-					error("handler undefined behavior", esp_req->uri, " t ", esp_timer_get_time());
+					error("handler undefined behavior", req.getUri().raw(), " t ", esp_timer_get_time());
 					serverError(req, resp);
-					debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-					debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 					return ESP_FAIL;
 				}
 			}
-		
 		} catch (headers_sended& e) {
 			error("handler throw error", e.what(), e.code());
-			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
 		} catch (std::exception& e) {
 			error("server exception", e.what(), ESP_FAIL);
 			serverException(req, resp, &e);
-			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
 			return ESP_FAIL;
 		} catch (...) {
 			error("server exception", ESP_FAIL);
 			serverError(req, resp);
-			debugIf(LOG_HTTP, "<--- static routing complete", esp_req->uri, " t ", esp_timer_get_time());
-			debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-            return ESP_FAIL;
+			return ESP_FAIL;
+		}
+		finishRequest(req, resp);
+		return ESP_OK;
+	}
+
+	class routeLogger {
+		httpd_req_t *esp_req;
+		public:
+			inline routeLogger(httpd_req_t *esp_req) : esp_req(esp_req) {
+				debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
+				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
+				if (esp_req->method == 0) {
+					info("handle request (websocket)");
+				} else {
+					info("handle request", esp_req->uri, " m: ", esp_req->method);
+				}
+			}
+			inline ~routeLogger()  {
+				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
+			}
+	};
+
+    //this method must process any exception and hold them inside fn border;
+	static esp_err_t staticRouter(httpd_req_t *esp_req) {
+
+		assert(esp_req != nullptr);
+		assert(esp_req->user_ctx != nullptr);
+		assert(esp_req->handle != nullptr);
+        action&  act     = *static_cast<action*>(esp_req->user_ctx);
+		request  req 	 = http::request(esp_req, act.isWebSocket());
+		response resp 	 = http::response(req);
+		server*  serv    = server::of(esp_req->handle);
+		assert(serv != nullptr);
+
+		routeLogger logEntry = {esp_req};
+
+        if (req.getRemote().version() == 6) {
+            std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
+        } else if (req.getRemote().version() == 4) {
+            std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
         }
 
-		finishRequest(req, resp);
-		debugIf(LOG_HTTPD_TASK_STACK, "stack exit: ", uxTaskGetStackHighWaterMark(nullptr));
-		debugIf(LOG_HTTP, "<--- static routing complete (nothing)", esp_req->uri, " t ", esp_timer_get_time());
-		return ESP_OK;
+		if (!(esp_req->method == 0 && req.isWebsocket())) {
+
+			if (auto host = req.getHeaders().host(); !isHostValid(host)) {
+				error("incorrect host rcv", host.c_str(), " t ", esp_timer_get_time());
+				return runAction(captiveOf(*serv), req, resp, *serv);
+			}
+
+			//auto start session only if it not ongoing websocket com
+			//because ws not have cookies, but initial Get have, so socket will rcv it session on protocol upgrade stage until it closes
+			if (auto code = sessionOpen(req, resp, *serv); code != ESP_OK) {
+				error("session open", req.native()->uri, " t ", esp_timer_get_time(), " code ", code);
+				serverError(req, resp, err2code(code));
+				return ESP_FAIL;
+			}
+
+		}
+
+		return runAction(act, req, resp, *serv);
+	}
+
+	esp_err_t error404Handler(httpd_req_t *esp_req, httpd_err_code_t err) {
+		assert(esp_req != nullptr);
+		assert(esp_req->handle != nullptr);
+		request  req 	 = http::request(esp_req);
+		response resp 	 = http::response(req);
+		server*  serv    = server::of(esp_req->handle);
+		assert(serv != nullptr);
+
+		if (auto host = req.getHeaders().host(); !isHostValid(host)) {
+			routeLogger logEntry = {esp_req};
+			return runAction(captiveOf(*serv), req, resp, *serv);
+		}
+
+		if (auto code = httpd_resp_send_err(esp_req, err, nullptr); code != ESP_OK) {
+			error("unable to set http error");
+		}
+
+		return ESP_FAIL; //close socket
 	}
 
     struct jobWrapper {
@@ -315,6 +369,28 @@ namespace http {
         delete wrapper;
     }
 
+	server::server():
+		captive([](request& req, response& resp, server& serv) -> result<codes> {
+			if (auto host = req.getHeaders().host(); host.empty()) {
+				return codes::BAD_REQUEST;
+			} else {
+				return codes::NOT_FOUND;
+			}
+		})
+	{
+
+	}
+
+
+	server* server::of(httpd_handle_t handler) {
+		if (auto ptr = httpd_get_global_user_ctx(handler); ptr != nullptr) {
+			if (auto serv = static_cast<server*>(ptr); serv->handler == handler) {
+				return serv;
+			}
+		}
+		return nullptr;
+	}
+
 	resBool server::begin(uint16_t port) {
         static_assert(SYSTEM_SOCKET_RESERVED > 0, "SYSTEM_SOCKET_RESERVED > 0");
 #ifdef ASSERT_IF_SOCKET_COUNT_LESS
@@ -324,10 +400,17 @@ namespace http {
 		config.max_uri_handlers 	= 20;
 		config.max_open_sockets 	= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
 		config.stack_size 		    = HTTPD_TASK_STACK_SIZE;
-        config.open_fn  = &socketOpen;
-        config.close_fn = &socketClose;
+        config.open_fn  			= &socketOpen;
+        config.close_fn 			= &socketClose;
         config.lru_purge_enable 	= SOCKET_RECYCLE_USE_LRU_COUNTER;
-        return  httpd_start(&handler, &config);
+		config.global_user_ctx      = this; //todo handle move
+		config.global_user_ctx_free_fn = nofree;
+		if (auto code = httpd_start(&handler, &config); code == ESP_OK) {
+			httpd_register_err_handler(handler, httpd_err_code_t::HTTPD_404_NOT_FOUND, error404Handler);
+			return code;
+		} else {
+			return code;
+		}
 	}
 
 	resBool server::end() {
@@ -341,7 +424,7 @@ namespace http {
             throw std::invalid_argument("callback must be provided");
         }
 
-		action* wrapper = new action(std::move(callback), this);
+		action* wrapper = new action(std::move(callback));
 
         httpd_uri routeHandler = {
             .uri                    = url,
@@ -399,6 +482,10 @@ namespace http {
         } else {
             return true;
         }
+	}
+
+	void server::captiveHandler(http::server::handler_type&& callback) {
+		captive = action(std::move(callback));
 	}
 
     void server::collect() {

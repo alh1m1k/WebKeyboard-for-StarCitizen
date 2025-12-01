@@ -54,7 +54,9 @@ inline void error(const char* msg, additional&&... args) {
 
 #define errorIf(enable, msg, ...) if constexpr (enable) error(msg __VA_OPT__(,) __VA_ARGS__)
 
-
+constexpr bool strings_equal(char const * a, char const * b) {
+	return std::string_view(a)==b;
+}
 
 template<typename ... Args>
 std::string sprintf( const std::string& format, Args ... args ) {

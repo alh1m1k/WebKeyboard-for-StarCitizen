@@ -14,6 +14,7 @@ namespace http {
 		UNAUTHORIZED 			= 401,
 		NOT_FOUND 				= 404,
 		REQUEST_TIMEOUT 		= 408,
+		UNSUPPORTED_MEDIA		= 415,
         TOO_MANY_REQUESTS       = 429,
 		INTERNAL_SERVER_ERROR 	= 500,
 	};
@@ -29,6 +30,7 @@ namespace http {
 		    case codes::UNAUTHORIZED:  			return "401 Unauthorized";
 			case codes::NOT_FOUND:  			return "404 Not Found";
 			case codes::REQUEST_TIMEOUT:  		return "408 Request Timeout";
+			case codes::UNSUPPORTED_MEDIA:		return "415 Unsupported Media Type";
             case codes::TOO_MANY_REQUESTS:  	return "429 Too Many Requests";
 			case codes::INTERNAL_SERVER_ERROR:  return "500 Internal Server Error";
             default:

@@ -14,24 +14,26 @@
 ___extern_res_start(file); \
 ___extern_res_end(file)
 
-#define __decl_res(name, varname, endingsValue, humanName, contentTypeValue) \
+#define __decl_res(name, varname, endingsValue, humanName, contentTypeValue, cacheControl) \
 http::resource::memory::file PPCAT(varname, _memory_file) = { \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
 	humanName, \
 	contentTypeValue, \
-    PPCAT(name, _checksum) \
+    PPCAT(name, _checksum),  \
+    cacheControl  \
 };
 
-#define __return_res(name, endingsValue, humanName, contentTypeValue) \
+#define __return_res(name, endingsValue, humanName, contentTypeValue, cacheControl) \
 http::resource::memory::file( \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
 	humanName, \
 	contentTypeValue, \
-	PPCAT(name, _checksum)  \
+	PPCAT(name, _checksum),  \
+    cacheControl          	 \
 );
 
 #if RESOURCE_COMPRESSION
@@ -41,9 +43,9 @@ http::resource::memory::file( \
 #ifdef _RESOURCE_COMPRESSED
 
 #include "file.h"
-#define decl_memory_file(fileV, endingV, nameV, contentTypeV) \
-__decl_memory_resource(PPCAT(fileV, _gz));                                \
-__decl_res(PPCAT(fileV, _gz), fileV, http::resource::memory::endings::BINARY, nameV, contentTypeV)
+#define decl_memory_file(fileV, endingV, nameV, contentTypeV, cacheControl) \
+__decl_memory_resource(PPCAT(fileV, _gz));                                	\
+__decl_res(PPCAT(fileV, _gz), fileV, http::resource::memory::endings::BINARY, nameV, contentTypeV, cacheControl)
 
 #else
 

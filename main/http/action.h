@@ -3,24 +3,20 @@
 #include "generated.h"
 
 #include <algorithm>
-#include <string>
 #include <functional>
 
 #include "esp_err.h"
 
 #include "request.h"
 #include "response.h"
-#include "server.h"
 #include "socket/handler.h"
 
 
-//class represent memory slot for path, callback and esp_handler
 namespace http {
 
     namespace socket {
         class handler;
     }
-	
 	class server;
 
 	class action {
@@ -29,26 +25,21 @@ namespace http {
             typedef result<codes> handler_res_type;
             typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
 
-        private:
-
-            friend server;
-
-		public:
-
             handler_type        callback;
-            server* const       owner;
 
-			action(handler_type&& _callback, server* owner);
+			action(handler_type&& _callback) noexcept;
 			
-			action(const action& copy);
+			action(const action& copy) noexcept;
 			
-			action(action&& move);
-			
-			virtual ~action();
+			action(action&& move) noexcept;
 
-			handler_res_type operator()(request& req, response& resp);
+			action& operator=(action&& move) noexcept;
+			
+			virtual ~action() noexcept;
 
-            inline bool isWebSocket() const {
+			handler_res_type operator()(request& req, response& resp, server& serv);
+
+            inline bool isWebSocket() const noexcept {
                 return callback.target<http::socket::handler>();
             }
 	};

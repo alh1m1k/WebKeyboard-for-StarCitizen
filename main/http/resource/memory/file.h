@@ -5,8 +5,9 @@
 #include "codes.h"
 #include "contentType.h"
 #include "esp_err.h"
+
 #include "resource.h"
-#include "response.h"
+
 
 namespace http::resource::memory {
 	
@@ -22,33 +23,39 @@ namespace http::resource::memory {
 		const int 	ending;
 		const char* name;
 		const char* contentType;
-		const char* checksum;
-		
+
+		const std::function<result<codes> (const file& file, request& req, response& resp, server& serv)> cacheControl;
+
 		protected:
 		
-			handlerRes handle(request& req, response& resp, server& serv) override;
+			result<codes> handle(request& req, response& resp, server& serv) const noexcept override;
 		
 		public:
-				
+
 			friend response& operator<<(response& stream, const file& result);
 
-			//file(int addressStart, int addressEnd, endings end, const char * name);
+			typedef std::function<result<codes> (const file& file, request& req, response& resp, server& serv)> cache_control_type;
+
+			const static cache_control_type noControl;
+
+			const char* checksum;
+
+			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum = nullptr, const cache_control_type& cache = noControl) noexcept;
 			
-			file(int addressStart, int addressEnd, endings end, const char * name, const char * contentType, const char* checksum = nullptr);
-			
-			file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum = nullptr);
+			file(int addressStart, int addressEnd, endings end, const char * name, enum contentType ct, const char* checksum = nullptr, const cache_control_type& cache = noControl) noexcept;
 
             //is override needed, for now its for unification with other virtual function?
             ~file() override = default;
 			
-			bool operator==(const file& other) const;
+			bool operator==(const file& other) const noexcept;
 			
-			bool operator!=(const file& other) const;
+			bool operator!=(const file& other) const noexcept;
 			
-			bool operator<(const file& other) const;
+			bool operator<(const file& other) const noexcept;
 
-			handlerRes operator()(request& req, response& resp, server& serv);
-			
+			resource::handler_res_type operator()(request& req, response& resp, server& serv) const noexcept;
+
+
 	};
 	
 	response& operator<<(response& stream, const std::string_view& str);

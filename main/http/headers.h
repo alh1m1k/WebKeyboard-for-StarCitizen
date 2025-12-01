@@ -195,6 +195,10 @@ namespace http {
 			inline resBool eTag(const char* str) noexcept {
 				return set("ETag", str);
 			}
+
+			inline resBool cacheControl(const std::string& str) noexcept {
+				return set("CacheControl", str.c_str());
+			}
 	};
 	
 }

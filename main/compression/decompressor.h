@@ -25,7 +25,7 @@ namespace compression {
                 if (auto result = owner.decompress(input.subspan(read), r, output, w); result.code() >= 0) {
                     read    += r;
                     writen  += w;
-                    return result.code() > 0;
+                    return result.code() > 0 ? ESP_OK : ESP_FAIL;
                 } else {
                     return result;
                 }

@@ -37,16 +37,14 @@
 //#define WIFI_AP_AUTH 						WIFI_AUTH_WPA2_WPA3_PSK
 #define WIFI_AP_AUTH 						WIFI_AUTH_WPA_WPA2_PSK //WIFI_AUTH_WPA2_WPA3_PSK
 //predefined ip of host and subnet
+#define WIFI_AP_DHCP_USE_STATIC_IP 			true
 #define WIFI_AP_DHCP_STATIC_IP 				"192.168.5.1"
-#define WIFI_AP_DHCP_STATIC_MASK 			"255.255.255.0"
+#define WIFI_AP_DHCP_STATIC_MASK 			"225.255.255.0"
 
-//this is not real DNS. mDns, only fresh system support's it.
-//I also haven't heard of certificates issued for such a domain name
-#define WIFI_AP_DNS							//using of dns may degrade perfomance
-											//not work on old android
-											//not work on windows earlier w10
-#define WIFI_AP_DNS_SERVICE_NAME 			"wkb"
-#define WIFI_AP_DNS_SERVICE_DESCRIPTION 	"StarCitizen WebKeyboard"
+//wifi access point dns server, make sense only if WIFI_MODE == WIFI_MODE_AP
+#define WIFI_AP_DNS 						true
+#define WIFI_AP_DNS_DOMAIN					"wkb.local"
+#define WIFI_AP_DNS_CAPTIVE 				true
 
 //factory reset trigger btn pin and led pin (if not addressable)
 //values included from define.h and board depended, change it there if other pin needed.
@@ -124,7 +122,7 @@
 
 //#define LOG_LED 		true
 
-//#define LOG_MESSAGES  true
+//#define LOG_MESSAGES true
 
 //#define LOG_SCHEDULER true
 

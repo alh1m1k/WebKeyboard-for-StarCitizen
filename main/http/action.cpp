@@ -6,22 +6,24 @@
 
 namespace http {
 		
-	action::action(handler_type&& callback, server* owner): callback(std::move(callback)), owner(owner) {};
+	action::action(handler_type&& callback) noexcept : callback(std::move(callback))  {};
 	
-	action::action(const action& copy): callback(copy.callback), owner(copy.owner) {};
+	action::action(const action& copy) noexcept : callback(copy.callback) {};
 	
-	action::action(action&& move): callback(std::move(move.callback)), owner(move.owner) {};
-	
-	action::~action() {}
+	action::action(action&& move) noexcept : callback(std::move(move.callback)) {};
 
-    action::handler_res_type action::operator()(request& req, response& resp) {
+	action& action::operator=(action&& move) noexcept {
+		callback = std::move(move.callback);
+		return *this;
+	}
+	
+	action::~action() noexcept {}
+
+    action::handler_res_type action::operator()(request& req, response& resp, server& serv) {
 		if (this->callback == nullptr) {
 			throw bad_api_call("route::operator() callback is nullptr", ESP_FAIL);
 		}
-        if (this->owner == nullptr) {
-            throw bad_api_call("route::operator() _owner is nullptr", ESP_FAIL);
-        }
-		return this->callback(req, resp, *this->owner); //todo change sig to ptr
+		return this->callback(req, resp, serv);
 	}
 }
 

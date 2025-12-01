@@ -9,8 +9,9 @@
 
 namespace http {
 	class uri {
+		httpd_req_t* handler;
 		public:
-			uri();
-			uri(httpd_req_t* handler);
+			explicit uri(httpd_req_t* handler);
+			const char* raw() const;
 	};
 }
