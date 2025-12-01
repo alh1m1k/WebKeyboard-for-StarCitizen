@@ -39,7 +39,7 @@
 //predefined ip of host and subnet
 #define WIFI_AP_DHCP_USE_STATIC_IP 			true
 #define WIFI_AP_DHCP_STATIC_IP 				"192.168.5.1"
-#define WIFI_AP_DHCP_STATIC_MASK 			"225.255.255.0"
+#define WIFI_AP_DHCP_STATIC_MASK 			"255.255.255.0"
 
 //wifi access point dns server, make sense only if WIFI_MODE == WIFI_MODE_AP
 #define WIFI_AP_DNS 						true
