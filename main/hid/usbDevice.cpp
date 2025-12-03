@@ -229,6 +229,8 @@ namespace hid {
 	
 	bool usbDevice::install() {
 
+		static_assert(CONFIG_TINYUSB_HID_COUNT >= 1);
+
         config = std::make_unique_for_overwrite<tinyusb_config_t>();
         *config = makeConfig();
 

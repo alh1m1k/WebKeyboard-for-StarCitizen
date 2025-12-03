@@ -44,7 +44,7 @@
 //wifi access point dns server, make sense only if WIFI_MODE == WIFI_MODE_AP
 #define WIFI_AP_DNS 						true
 #define WIFI_AP_DNS_DOMAIN					"wkb.local"
-#define WIFI_AP_DNS_CAPTIVE 				true
+#define WIFI_AP_DNS_CAPTIVE 				false
 
 //factory reset trigger btn pin and led pin (if not addressable)
 //values included from define.h and board depended, change it there if other pin needed.
@@ -69,7 +69,9 @@
 //every static file request will processed with "connection: close" header applied.
 //instructing the client to close the connection immediately after receiving the file, without waiting for the socket timeout
 //freeing up the socket for subsequent requests
-#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
+//fot HTTPS leave it blank or set to false, or significant reduction of connection speed happened.
+//if blank it will be true for https and false for http
+//#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
 
 //use lwip "last recently used" counter for every socket. when socket pool depleted least recently socket will-be used
 //to process incoming connection
@@ -83,7 +85,13 @@
 #define SESSION_MAX_CLIENT_COUNT 			10
 
 
+#define HTTP_USE_HTTPS      true
+
 #define HTTP_CACHE_USE_ETAG true
+
+#define HTTP_PORT 			80
+
+#define HTTP_HTTPS_PORT 	443
 
 
 //USB STUFF, this is override of default values,
@@ -100,10 +108,11 @@
 
 
 #define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7)
+#define ASSERT_IF_INSECURE_HTTPS 	true
 
 
 //JTAG DEBUG
-//#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
+#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
                                                 //as CDC and JTAG are compete for resources
 //use menuconfig Component config > ESP System Settings :: CONFIG_ESP_CONSOLE_UART = CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 //to redirect app logs to JTAG uart

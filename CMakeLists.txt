@@ -7,10 +7,12 @@ project(WebKeyboard)
 
 option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+option(EMBED_CERT           "Include ssl certificate" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 
 set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
 set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)
 set (DISCLAIMER "do not touch! content is auto generated on every build!")
+set (EMBED_CACERT OFF)
 
 message("RESOURCE_COMPRESSION=${RESOURCE_COMPRESSION}")
 message("RESOURCE_CHECKSUM=${RESOURCE_CHECKSUM}")
@@ -58,6 +60,18 @@ function(resource file type)
         message(STATUS "Processing resource: ${file}")
     endif ()
 endfunction()
+
+if (EMBED_CERT)
+    target_add_binary_data(WebKeyboard.elf "${PROJECT_DIR}/cert/cert.pem"        TEXT)
+    target_add_binary_data(WebKeyboard.elf "${PROJECT_DIR}/cert/privkey.pem"     TEXT)
+    if(EXISTS "${PROJECT_DIR}/cacert.pem")
+        target_add_binary_data(WebKeyboard.elf "${PROJECT_DIR}/cert/cacert.pem"  TEXT)
+        set(EMBED_CACERT ON)
+    endif ()
+endif ()
+
+message("EMBED_CERT=${EMBED_CERT}")
+message("EMBED_CACERT=${EMBED_CACERT}")
 
 
 include(resource/CMakeLists.txt)

@@ -6,7 +6,7 @@ idf_component_register(
 
     					resultStream.cpp http/uri.cpp http/network.cpp http/headers.cpp http/cookie.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
 						http/socket/socket.cpp http/socket/asyncSocket.cpp
-    					http/resource/memory/file.cpp http/action.cpp http/server.cpp
+    					http/resource/memory/file.cpp http/action.cpp http/server.cpp http/secure.cpp
 
 						crypto/hash/sha256Engine.cpp
     					hid/usbDevice.cpp

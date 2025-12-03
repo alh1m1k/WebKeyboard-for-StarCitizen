@@ -28,7 +28,11 @@
 #include "ledStatusChange.h"
 
 #include "contentType.h"
+#if HTTP_USE_HTTPS
+#include "http/secure.h"
+#else
 #include "http/server.h"
+#endif
 #include "socket/handler.h"
 #include "sessionManager.h"
 
@@ -72,17 +76,30 @@ auto noCache = http::resource::cache::noCache();
 #endif
 
 //http::resource::memory::file will be created and stored in hello_js_memory_file
-decl_memory_file(widget_js, 	http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl	);
-decl_memory_file(overlay_js, 	http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl );
-decl_memory_file(lib_js, 		http::resource::memory::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl	);
-decl_memory_file(index_html, 	http::resource::memory::endings::TEXT, 		"index.html", 		http::contentType::TEXT,  	defaultCacheControl	);
-decl_memory_file(favicon_ico, 	http::resource::memory::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl	);
-decl_memory_file(index_js, 		http::resource::memory::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl	);
-decl_memory_file(index_css,		http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl	);
-decl_memory_file(symbols_svg,	http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl	);
+decl_web_resource(widget_js, 	http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl	);
+decl_web_resource(overlay_js, 	http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl );
+decl_web_resource(lib_js, 		http::resource::memory::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl	);
+decl_web_resource(index_html, 	http::resource::memory::endings::TEXT, 		"index.html", 		http::contentType::TEXT,  	defaultCacheControl	);
+decl_web_resource(favicon_ico, 	http::resource::memory::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl	);
+decl_web_resource(index_js, 	http::resource::memory::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl	);
+decl_web_resource(index_css,	http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl	);
+decl_web_resource(symbols_svg,	http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl	);
 
-#ifdef EMBED_CAPTIVE
-decl_memory_file(captive_html,	http::resource::memory::endings::TEXT, 		"captive.html", 	http::contentType::TEXT,    noCache	);
+#if EMBED_CAPTIVE
+decl_web_resource(captive_html,	http::resource::memory::endings::TEXT, 		"captive.html", 	http::contentType::TEXT,    noCache	);
+#endif
+
+#if EMBED_CERT
+decl_memory_file(cert_pem, 	   http::resource::memory::endings::TEXT );
+decl_memory_file(privkey_pem,  http::resource::memory::endings::TEXT );
+#elif HTTP_USE_HTTPS
+auto& cert_pem_memory_file 		= http::resource::memory::nofile;
+auto& privkey_pem_memory_file 	= http::resource::memory::nofile;
+#endif
+#if EMBED_CACERT
+decl_memory_file(cacert_pem,  http::resource::memory::endings::TEXT );
+#elif HTTP_USE_HTTPS
+auto& cacert_pem_memory_file = http::resource::memory::nofile;
 #endif
 
 
@@ -145,6 +162,10 @@ void trap(const char* msg, esp_err_t code = ESP_FAIL) {
 #if (WIFI_AP_DNS && WIFI_AP_DNS_CAPTIVE)
 static_assert(strings_equal(CAPTIVE_PORTAL_BACK_URL, WIFI_AP_DNS_DOMAIN), "PORTAL_BACK_URL != WIFI_AP_DNS_DOMAIN");
 static_assert(EMBED_CAPTIVE, "EMBED_CAPTIVE must be set to use captive portal");
+#endif
+
+#if (WIFI_AP_DNS)
+static_assert(WIFI_MODE == WIFI_MODE_AP);
 #endif
 
 void app_main(void)
@@ -291,14 +312,25 @@ void app_main(void)
 	std::cout << "starting of usb stack complete" << std::endl;
 
 
-
-
 	std::cout << "starting webServer " << std::endl;
-	static http::server webServer = {};
+	static auto webServer = []() -> auto {
+		if constexpr (HTTP_USE_HTTPS) {
+			return https::server{};
+		} else {
+			return http::server{};
+		}
+	}();
+
     webServer.attachSessions<sessionManager>(persistenceSign);
 
-	if (auto status = webServer.begin(80); !status) {
-		trap("fail 2 setup webServer", status.code());
+	if constexpr (HTTP_USE_HTTPS) {
+		if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
+			trap("fail 2 setup webServer", status.code());
+		}
+	} else {
+		if (auto status = webServer.begin(HTTP_PORT); !status) {
+			trap("fail 2 setup webServer", status.code());
+		}
 	}
 
 	resBool status = ESP_OK;
@@ -336,9 +368,9 @@ void app_main(void)
 		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
 	}
 
-	if constexpr (WIFI_AP_DNS_CAPTIVE) {
+#if (WIFI_AP_DNS_CAPTIVE && EMBED_CAPTIVE)
 		webServer.captiveHandler(captive_html_memory_file);
-	}
+#endif
 
 	if (status = webServer.addHandler("/leave", httpd_method_t::HTTP_POST,
 	  [](http::request& req, http::response& response, http::server& serv)-> http::server::handler_res_type {
@@ -360,8 +392,6 @@ void app_main(void)
 		webServer.end();
 		trap("fail 2 setup webServer path /renew", 	status.code());
 	}
-
-
 
 
     static auto  kbMessageParser    = typename wsproto::kb_parser_type();
@@ -399,17 +429,12 @@ void app_main(void)
 
     tailScheduler.begin();
 
-	struct {
-		http::server& 			webServer;
-		wsproto::ctrl_map_type& ctrl;
-	} collectable = {webServer, ctrl};
-    tailScheduler.schedule("server gc", [&collectable]() -> void {
+    tailScheduler.schedule("server gc", []() -> void {
         infoIf(LOG_SERVER_GC, "server gc start");
-		collectable.webServer.collect();
-		collectable.ctrl.collect();
+		webServer.collect();
+		ctrl.collect();
         infoIf(LOG_SERVER_GC, "server gc end");
     }, 10000, -1);
-
 	
 	//todo fix schedule faild before .begin
 /*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {

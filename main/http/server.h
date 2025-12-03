@@ -21,13 +21,11 @@ namespace http {
     }
 
 	//im fail to declare {anonimus}::captiveOf
-	action& captiveOf(server& serv);
+	action& captiveOf(server& serv) noexcept;
 
 	class server {
 
-		friend action& captiveOf(server& serv);
-
-		httpd_handle_t  handler = {};
+		friend action& captiveOf(server& serv) noexcept;
 
         mutable std::mutex _m;
 
@@ -35,7 +33,17 @@ namespace http {
 
         protected:
 
+			httpd_handle_t  handler = {};
+
 			action captive;
+
+			//allow to hook from descendants
+			static esp_err_t socketOpen(httpd_handle_t hd, int sockfd) noexcept;
+			static void 	 socketClose(httpd_handle_t hd, int sockfd) noexcept;
+			static void 	 globalUserCtxFree(void*) noexcept;
+			httpd_config_t 	 config(uint16_t port) noexcept;
+			void 			 afterStart() noexcept;
+			void 			 beforeStop() noexcept;
 
             void setSessions(std::unique_ptr<session::iManager>&& manager);
 
@@ -49,8 +57,7 @@ namespace http {
 			static server* of(httpd_handle_t handler);
 
 
-
-			server();
+			server() noexcept;
 
 			server(const server&) = delete;
 
@@ -58,19 +65,19 @@ namespace http {
 
 			auto operator=(const server&) = delete;
 
-            inline httpd_handle_t native() {
+            inline httpd_handle_t native() noexcept {
                 return handler;
             }
 			
-			resBool begin(uint16_t port);
+			resBool begin(uint16_t port = 80) noexcept;
 			
-			resBool end();
+			resBool end() noexcept;
 			
 			resBool addHandler(const char * url, httpd_method_t mode, handler_type&& callback);
 			
 			resBool removeHandler(const char * url, httpd_method_t mode);
 			
-			bool    hasHandler(const char * url, httpd_method_t mode);
+			bool    hasHandler(const char * url, httpd_method_t mode) noexcept;
 
 			void 	captiveHandler(handler_type&& callback);
 

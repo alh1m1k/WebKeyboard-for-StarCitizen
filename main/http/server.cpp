@@ -21,10 +21,9 @@
 #include "session/pointer.h"
 #include "network.h"
 
-
 namespace http {
 
-	action& captiveOf(server& serv) {
+	action& captiveOf(server& serv) noexcept {
 		return serv.captive;
 	}
 
@@ -91,28 +90,6 @@ namespace http {
 	static void serverException(request& req, response& resp, std::exception* e) {
 		serverError(req, resp);
 	}
-
-    static esp_err_t socketOpen(httpd_handle_t hd, int sockfd) {
-        return ESP_OK;
-    }
-
-    static void socketClose(httpd_handle_t hd, int sockfd) {
-        if (auto weakSessPtr = httpd_sess_get_ctx(hd, sockfd); weakSessPtr != nullptr) {
-            if (auto absSessPtr = static_cast<session::pointer*>(weakSessPtr)->lock(); absSessPtr != nullptr) {
-                infoIf(LOG_SESSION, "session ", absSessPtr->sid().c_str(), " socket closing: ", sockfd);
-                if (auto socketAwareSessionPtr = pointer_cast<session::iSocksCntSession>(absSessPtr); socketAwareSessionPtr != nullptr) {
-                    socketAwareSessionPtr->socksCntDecr();
-                    infoIf(LOG_SESSION, "     pendingSockets: ", socketAwareSessionPtr->socksCnt());
-                }
-                if (auto wsSessionPtr = pointer_cast<session::iWebSocketSession>(absSessPtr); wsSessionPtr != nullptr) {
-                    if (wsSessionPtr->updateWebSocketIfEq(socket::asyncSocket(hd, sockfd), socket::noAsyncSocket)) {
-                        infoIf(LOG_SESSION, "     websocket is closed");
-                    }
-                }
-            }
-        }
-        close(sockfd);
-    }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -225,7 +202,6 @@ namespace http {
     }
 
     static esp_err_t noop(httpd_req_t *esp_req) { return ESP_OK; };
-	static void nofree(void*) {};
 
 	static esp_err_t runAction(action& act, request& req, response& resp, server& serv) {
 		try {
@@ -369,7 +345,7 @@ namespace http {
         delete wrapper;
     }
 
-	server::server():
+	server::server() noexcept :
 		captive([](request& req, response& resp, server& serv) -> result<codes> {
 			if (auto host = req.getHeaders().host(); host.empty()) {
 				return codes::BAD_REQUEST;
@@ -391,29 +367,68 @@ namespace http {
 		return nullptr;
 	}
 
-	resBool server::begin(uint16_t port) {
+	esp_err_t server::socketOpen(httpd_handle_t hd, int sockfd) noexcept {
+		return ESP_OK;
+	}
+
+	void server::socketClose(httpd_handle_t hd, int sockfd) noexcept {
+		if (auto weakSessPtr = httpd_sess_get_ctx(hd, sockfd); weakSessPtr != nullptr) {
+			if (auto absSessPtr = static_cast<session::pointer*>(weakSessPtr)->lock(); absSessPtr != nullptr) {
+				infoIf(LOG_SESSION, "session ", absSessPtr->sid().c_str(), " socket closing: ", sockfd);
+				if (auto socketAwareSessionPtr = pointer_cast<session::iSocksCntSession>(absSessPtr); socketAwareSessionPtr != nullptr) {
+					socketAwareSessionPtr->socksCntDecr();
+					infoIf(LOG_SESSION, "     pendingSockets: ", socketAwareSessionPtr->socksCnt());
+				}
+				if (auto wsSessionPtr = pointer_cast<session::iWebSocketSession>(absSessPtr); wsSessionPtr != nullptr) {
+					if (wsSessionPtr->updateWebSocketIfEq(socket::asyncSocket(hd, sockfd), socket::noAsyncSocket)) {
+						infoIf(LOG_SESSION, "     websocket is closed");
+					}
+				}
+			}
+		}
+		close(sockfd);
+	}
+
+	void server::globalUserCtxFree(void*) noexcept {} //nofree
+
+	httpd_config_t server::config(uint16_t port) noexcept {
+		httpd_config_t config 			= HTTPD_DEFAULT_CONFIG();
+		config.max_uri_handlers 		= 20;
+		config.max_open_sockets 		= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
+		config.stack_size 		    	= HTTPD_TASK_STACK_SIZE;
+		config.open_fn  				= &socketOpen;
+		config.close_fn 				= &socketClose;
+		config.lru_purge_enable 		= SOCKET_RECYCLE_USE_LRU_COUNTER;
+		config.global_user_ctx      	= this; //todo handle move
+		config.global_user_ctx_free_fn 	= &globalUserCtxFree;
+		config.server_port				= port;
+		return config;
+	}
+
+	void server::afterStart() noexcept {
+		httpd_register_err_handler(handler, httpd_err_code_t::HTTPD_404_NOT_FOUND, error404Handler);
+	}
+
+	void server::beforeStop() noexcept {}
+
+	resBool server::begin(uint16_t port) noexcept {
         static_assert(SYSTEM_SOCKET_RESERVED > 0, "SYSTEM_SOCKET_RESERVED > 0");
 #ifdef ASSERT_IF_SOCKET_COUNT_LESS
         static_assert(CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED >= ASSERT_IF_SOCKET_COUNT_LESS, "ASSERT_IF_MIN_SOCKET_COUNT_LESS");
 #endif
-		httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-		config.max_uri_handlers 	= 20;
-		config.max_open_sockets 	= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
-		config.stack_size 		    = HTTPD_TASK_STACK_SIZE;
-        config.open_fn  			= &socketOpen;
-        config.close_fn 			= &socketClose;
-        config.lru_purge_enable 	= SOCKET_RECYCLE_USE_LRU_COUNTER;
-		config.global_user_ctx      = this; //todo handle move
-		config.global_user_ctx_free_fn = nofree;
-		if (auto code = httpd_start(&handler, &config); code == ESP_OK) {
-			httpd_register_err_handler(handler, httpd_err_code_t::HTTPD_404_NOT_FOUND, error404Handler);
+		static_assert(CONFIG_HTTPD_WS_SUPPORT);
+		static_assert(CONFIG_HTTPD_MAX_REQ_HDR_LEN >= 1024);
+		httpd_config_t conf = config(port);
+		if (auto code = httpd_start(&handler, &conf); code == ESP_OK) {
+			afterStart();
 			return code;
 		} else {
 			return code;
 		}
 	}
 
-	resBool server::end() {
+	resBool server::end() noexcept {
+		beforeStop();
 		return httpd_stop(handler);
 	}
 	
@@ -470,7 +485,7 @@ namespace http {
         return httpd_unregister_uri_handler(handler, url, mode);
 	}
 	
-	bool server::hasHandler(const char * url, httpd_method_t mode) {
+	bool server::hasHandler(const char * url, httpd_method_t mode) noexcept {
         httpd_uri routeHandler = {};
         routeHandler.uri    = url;
         routeHandler.method = mode;

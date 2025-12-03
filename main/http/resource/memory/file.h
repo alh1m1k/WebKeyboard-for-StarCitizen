@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ostream>
+#include <span>
 
 #include "codes.h"
 #include "contentType.h"
@@ -17,7 +18,7 @@ namespace http::resource::memory {
 	};
 	
 	class file: public resource {
-		
+
 		const int 	addressStart;
 		const int 	addressEnd;
 		const int 	ending;
@@ -53,12 +54,18 @@ namespace http::resource::memory {
 			
 			bool operator<(const file& other) const noexcept;
 
-			resource::handler_res_type operator()(request& req, response& resp, server& serv) const noexcept;
+			inline operator std::span<const uint8_t>() const noexcept {
+				return {(const uint8_t*)addressStart, (size_t)(addressEnd - addressStart)};
+			}
 
+			resource::handler_res_type operator()(request& req, response& resp, server& serv) const noexcept;
 
 	};
 	
 	response& operator<<(response& stream, const std::string_view& str);
+
+	inline file nofile = {0, 0, endings::BINARY, nullptr, nullptr};
+
 }
 
 

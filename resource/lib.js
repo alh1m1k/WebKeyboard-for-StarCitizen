@@ -671,7 +671,7 @@ function Socket(target) {
                 privateCtx.connectAttempts++;
                 privateCtx.lastConnectTime = new Date();
                 console.log("connection attempt: ", privateCtx.connectAttempts);
-                privateCtx.socket = new WebSocket("ws://" + location.hostname + target);
+                privateCtx.socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.hostname + target);
             }).then((status) => {
                 return immediateClose; //fixme todo19
             }).then((status) => {
