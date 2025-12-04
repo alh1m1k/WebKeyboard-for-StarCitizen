@@ -56,7 +56,7 @@ namespace http {
 		static_assert(CONFIG_HTTPD_WS_SUPPORT);
 		static_assert(CONFIG_HTTPD_MAX_REQ_HDR_LEN >= 1024);
 		static_assert(CONFIG_ESP_HTTPS_SERVER_ENABLE);
-		static_assert(!WIFI_AP_DNS_CAPTIVE);
+		static_assert((CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED) <= 7, "ssl socket count, esp32 memory limit");
 		httpd_ssl_config_t conf = config(port, certPem, privKeyPem, caCertPem);
 		if (auto code = httpd_ssl_start(&handler, &conf); code == ESP_OK) {
 			afterStart();

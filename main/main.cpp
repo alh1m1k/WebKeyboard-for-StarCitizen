@@ -159,7 +159,9 @@ void trap(const char* msg, esp_err_t code = ESP_FAIL) {
 	throw std::runtime_error("trap func must newer ended");
 }
 
-#if (WIFI_AP_DNS && WIFI_AP_DNS_CAPTIVE)
+#if (WIFI_AP_DNS_CAPTIVE)
+static_assert(WIFI_AP_DNS, "WIFI_AP_DNS");
+static_assert(!HTTP_USE_HTTPS, "!HTTP_USE_HTTPS");
 static_assert(strings_equal(CAPTIVE_PORTAL_BACK_URL, WIFI_AP_DNS_DOMAIN), "PORTAL_BACK_URL != WIFI_AP_DNS_DOMAIN");
 static_assert(EMBED_CAPTIVE, "EMBED_CAPTIVE must be set to use captive portal");
 #endif
@@ -168,8 +170,14 @@ static_assert(EMBED_CAPTIVE, "EMBED_CAPTIVE must be set to use captive portal");
 static_assert(WIFI_MODE == WIFI_MODE_AP);
 #endif
 
+#if (HTTP_USE_HTTPS)
+static_assert(!WIFI_AP_DNS_CAPTIVE);
+#endif
+
 void app_main(void)
 {
+
+	debugIf(LOG_HTTPD_HEAP, "app_main ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	info("app init");
 
@@ -217,6 +225,8 @@ void app_main(void)
 
   	info("factory reset interval passed");
 
+	debugIf(LOG_HTTPD_HEAP, "app_main wifi", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
 	if (auto wifiStatus = wifi::init(); !wifiStatus) {
 		trap("fail to init wifi", wifiStatus.code());
 	}
@@ -224,6 +234,8 @@ void app_main(void)
 	if (auto statusCode = wifi::mode(WIFI_MODE); !statusCode) {
 		trap("unable setup mode", statusCode.code());
 	}
+
+	debugIf(LOG_HTTPD_HEAP, "app_main storage", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	static std::string persistenceSign;
 	static std::string bootingSign;
@@ -266,6 +278,8 @@ void app_main(void)
 		bootingSign = randomString(32);
 	}
 
+	debugIf(LOG_HTTPD_HEAP, "app_main dns", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
 
 #ifdef WIFI_AP_DNS
 	std::cout << "starting dns" << std::endl;
@@ -274,6 +288,7 @@ void app_main(void)
 	}
 #endif
 
+	debugIf(LOG_HTTPD_HEAP, "app_main rnd", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting rnd generator " << std::endl;
 
@@ -285,10 +300,12 @@ void app_main(void)
 		.distribution 	= std::normal_distribution<float>(0, 1.0),
 	};
 
-
+	debugIf(LOG_HTTPD_HEAP, "app_main usb", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting usb Stack " << std::endl;
 	hid::UsbDevice = std::make_unique<hid::UsbDeviceImpl>();
+
+	debugIf(LOG_HTTPD_HEAP, "app_main kb", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting keyboard " << std::endl;
 	static auto kb = hid::keyboard();
@@ -298,6 +315,8 @@ void app_main(void)
 	}
 	kb.entroySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
 
+	debugIf(LOG_HTTPD_HEAP, "app_main joy", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
 	std::cout << "starting joystick " << std::endl;
 	static auto joy = hid::joystick();
 
@@ -305,12 +324,15 @@ void app_main(void)
 		trap("fail 2 setup joystick", ESP_FAIL);
 	}
 
+	debugIf(LOG_HTTPD_HEAP, "app_main driver", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
 	std::cout << "installing usb driver" << std::endl;
 	if (!hid::UsbDevice->install()) { //mustbe called after all usb device
 		trap("fail 2 install usb driver", ESP_FAIL);
 	}
 	std::cout << "starting of usb stack complete" << std::endl;
 
+	debugIf(LOG_HTTPD_HEAP, "app_main web", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting webServer " << std::endl;
 	static auto webServer = []() -> auto {
@@ -334,6 +356,8 @@ void app_main(void)
 	}
 
 	resBool status = ESP_OK;
+
+	debugIf(LOG_HTTPD_HEAP, "app_main web handlers", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	if (status = webServer.addHandler("/", httpd_method_t::HTTP_GET, index_html_memory_file); !status) {
 		webServer.end();
@@ -394,6 +418,8 @@ void app_main(void)
 	}
 
 
+	debugIf(LOG_HTTPD_HEAP, "app_main proto", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
     static auto  kbMessageParser    = typename wsproto::kb_parser_type();
 	static auto  packetCounter 	 	= typename wsproto::packet_seq_generator_type();
 	static auto  ctrl               = typename wsproto::ctrl_map_type();
@@ -427,6 +453,8 @@ void app_main(void)
 	//kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter, tailOp));
 	kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter));
 
+	debugIf(LOG_HTTPD_HEAP, "app_main scheduler.begin()", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+
     tailScheduler.begin();
 
     tailScheduler.schedule("server gc", []() -> void {
@@ -446,6 +474,7 @@ void app_main(void)
 		joy.axis(axis++, std::min(std::max((uint16_t)(randomCtx.distribution(randomCtx.generator) * 1024 + 1024), (uint16_t)0), (uint16_t)2048));
 	}, 250, 1000);*/
 
+	debugIf(LOG_HTTPD_HEAP, "app_main done", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 	
 	info("setup done, app now operational");
 	

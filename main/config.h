@@ -38,13 +38,13 @@
 #define WIFI_AP_AUTH 						WIFI_AUTH_WPA_WPA2_PSK //WIFI_AUTH_WPA2_WPA3_PSK
 //predefined ip of host and subnet
 #define WIFI_AP_DHCP_USE_STATIC_IP 			true
-#define WIFI_AP_DHCP_STATIC_IP 				"192.168.5.1"
-#define WIFI_AP_DHCP_STATIC_MASK 			"255.255.255.0"
+//#define WIFI_AP_DHCP_STATIC_IP 			"192.168.5.1"
+//#define WIFI_AP_DHCP_STATIC_MASK 			"255.255.255.0"
 
 //wifi access point dns server, make sense only if WIFI_MODE == WIFI_MODE_AP
-#define WIFI_AP_DNS 						true
-#define WIFI_AP_DNS_DOMAIN					"wkb.local"
-#define WIFI_AP_DNS_CAPTIVE 				false
+//#define WIFI_AP_DNS 						true //if WIFI_MODE == WIFI_MODE_AP
+//#define WIFI_AP_DNS_DOMAIN				"wkb.local"
+//#define WIFI_AP_DNS_CAPTIVE 				false
 
 //factory reset trigger btn pin and led pin (if not addressable)
 //values included from define.h and board depended, change it there if other pin needed.
@@ -54,7 +54,7 @@
 //SOCKET MANAGEMENT
 //Exact socket count controlled by menuconfig via CONFIG_LWIP_MAX_SOCKETS define
 //httpd server socket poolSize = CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
-#define SYSTEM_SOCKET_RESERVED 5
+#define SYSTEM_SOCKET_RESERVED 3
 
 //when socket pool became empty system will stall ~30s until some of the socket became available.
 //SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER reduce chance of such event by closing every non essential connection
@@ -76,22 +76,22 @@
 //use lwip "last recently used" counter for every socket. when socket pool depleted least recently socket will-be used
 //to process incoming connection
 //WARNING: this may close persistent ws connection in some condition.
-#define SOCKET_RECYCLE_USE_LRU_COUNTER true
+//#define SOCKET_RECYCLE_USE_LRU_COUNTER true
 
 
-#define SID_COOKIE_TTL                      3600*24
-#define SESSION_TIMEOUT                     60*30
-#define SESSION_SID_REFRESH_INTERVAL        3600
-#define SESSION_MAX_CLIENT_COUNT 			10
+//#define SID_COOKIE_TTL                    3600*24
+//#define SESSION_TIMEOUT                   60*30
+//#define SESSION_SID_REFRESH_INTERVAL      3600
+//#define SESSION_MAX_CLIENT_COUNT 			10
 
 
 #define HTTP_USE_HTTPS      true
 
-#define HTTP_CACHE_USE_ETAG true
+//#define HTTP_CACHE_USE_ETAG true
 
-#define HTTP_PORT 			80
+//#define HTTP_PORT 		80
 
-#define HTTP_HTTPS_PORT 	443
+//#define HTTP_HTTPS_PORT 	443
 
 
 //USB STUFF, this is override of default values,
@@ -107,12 +107,13 @@
 #define DEVICE_KB_HID 			"WebKeyboard for StarCitizen"
 
 
-#define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7)
+//#define ASSERT_IF_SOCKET_COUNT_LESS (SESSION_MAX_CLIENT_COUNT + 1 * 7) http version
+#define ASSERT_IF_SOCKET_COUNT_LESS 6 //https version
 #define ASSERT_IF_INSECURE_HTTPS 	true
 
 
 //JTAG DEBUG
-#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
+// #define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC   //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
                                                 //as CDC and JTAG are compete for resources
 //use menuconfig Component config > ESP System Settings :: CONFIG_ESP_CONSOLE_UART = CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 //to redirect app logs to JTAG uart
@@ -148,6 +149,8 @@
 #define LOG_SERVER_GC    false
 
 #define LOG_HTTPD_TASK_STACK false
+
+#define LOG_HTTPD_HEAP false
 
 
 

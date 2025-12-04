@@ -7,12 +7,8 @@
 #define WIFI_MODE WIFI_MODE_AP
 #endif
 
-#ifndef WIFI_MODE 
-#define WIFI_SSID "test"
-#endif
-
-#ifndef WIFI_PWD 
-#define WIFI_PWD  "test"
+#ifndef WIFI_AP_AUTH
+#define WIFI_AP_AUTH WIFI_AUTH_WPA2_WPA3_PSK
 #endif
 
 #ifndef WIFI_MIN_SSID_LEN
@@ -31,21 +27,16 @@
 #define WIFI_MAX_PWD_LEN 63
 #endif
 
-#ifdef WIFI_AP_DNS
-#if WIFI_MODE != WIFI_MODE_AP
-#undef  WIFI_MODE;
-#define WIFI_MODE false
-#endif
-#else
+#ifndef WIFI_AP_DNS
+#if WIFI_MODE == WIFI_MODE_AP
 #define WIFI_AP_DNS true
+#else
+#define WIFI_AP_DNS false
+#endif
 #endif
 
-#ifndef WIFI_AP_DHCP_STATIC_IP
-#define WIFI_AP_DHCP_STATIC_IP false
-#endif
-
-#ifndef WIFI_AP_DHCP_STATIC_IP
-#define WIFI_AP_DHCP_STATIC_IP DEFAULT_WIFI_AP_DHCP_STATIC_IP
+#ifndef WIFI_AP_DHCP_USE_STATIC_IP
+#define WIFI_AP_DHCP_USE_STATIC_IP false
 #endif
 
 #ifndef WIFI_AP_DHCP_STATIC_IP
@@ -62,16 +53,6 @@
 
 #ifndef WIFI_AP_DNS_DOMAIN
 #define WIFI_AP_DNS_DOMAIN  "wkb.local"
-#endif
-
-#ifndef WIFI_AP_DNS_CAPTIVE
-#define WIFI_AP_DNS_CAPTIVE true
-#endif
-
-#if WIFI_AP_DNS_CAPTIVE
-#define APP_DNS_DOMAIN "*"
-#else
-#define APP_DNS_DOMAIN WIFI_AP_DNS_DOMAIN
 #endif
 
 #if defined(DEVICE_KB_VENDORID) || defined(DEVICE_KB_PRODUCTID) 
@@ -158,32 +139,40 @@
 #define LOG_HTTPD_TASK_STACK	false
 #endif
 
+#ifndef LOG_HTTPD_HEAP
+#define LOG_HTTPD_HEAP	false
+#endif
+
 #ifndef SESSION_TIMEOUT
-SESSION_TIMEOUT 60*20
+#define SESSION_TIMEOUT 60*20
 #endif
 
 #ifndef SID_COOKIE_TTL
-SID_COOKIE_TTL 3600*24
+#define SID_COOKIE_TTL 3600*24
+#endif
+
+#ifndef SESSION_SID_REFRESH_INTERVAL
+#define SESSION_SID_REFRESH_INTERVAL 3600
 #endif
 
 #ifndef HTTP_CACHE_USE_ETAG
-HTTP_CACHE_USE_ETAG true
+#define HTTP_CACHE_USE_ETAG true
+#endif
+
+#ifndef HTTP_USE_HTTPS
+#define HTTP_USE_HTTPS false
 #endif
 
 #ifndef HTTP_PORT
-	HTTP_PORT 80
+#define	HTTP_PORT 80
 #endif
 
 #ifndef HTTP_HTTPS_PORT
-	HTTP_HTTPS_PORT 443
+#define	HTTP_HTTPS_PORT 443
 #endif
 
 #ifndef SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER
-#if HTTP_USE_HTTPS
-#define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER false
-#else
 #define SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
-#endif
 #endif
 
 #ifndef SOCKET_RECYCLE_USE_LRU_COUNTER
@@ -195,6 +184,16 @@ HTTP_CACHE_USE_ETAG true
 #endif
 
 
+#ifndef WIFI_AP_DNS_CAPTIVE
+#if !WIFI_AP_DNS || HTTP_USE_HTTPS
+#define WIFI_AP_DNS_CAPTIVE false
+#endif
+#endif
 
+#if WIFI_AP_DNS_CAPTIVE
+#define APP_DNS_DOMAIN "*"
+#else
+#define APP_DNS_DOMAIN WIFI_AP_DNS_DOMAIN
+#endif
 
 

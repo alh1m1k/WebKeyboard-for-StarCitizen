@@ -258,6 +258,7 @@ namespace http {
 		public:
 			inline routeLogger(httpd_req_t *esp_req) : esp_req(esp_req) {
 				debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
+				debugIf(LOG_HTTPD_HEAP, "heap enter: ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
 				if (esp_req->method == 0) {
 					info("handle request (websocket)");
@@ -266,7 +267,9 @@ namespace http {
 				}
 			}
 			inline ~routeLogger()  {
-				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
+				debugIf(LOG_HTTP, "---> static routing end", esp_req->uri, " t ", esp_timer_get_time());
+				debugIf(LOG_HTTPD_TASK_STACK, "stack leave: ", uxTaskGetStackHighWaterMark(nullptr));
+				debugIf(LOG_HTTPD_HEAP, "heap leave: ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 			}
 	};
 
@@ -368,10 +371,12 @@ namespace http {
 	}
 
 	esp_err_t server::socketOpen(httpd_handle_t hd, int sockfd) noexcept {
+		debug("using socket", sockfd);
 		return ESP_OK;
 	}
 
 	void server::socketClose(httpd_handle_t hd, int sockfd) noexcept {
+		debug("done withCONFIG_LWIP_MAX_SOCKETS socket", sockfd);
 		if (auto weakSessPtr = httpd_sess_get_ctx(hd, sockfd); weakSessPtr != nullptr) {
 			if (auto absSessPtr = static_cast<session::pointer*>(weakSessPtr)->lock(); absSessPtr != nullptr) {
 				infoIf(LOG_SESSION, "session ", absSessPtr->sid().c_str(), " socket closing: ", sockfd);
