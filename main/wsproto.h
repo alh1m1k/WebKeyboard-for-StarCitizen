@@ -97,7 +97,7 @@ class wsproto {
                 tailScheduler(tailScheduler),
                 entropySource(entropySource),
                 persistenceSign(persistenceSign),
-                bootingSign(bootingSign),
+                bootingSign(bootingSign)
         {
             sessions.notification = [proto= this](int type, sessionManager::session_ptr_type& context, void* data) -> void  {
                 proto->handleEvents(type, context, data);
