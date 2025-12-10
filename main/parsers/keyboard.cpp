@@ -12,7 +12,7 @@ namespace parsers {
 	using namespace std::literals;
 		
 	keyboard::token::press_e keyboard::view2press(std::string_view candidate) {
-		debug("keyboard::view2press", candidate);
+		//debug("keyboard::view2press", candidate);
 		if (candidate == "press"sv) {
 			return keyboard::token::press_e::PRESS;
 		}
@@ -421,12 +421,12 @@ hid::task::pressType conv(keyboard::token::press_e in) {
 		const auto total = _tokens.size();
 		for (auto i = 0; i < total; ++i) {
 			if (_tokens[i].type == keyboard::token::type_e::KEY) {
-				logIf(true, "\"", _tokens[i].view, "\"k", total == i + 1 ? "" : ", ");
+				logIf(true, "\"", _tokens[i].view, ":", (int)_tokens[i].press, "\"k", total == i + 1 ? "" : ", ");
 				if (success = specialKey(sequence, _tokens[i].view, _tokens[i]); !success) {
 					break;
 				}
 			} else {
-				logIf(true, "\"", _tokens[i].view, "\"s", total == i + 1 ? "" : ", ");
+				logIf(true, "\"", _tokens[i].view, ":", (int)_tokens[i].press, "\"s", total == i + 1 ? "" : ", ");
 				//std::string proxy = std::string(_tokens[i].view.begin(), _tokens[i].view.end());
 				if (success = sequence.type(_tokens[i].view, _tokens[i].press == keyboard::token::press_e::SHORT); !success) {
 					break;

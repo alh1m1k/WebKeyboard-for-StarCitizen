@@ -288,8 +288,8 @@ class wsproto {
 
 				++joystickCounter;
 				if (auto time = esp_timer_get_time(); (time - joystickFlushAt >= 1000000) && joystickCounter > 1) {
-					//that probably not thread safe add spinlock
-					infoIf( "client activity", "from: ", joystickFlushAt,  "to `now` processed: ", joystickCounter, " joystick event(s)");
+					//that probably not thread safe, add spinlock
+					info("client activity", "from: ", joystickFlushAt,  " to `now` processed: ", joystickCounter, " joystick event(s)");
 					joystickCounter = 0;
 					joystickFlushAt = time;
 				}

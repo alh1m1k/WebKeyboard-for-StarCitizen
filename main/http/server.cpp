@@ -317,12 +317,9 @@ namespace http {
 				return ESP_FAIL;
 			}
 
-			logRequest(req, "http(s) request");
+			logRequest(req, req.isWebsocket() ? "http(s) switch protocol request" : "http(s) request");
 		} else  {
 			//webSocket handler
-			if (esp_req->method != 0) {
-				logRequest(req, "http(s) switch protocol request");
-			}
 		}
 
 		return runAction(act, req, resp, *serv);
