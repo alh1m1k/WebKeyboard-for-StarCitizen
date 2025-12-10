@@ -20,7 +20,6 @@ namespace http {
 		config.httpd.lru_purge_enable 			= SOCKET_RECYCLE_USE_LRU_COUNTER;
 		config.httpd.global_user_ctx      		= this; //todo handle move
 		config.httpd.global_user_ctx_free_fn 	= &globalUserCtxFree;
-		config.httpd.server_port				= port;
 
 		if (!certPem.empty()) {
 			config.servercert 			= certPem.data();
@@ -34,6 +33,8 @@ namespace http {
 			config.cacert_pem 			= caCertPem.data();
 			config.cacert_len 			= caCertPem.size();
 		}
+
+		config.port_secure = config.port_insecure = port;
 
 		assert(
 			(config.servercert == nullptr && config.servercert == config.prvtkey_pem) ||

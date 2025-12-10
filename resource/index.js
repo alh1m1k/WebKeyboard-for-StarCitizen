@@ -1856,13 +1856,24 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
     window.storage = storage;
 
-    let socket = Socket("/socks");
+    let socket = wsocket("/socks");
     window.socket = socket;
 
     const identityV = identity();
     socket.identity(() => identityV);
     socket.session( () => fetch("/renew", { method: 'POST' }) );
-    socket.open();
+    socket.keepAlive = 5000;
+    socket.begin();
+
+/*
+    socket termination opt
+
+    socket.end()
+
+    let ab = new AbortController();
+    socket.signal = ab.signal;
+    setTimeout(() => ab.abort("test"), 60000);
+*/
 
     notificator.addNotification("Attempting connect...", "connection_info", "info", 0);
     reportDeviceScreen();
@@ -2020,7 +2031,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
             name = "document";
         } else {
             console.log("undefined leave type");
-            socket.close();
+            socket.end();
             return;
         }
 
@@ -2028,7 +2039,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
         if (/*name === "document" &&*/ type === "navigate") {
             console.log("page is moveout");
-            socket.close();
+            socket.end();
         } else {
             console.log("page is reloading");
         }
@@ -2082,7 +2093,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 socket.send("kb", kbd);
             }
         } else {
-            console.warn("socket unavailable unable to send", kbd, socket.reconnectReason, socket.error);
+            console.warn("socket unavailable unable to send", kbd, socket.disconnectReason, socket.error);
         }
     });
 
@@ -2594,10 +2605,10 @@ const invertAspectRatio = 2/3.1; //@see CSS
                                     updateOverlay(); //@see mustUpdateOverlay;
                                 }
                                 if (clientIdUpdated) {
-                                    return socket.closeAsync().then(()=> {
+                                    return socket.reconnect(() => {
                                         const identityV = identity();
                                         socket.identity(() => identityV);
-                                        return socket.openAsync();
+                                        return Promise.resolve();
                                     });
                                 } else {
                                     return a;

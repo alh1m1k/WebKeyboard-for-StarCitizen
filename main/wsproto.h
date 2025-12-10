@@ -83,7 +83,6 @@ class wsproto {
                 entropy_generator_type&         entropySource,
                 sing_type&                      persistenceSign,
                 sing_type&                      bootingSign
-
         ) :
                 parser(parser),
                 keyboard(keyboard),
@@ -96,7 +95,6 @@ class wsproto {
                 entropySource(entropySource),
                 persistenceSign(persistenceSign),
                 bootingSign(bootingSign)
-
         {
             sessions.notification = [proto= this](int type, sessionManager::session_ptr_type& context, void* data) -> void  {
                 proto->handleEvents(type, context, data);
@@ -165,6 +163,17 @@ class wsproto {
             if (IS(flags, (uint32_t)sessionFlags::SOCKET_CHANGE)) {
                 flags = UNSET(pSession->write()->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHODIZED);
             }
+
+			//ping is not member of keepAlive, it is network fail discovery
+			if (rawMessage.starts_with("ping:") && IS(flags, (uint32_t)sessionFlags::AUTHODIZED)) {
+				auto pack = unpackMsg(rawMessage);
+				if (pack.success) {
+					socket.write(resultMsg("echo", pack.taskId, pack.success));
+					return ESP_OK;
+				} else {
+					return ESP_FAIL;
+				}
+			}
 
             info("session credits", pSession->sid().c_str(), " i: ", pSession->index(), " n: ", clientName.c_str(), " stack: ", uxTaskGetStackHighWaterMark(nullptr));
 
@@ -277,21 +286,6 @@ class wsproto {
                 }
 
                 return ESP_OK; //no respond
-            }
-
-            if (rawMessage.starts_with("axi:")) {
-                //custom axis request must be fixed size: 2byte + buttons (32 one bit each) + 4byte header = 10 bytes
-            }
-
-
-            if (rawMessage.starts_with("ping:")) {
-                auto pack = unpackMsg(rawMessage);
-                if (pack.success) {
-                    socket.write(resultMsg("ping", pack.taskId, pack.success));
-                    return ESP_OK;
-                } else {
-                    return ESP_FAIL;
-                }
             } else if (rawMessage.starts_with("kb:")) {
                 auto pack = unpackMsg(rawMessage);
                 if (!pack.success) {

@@ -287,13 +287,14 @@ namespace http {
 
 		routeLogger logEntry = {esp_req};
 
-        if (req.getRemote().version() == 6) {
-            std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
-        } else if (req.getRemote().version() == 4) {
-            std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
-        }
-
 		if (!(esp_req->method == 0 && req.isWebsocket())) {
+			//http handler
+
+			if (req.getRemote().version() == 6) {
+				std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
+			} else if (req.getRemote().version() == 4) {
+				std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
+			}
 
 			if (auto host = req.getHeaders().host(); !isHostValid(host)) {
 				error("incorrect host rcv", host.c_str(), " t ", esp_timer_get_time());
@@ -308,6 +309,8 @@ namespace http {
 				return ESP_FAIL;
 			}
 
+		} else {
+			//webSocket handler
 		}
 
 		return runAction(act, req, resp, *serv);
@@ -376,7 +379,7 @@ namespace http {
 	}
 
 	void server::socketClose(httpd_handle_t hd, int sockfd) noexcept {
-		debug("done withCONFIG_LWIP_MAX_SOCKETS socket", sockfd);
+		debug("done with socket", sockfd);
 		if (auto weakSessPtr = httpd_sess_get_ctx(hd, sockfd); weakSessPtr != nullptr) {
 			if (auto absSessPtr = static_cast<session::pointer*>(weakSessPtr)->lock(); absSessPtr != nullptr) {
 				infoIf(LOG_SESSION, "session ", absSessPtr->sid().c_str(), " socket closing: ", sockfd);

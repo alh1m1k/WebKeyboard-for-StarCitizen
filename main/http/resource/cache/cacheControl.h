@@ -1,15 +1,17 @@
 #pragma once
 
-#include "file.h"
 #include "result.h"
+#include "request.h"
+#include "response.h"
+#include "server.h"
 
 namespace http::resource::cache {
 
 	class cacheControl {
-		std::string token;
+		const char* token;
 		public:
-			cacheControl(const std::string& value) noexcept : token(value) {};
-			result<codes> operator()(const memory::file& file, request& req, response& resp, server& serv) const noexcept {
+			constexpr explicit cacheControl(const std::string& value) noexcept : token(value.c_str()) {};
+			result<codes> operator()(request& req, response& resp, server& serv) noexcept {
 				resp.getHeaders().cacheControl(token);
 				return ESP_OK;
 			}

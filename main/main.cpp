@@ -36,11 +36,8 @@
 #include "socket/handler.h"
 #include "sessionManager.h"
 
-#include "resource/memory/file.h"
-#include "resource/memory/shortcut.h"
-#include "resource/cache/eTag.h"
-#include "resource/cache/noCache.h"
-#include "resource/cache/dymmy.h"
+#include "resource/file.h"
+#include "resource/shortcut.h"
 
 #include "ctrlmap.h"
 #include "make.h"
@@ -49,6 +46,7 @@
 #include "scheduler.h"
 #include "storage.h"
 #include "wsproto.h"
+#include "cache.h"
 
 #ifdef WIFI_AP_DNS
 #include "dns/server.h"
@@ -56,8 +54,6 @@
 
 #include "resultStream.h" //need for cout << result
 
-
-// compile time define example target_compile_definitions(${lwip} PRIVATE "-DESP_IDF_LWIP_HOOK_FILENAME=\"my_hook.h\"")
 
 
 extern "C" {
@@ -68,38 +64,37 @@ extern "C" {
 #include "resourceChecksum.h"
 #endif
 
-auto noCache = http::resource::cache::noCache();
 #if HTTP_CACHE_USE_ETAG
-	auto defaultCacheControl = http::resource::cache::eTag();
+	auto defaultCacheControl = eTagHandler;
 #else
-	auto defaultCacheControl = http::resource::cache::dymmy();
+	auto defaultCacheControl = dummyHandler;
 #endif
 
-//http::resource::memory::file will be created and stored in hello_js_memory_file
-decl_web_resource(widget_js, 	http::resource::memory::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl	);
-decl_web_resource(overlay_js, 	http::resource::memory::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl );
-decl_web_resource(lib_js, 		http::resource::memory::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl	);
-decl_web_resource(index_html, 	http::resource::memory::endings::TEXT, 		"index.html", 		http::contentType::TEXT,  	defaultCacheControl	);
-decl_web_resource(favicon_ico, 	http::resource::memory::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl	);
-decl_web_resource(index_js, 	http::resource::memory::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl	);
-decl_web_resource(index_css,	http::resource::memory::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl	);
-decl_web_resource(symbols_svg,	http::resource::memory::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl	);
+//http::resource::file will be created and stored in hello_js_memory_file
+decl_web_resource(widget_js, 	http::resource::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl);
+decl_web_resource(overlay_js, 	http::resource::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(lib_js, 		http::resource::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(index_html, 	http::resource::endings::TEXT, 		"index.html", 		http::contentType::HTML,  	defaultCacheControl);
+decl_web_resource(favicon_ico, 	http::resource::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl);
+decl_web_resource(index_js, 	http::resource::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(index_css,	http::resource::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl);
+decl_web_resource(symbols_svg,	http::resource::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl);
 
 #if EMBED_CAPTIVE
-decl_web_resource(captive_html,	http::resource::memory::endings::TEXT, 		"captive.html", 	http::contentType::TEXT,    noCache	);
+decl_web_resource(captive_html,	http::resource::endings::TEXT, 		"captive.html", 	http::contentType::TEXT,    noCache);
 #endif
 
 #if EMBED_CERT
-decl_memory_file(cert_pem, 	   http::resource::memory::endings::TEXT );
-decl_memory_file(privkey_pem,  http::resource::memory::endings::TEXT );
+decl_memory_file(cert_pem, 	   http::resource::endings::TEXT);
+decl_memory_file(privkey_pem,  http::resource::endings::TEXT);
 #elif HTTP_USE_HTTPS
-auto& cert_pem_memory_file 		= http::resource::memory::nofile;
-auto& privkey_pem_memory_file 	= http::resource::memory::nofile;
+auto& cert_pem_memory_file 		= http::resource::nofile;
+auto& privkey_pem_memory_file 	= http::resource::nofile;
 #endif
 #if EMBED_CACERT
-decl_memory_file(cacert_pem,  http::resource::memory::endings::TEXT );
+decl_memory_file(cacert_pem,  http::resource::endings::TEXT);
 #elif HTTP_USE_HTTPS
-auto& cacert_pem_memory_file = http::resource::memory::nofile;
+auto& cacert_pem_memory_file = http::resource::nofile;
 #endif
 
 
@@ -176,6 +171,7 @@ static_assert(!WIFI_AP_DNS_CAPTIVE);
 
 void app_main(void)
 {
+
 
 	debugIf(LOG_HTTPD_HEAP, "app_main ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 

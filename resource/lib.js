@@ -1,12 +1,14 @@
 "use strict";
 
-const SocketInit        = 0;
-const SocketOpen        = 1;
-const SocketAuthorized  = 2;
-const SocketClose       = 3;
-const SocketError       = 4;
-const SocketReconnect   = 5;
-const SocketAuthorize   = 6;
+const SocketInit              =  0;
+const SocketOpen              =  1;
+const SocketAuthorize         =  2;
+const SocketClose             =  3;
+
+const SocketFlagWasOpened     =  1;
+const SocketFlagWasAuthorized =  1 << 1;
+const SocketFlagClosedImmediately     =  1 << 6;
+const SocketFlagError                 =  1 << 7;
 
 const quarterFingerPixels = ((2.75 - 2.25) / 2 + 2.25) / (Math.PI * 2) / 2 * ((window.devicePixelRatio || 1.0) * 96);
 
@@ -264,542 +266,393 @@ const _disabledDescriptor = Symbol("disabled");
 
 const indentity = Math.random().toString(36).replace(/:/g, "x");
 
-function Socket(target) {
+function ConnectionError(details, message = "connection error") {
+    this.wasClean       = details.wasClean;
+    this.code           = details.code;
+    this.reason         = details.reason;
+    Error.call(this, message);
+}
+Object.setPrototypeOf(ConnectionError.prototype, Error.prototype);
 
-    const DeadSocket = {
-        close() {
-            console.log("closing dead socket");
+function TimeoutError(message = "timeout") {
+    Error.call(this, message);
+}
+Object.setPrototypeOf(TimeoutError.prototype, Error.prototype);
+
+function CanceledError(message = "canceled") {
+    Error.call(this, message);
+}
+Object.setPrototypeOf(CanceledError.prototype, Error.prototype);
+
+function wsocket(target) {
+    const open = (url, opt) => {
+
+        const socket = new WebSocket(url);
+
+        socket.binaryType = "arraybuffer";
+
+        const opened = Promise.withResolvers();
+        const closed = Promise.withResolvers();
+
+        socket.onopen = function(event){
+            opened.resolve(event);
+        };
+
+        socket.onclose = function(event) {
+            const reason = new ConnectionError({
+                wasClean:     event.wasClean,
+                code:         event.code,
+                reason:       event.reason,
+            });
+            opened.reject(reason);
+            closed.resolve(reason);
+            socket.onmessage = socket.onerror = null;
+        };
+
+        if (opt && opt.signal) {
+            opt.signal.addEventListener("abort", () => socket.close(0, "AbortError"))
         }
-    };
 
+        return {
+            status: SocketInit,
+            flags:  0x00,
+            opened: opened.promise,
+            closed: closed.promise,
+            socket: socket,
+        };
+
+    }
+
+    let publicCtx = null;
     let privateCtx = {
-        _socket: null,
-        set socket(socket) {
-
-            if (socket === privateCtx._socket) {
-                return;
-            }
-
-            let oldSocket = privateCtx._socket;
-            privateCtx._socket = socket;
-
-            socket.binaryType = "arraybuffer";
-
-            socket.onopen = function(e){
-                //alert("[open] Соединение установлено");
-                // alert("Отправляем данные на сервер");
-                //socket.send("Меня зовут Джон");
-                if (this !== privateCtx._socket) {
-                    console.log("context changed between call :: open");
-                    return;
-                }
-
-                console.info("socket open");
-
-                clearTimeout(privateCtx.reconnectHndl);
-                privateCtx.reconnectHndl = undefined;
-                privateCtx.status = SocketOpen;
-
-                if (privateCtx._internalWait.has("open")) {
-                    privateCtx._internalWait.get("open").resolve(e);
-                    privateCtx._internalWait.delete("open");
-                } else {
-                    console.warn("no handler");
-                }
-
-                privateCtx.lastOpenAt = new Date();
-                privateCtx.wasOpen = true;
-
-                if (isCallable(privateCtx.onconnectnect)) {
-                    privateCtx.onconnectnect.call(publicCtx, e);
-                }
-            };
-
-            socket.onclose = function(event) {
-                if (this !== privateCtx._socket) {
-                    console.log("context changed between call :: close", privateCtx._socket);
-                    return;
-                }
-                privateCtx.lastDisconnectReason = {
-                    wasClean:   event.wasClean,
-                    code:       event.code,
-                    reason:     event.reason,
-                    socketStatus: event.wasClean ? SocketClose : SocketError,
-                }
-                const prevStatus = privateCtx.status;
-                if (event.wasClean) {
-                    //alert(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
-                    privateCtx.status = SocketClose;
-                } else {
-                    // например, сервер убил процесс или сеть недоступна
-                    // обычно в этом случае event.code 1006
-                    //alert('[close] Соединение прервано');
-                    privateCtx.status = SocketError;
-
-                }
-
-                if (privateCtx._internalWait.has("close")) {
-                    privateCtx._internalWait.get("close").resolve(event);
-                    privateCtx._internalWait.delete("close");
-                } else {
-                    //console.warn("no handler");
-                }
-                if (privateCtx._internalWait.has("open")) {
-                    privateCtx._internalWait.get("open").reject("socket closed", event);
-                    privateCtx._internalWait.delete("open");
-                } else {
-                    //may not exist (disconnect)
-                }
-
-                if (prevStatus === SocketAuthorized && isCallable(privateCtx.ondeauthorized)) {
-                    privateCtx.ondeauthorized.call(publicCtx, "socketClosed", event);
-                }
-                if (isCallable(privateCtx.ondisconnect)) {
-                    privateCtx.ondisconnect.call(publicCtx, event);
-                }
-
-                if (!event.wasClean) {
-                    if ( privateCtx.sess !== emptyFn && privateCtx.wasAuthorizedOnce && privateCtx.wasOpen &&
-                        privateCtx.lastOpenAt && new Date() - privateCtx.lastOpenAt <= 1000)
-                    {
-                        privateCtx.sess().then(() => {
-                            clearTimeout(privateCtx.reconnectHndl);
-                            privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
-                            //temporal fix race of socket open/close
-                        });
-                    } else {
-                        clearTimeout(privateCtx.reconnectHndl);
-                        privateCtx.reconnectHndl = setTimeout(() => privateCtx.reconnect(), 0); //move out of stack
-                        console.warn("trigger reconnect")
-                    }
-                } else {
-                    console.warn("socket closed clean");
-                }
-            };
-
-            socket.onmessage = function(evt, ...args) {
-
-                const msg = evt.data
-                console.log(msg, typeof msg, ...args);
-
-                if (this !== privateCtx._socket) {
-                    console.log("context changed between call :: onmessage");
-                    return;
-                }
-
-                if (msg === "authfail") {
-                    console.error("auth fail");
-                    if (privateCtx.status === SocketAuthorized) {
-                        privateCtx.status = SocketOpen;
-                        privateCtx.reauthorize();
-                        setTimeout(privateCtx.ondeauthorized.call(publicCtx), 0);
-                    }
-                }
-
-                let namespace;
-                if (msg instanceof Blob) {
-
-                    if (privateCtx._ns.has("ctr")) {
-                        const nsHandler = privateCtx._ns.get("ctr");
-                        if (nsHandler.async) {
-                            nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
-                        } else {
-                            nsHandler.callbacks.forEach(store => store.callback(0, msg, ...store.args));
-                        }
-                    }
-
-                } else if (msg instanceof ArrayBuffer) {
-
-                    if (privateCtx._ns.has("ctr")) {
-                        const nsHandler = privateCtx._ns.get("ctr");
-                        if (nsHandler.async) {
-                            nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
-                        } else {
-                            nsHandler.callbacks.forEach(store => store.callback(0, msg, ...store.args));
-                        }
-                    }
-
-                } else {
-                    let index = -1;
-                    if ((index = msg.indexOf(":")) !== -1) {
-                        namespace = msg.substring(0, index);
-                        let taskId = undefined;
-                        let data = undefined;
-                        if ((index = msg.indexOf(":", index+1)) !== -1) {
-                            taskId = msg.substring(0, index);
-                            if (privateCtx.hachiko.has(taskId)) {
-                                const ctrl = privateCtx.hachiko.get(taskId);
-                                if (msg.substring(index+1, index+1+2) === "ok") {
-                                    data = msg.substring(index+1+2+1);
-                                    ctrl.resolve(data);
-                                } else {
-                                    index = msg.indexOf(":", index+1);
-                                    data = msg.substring(index === -1 ? msg.length : index+1);
-                                    ctrl.reject(data);
-                                }
-                                privateCtx.hachiko.delete(taskId);
-                            }
-                        } else {
-                            console.warn("probably malformed message", msg);
-                        }
-
-                        if (privateCtx._ns.has(namespace)) {
-                            const nsHandler = privateCtx._ns.get(namespace);
-                            if (data === undefined) {
-                                data = msg.substring(index+1);
-                            }
-                            if (taskId && (index = taskId.indexOf(":")) !== -1) {
-                                taskId = taskId.substring(index+1);
-                            }
-                            if (nsHandler.async) {
-                                nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, taskId, data, ...store.args));
-                            } else {
-                                nsHandler.callbacks.forEach(store => store.callback(taskId, data, ...store.args));
-                            }
-                        }
-                    }
-                }
-
-
-                if (isCallable(privateCtx.onmessage)) {
-                    return privateCtx.onmessage.call(publicCtx, msg, ...args);
-                }
-
-            };
-
-            socket.onerror = function(error) {
-                if (this !== privateCtx._socket) {
-                    //console.log("context changed between call :: error");
-                    return;
-                }
-                const prevStatus = privateCtx.status;
-                privateCtx.status = SocketError;
-                privateCtx.lastError = {
-                    time: new Date(),
-                    subject: error
-                }
-
-                console.error("socket", error);
-
-                if (prevStatus === SocketAuthorized && isCallable(privateCtx.ondeauthorized)) {
-                    privateCtx.ondeauthorized.call(publicCtx, "socketError", error);
-                }
-            };
-
-        },
-        get socket() {
-            return privateCtx._socket;
-        },
-        tasks: {
-            connect: null,
-            disconnect: null,
-            auth: null,
-        },
-        taskId: 0,
-        status: SocketInit,
-        wasOpen: false,
-        wasAuthorizedOnce: false,
-        lastError: {},
-        lastDisconnectReason: {},
-        connectAttempts: 0,
-        lastConnectTime: null,
-        lastOpenAt: null,
-        onconnectnect: null,
-        ondisconnect: null,
-        onauthorized: null,
+        context:                null,
+        wasAuthorizeAt:         undefined,
+        reconnect:              false,
+        taskId:                 0,
+        sessionErrors:          0,
+        lastDisconnectReason:   null,
+        lastError:              null,
+        pendingSend:    new Map(),
+        namespaces:     new Map(),
+        sessRenew:      emptyFn,
+        signal:         null,
+        kaHandler:      undefined,
+        onconnect:      null,
+        ondisconnect:   null,
+        onauthorized:   null,
         ondeauthorized: null,
-        onmessage: null,
-        hachiko: new Map(),
-        _internalWait: new Map(),
-        _ns: new Map(),
-        auth: () => {
-            return indentity;
-        },
-        sess: emptyFn(),
-        connect: ()=> {
-            console.info("trigger connect")
-            if (privateCtx.tasks.connect) {
-                console.warn("connect task ongoing");
-                //todo check why mo than one socket cannot exist with same add?
-                //socket.onclose not call for second
-                return;
+        send: (topic, buffer, binary = false) => {
+            if (!(privateCtx.context.status === SocketOpen || privateCtx.context.status === SocketAuthorize)) {
+                throw new Error("socket was not open");
             }
-            //todo check why more than one socket with same add cannot persist
-            privateCtx.tasks.connect =  privateCtx.connectTask().then(() => {
-                privateCtx.tasks.connect = null;
-            }).catch(() => {
-                privateCtx.tasks.connect = null;
-            });
-        },
-        connectAsync: async ()=> {
-            privateCtx.tasks.connect = privateCtx.connectTask().catch(console.warn);
-            await privateCtx.tasks.connect;
-            privateCtx.tasks.connect = null;
-        },
-        reconnect: () => {
-            privateCtx.wasOpen = false;
-            privateCtx.lastOpenAt = null;
-            clearTimeout(privateCtx.reconnectHndl); //privateCtx.reconnectHndl is shared betwen reconnect impl and reconnect itself
-            let passes = (new Date) - privateCtx.lastConnectTime;
-            let time = 1000 *  Math.min(Math.floor(privateCtx.connectAttempts / 5)+1, 10);
-            if (passes < time) {
-                console.info("delay connect evt by", time - passes);
-                privateCtx.reconnectHndl = setTimeout(() => { privateCtx.connect(); }, time - passes);
+            if (binary) {
+                const prefix = (new TextEncoder()).encode(topic + ":" + privateCtx.taskId.toString() + ":");
+                let msg = new Uint8Array(prefix.byteLength + buffer.byteLength);
+                msg.set(prefix, 0);
+                msg.set(new Uint8Array(msg), prefix.byteLength);
+                privateCtx.context.socket.send(msg);
             } else {
-                //it seems timeout is crucial to proper resolve connect promise //do not remove even if reconnect now itself out of stack
-                privateCtx.reconnectHndl = setTimeout(() => { privateCtx.connect(); }, 250);
+                privateCtx.context.socket.send(topic + ":" + privateCtx.taskId.toString() + ":" + buffer);
             }
+            return privateCtx.taskId++;
         },
-        reauthorize: () => {
-            privateCtx.authorizeTask().then(() => {
-                privateCtx.reauthorizeAttempts = 0;
-                if (isCallable(privateCtx.onauthorized)) {
-                    console.info("onauthorized");
-                    privateCtx.onauthorized.call(publicCtx, privateCtx.auth());
-                } else {
-                    console.info("not auth task");
-                }
-            }).catch(e => {
-                privateCtx.reauthorizeAttempts++;
-                privateCtx.disconnect();
-            })
-        },
-        disconnect: () => {
-            if (privateCtx.status === SocketOpen) {
-                privateCtx.disconnectTask().catch(console.error);
-            } else {
-                privateCtx._socket.close();
-                privateCtx.socket = DeadSocket; //move current socket away of scope
-                privateCtx.status = SocketClose;
-            }
-        },
-        disconnectAsync: async () => {
-            const identity = isCallable(privateCtx.auth) ? privateCtx.auth() : "";
-            if (indentity.trim().length === 0) {
-                throw new Error("invalid identity");
-            }
-            if (privateCtx.status === SocketOpen) {
-                await privateCtx.disconnectTask().catch(console.error);
-            } else {
-                privateCtx.socket.close();
-                privateCtx.socket = DeadSocket; //move current socket away of scope
-                privateCtx.status = SocketClose;
-            }
-        },
-        disconnectTask: (timeoutMs = 250) => {
-            const identity = isCallable(privateCtx.auth) ? privateCtx.auth() : "";
-            if (indentity.trim().length === 0) {
-                throw new Error("invalid identity");
-            }
-            return privateCtx.deauthorizeTask.then((msg) => {
-                return new Promise((resolve, reject) => {
-                    privateCtx._internalWait.set("close", {
-                        resolve,
-                        reject,
-                    });
-                    setTimeout(() => {
-                        privateCtx._internalWait.delete("close");
-                        reject("timeout");
-                    }, timeoutMs);
-                    privateCtx._socket.close();
+        sendConf: (topic, msg, binary = false, timeoutMs = 1000) => {
+            return new Promise((resolve, reject) => {
+                const taskId = privateCtx.taskId;
+                privateCtx.pendingSend.set(topic + ":" + taskId.toString(), {
+                    resolve,
+                    reject,
+                    timeout: setTimeout(() => {
+                        privateCtx.pendingSend.delete(topic + ":" + taskId.toString());
+                        reject(new TimeoutError());
+                    }, timeoutMs),
                 });
-            }).then(() => {
-                privateCtx.socket = DeadSocket;
-                privateCtx.status = SocketClose;
-                return true;
-            }).catch((reason) => {
-                privateCtx.socket = DeadSocket; //move current socket away of scope
-                privateCtx.status = SocketClose;
-                throw new Error(reason);
+                return privateCtx.send(topic, msg);
             });
+        },
+        openTask: () => {
+            if (privateCtx.context !== null) {
+                privateCtx.context.socket.onmessage = privateCtx.context.socket.onerror = null;
+                if (privateCtx.context.status !== SocketClose) {
+                    console.error("socket, openTask context already exist")
+                }
+            }
+            privateCtx.context = open((location.protocol === "https:" ? "wss://" : "ws://") + location.hostname + target);
+            privateCtx.wasClosedImmediately  = false;
+            privateCtx.context.opened = privateCtx.context.opened.then(privateCtx.socketOpenHandler);
+            privateCtx.context.closed = privateCtx.context.closed.then(privateCtx.socketCloseHandler);
+            privateCtx.context.socket.onmessage = privateCtx.messageHandler;
+            privateCtx.context.socket.onerror   = privateCtx.errorHandler;
+            return privateCtx.context.opened;
+        },
+        closeTask: () => {
+            if (privateCtx.context === null) {
+                console.error("attempt to close closed/not opened connection");
+                return Promise.resolve({wasClean: true, code: 0, reason: ""});
+            }
+            if (privateCtx.context.status === SocketClose) {
+                console.error("attempt to close already closed connection");
+                return privateCtx.context.closed;
+            }
+            privateCtx.context.socket.close();
+            return privateCtx.context.closed;
         },
         authorizeTask: (timeoutMs = 1000) => {
-            const identity = isCallable(privateCtx.auth) ? privateCtx.auth() : "";
-            if (indentity.trim().length === 0) {
-                throw new Error("invalid identity");
-            }
-            return privateCtx.sendConf("auth", identity, timeoutMs).then(()=>{
-                console.info("successful auth");
-                if (privateCtx.status === SocketOpen) {
-                    privateCtx.status = SocketAuthorized;
-                    privateCtx.wasAuthorizedOnce = true;
-                } else {
-                    console.warn("SocketAuthorized of socket that no open!");
+            return privateCtx.sendConf("auth", privateCtx.auth(), false, timeoutMs).then(()=> {
+                privateCtx.context.status = SocketAuthorize;
+                privateCtx.context.flags |= SocketFlagWasAuthorized;
+                privateCtx.wasAuthorizeAt = new Date();
+                privateCtx.sessionErrors  = 0;
+                if (isCallable(privateCtx.onauthorized)) {
+                    try { privateCtx.onauthorized.call(publicCtx, privateCtx.auth()); } catch (e) {}
                 }
-                return true;
-            }).catch((e) => {
-                if (privateCtx.status === SocketAuthorized) {
-                    privateCtx.status = SocketOpen;
-                }
-                throw new Error(e);
-            });
+            })
         },
         deauthorizeTask: (timeoutMs = 1000) => {
-            const identity = isCallable(privateCtx.auth) ? privateCtx.auth() : "";
-            if (indentity.trim().length === 0) {
-                throw new Error("invalid identity");
-            }
-            return privateCtx.sendConf("leave", identity, timeoutMs).then(()=>{
-                console.info("successful deauth");
-                if (privateCtx.status === SocketAuthorized) {
-                    privateCtx.status = SocketOpen;
-                } else {
-                    console.warn("deauthorize socket that not authorized!");
+            return privateCtx.sendConf("leave", privateCtx.auth(), false, timeoutMs).then(()=> {
+                privateCtx.context.status = SocketOpen;
+                if (isCallable(privateCtx.ondeauthorized)) {
+                    try { privateCtx.ondeauthorized.call(publicCtx, "socketError"); } catch (e) {}
                 }
-                return true;
-            }).catch((e) => {
-                throw new Error(e);
+                return privateCtx.context.status;
             });
         },
         connectTask: () => {
-            const identity = isCallable(privateCtx.auth) ? privateCtx.auth() : "";
-            if (indentity.trim().length === 0) {
-                throw new Error("invalid identity");
-            }
-            let immediateClose = new Promise((resolve, reject) => {
-                privateCtx._internalWait.set("close", {
-                    resolve: () => reject("socket closed"),
-                });
-                setTimeout(resolve, 250);
-            });
-            return new Promise((resolve, reject) => {
-                privateCtx.socket = DeadSocket;
-                privateCtx._internalWait.set("open", {
-                    resolve,
-                    reject,
-                });
-                privateCtx.connectAttempts++;
-                privateCtx.lastConnectTime = new Date();
-                console.log("connection attempt: ", privateCtx.connectAttempts);
-                privateCtx.socket = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.hostname + target);
-            }).then((status) => {
-                return immediateClose; //fixme todo19
-            }).then((status) => {
-                //when server close session it first open and emediatly close
-                //this not work as reject not work after resolve
+            return privateCtx.openTask().then(() => {
                 return privateCtx.authorizeTask();
-            }).then((status) => {
-                if (isCallable(privateCtx.onauthorized)) {
-                    console.info("onauthorized");
-                    privateCtx.onauthorized.call(publicCtx, privateCtx.auth());
-                } else {
-                    console.info("not auth task");
-                }
-                return status;
-            }).catch((e) => {
-                console.debug("catch on connect")
-                if (privateCtx.status === SocketAuthorized) {
-                    console.info("fail2connect execute disconnect");
-                    return privateCtx.disconnectTask().then(status => {
-                        throw new Error(e);
-                    });
-                } else {
-                    privateCtx.socket = DeadSocket; //safeguard of socket retry
-                    throw new Error(e);
-                }
-            });
+            }).catch(privateCtx.connectionErrorHandler);
         },
-        send: (topic, msg) => {
-            if (!(privateCtx.status === SocketOpen || privateCtx.status === SocketAuthorized)) {
-                throw new Error("socket was not open");
-            }
-            privateCtx.socket.send(topic + ":" + privateCtx.taskId.toString() + ":" + msg);
-            return privateCtx.taskId++;
-        },
-        sendBinary: (topic, buffer) => { //todo remove me
-            if (!(privateCtx.status === SocketOpen || privateCtx.status === SocketAuthorized)) {
-                throw new Error("socket was not open");
-            }
-            const prefix = (new TextEncoder()).encode(topic + ":" + privateCtx.taskId.toString() + ":");
-            let msg = new Uint8Array(prefix.byteLength + buffer.byteLength);
-            msg.set(prefix, 0);
-            msg.set(new Uint8Array(buffer), prefix.byteLength);
-            privateCtx.socket.send(msg);
-            return privateCtx.taskId++;
-        },
-        sendConf: (topic, msg, timeoutMs = 1000) => {
-            return new Promise((resolve, reject) => {
-                const taskId = privateCtx.taskId;
-                privateCtx.hachiko.set(topic + ":" + taskId.toString(), {
-                    resolve,
-                    reject
+        reconnectTask: (middleWare = Promise.resolve()) => {
+            privateCtx.disconnectTask().then(() => {
+                return middleWare.then(() => {
+                    const flags = privateCtx.context.flags;
+                    if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.sessRenew !== emptyFn) {
+                        return privateCtx.sessRenew().then(() => privateCtx.connectTask());
+                    } else {
+                        return privateCtx.connectTask();
+                    }
                 });
-                if (privateCtx.send(topic, msg) !== taskId) {
-                    privateCtx.hachiko.delete(topic + ":" + taskId.toString());
-                    reject("malformed impl of send");
-                }
-                setTimeout(() => {
-                    privateCtx.hachiko.delete(topic + ":" + taskId.toString());
-                    reject("timeout");
-                }, timeoutMs);
             });
         },
-    };
+        monitorHelper: (reason) => {
+            if (!privateCtx.reconnect) {
+                return;
+            }
+            if (reason instanceof ConnectionError && reason.wasClean) {
+                return;
+            }
+            if (privateCtx.sessionErrors >= 1) {
+                console.info("session closed");
+                return;
+            }
+            const flags = privateCtx.context.flags;
+            if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.sessRenew !== emptyFn) {
+                privateCtx.sessionErrors++;
+                privateCtx.sessRenew().then(() => {
+                    privateCtx.connectTask();
+                    privateCtx.context.closed.then(privateCtx.monitorHelper);
+                });
+            } else {
+                privateCtx.connectTask();
+                privateCtx.context.closed.then(privateCtx.monitorHelper);
+            }
+        },
+        monitor: () => {
+            privateCtx.reconnect = true;
+            if (!privateCtx.context) { privateCtx.connectTask(); }
+            privateCtx.context.closed.then(privateCtx.monitorHelper);
+        },
+        disconnectTask: () => {
+            return privateCtx.connectionErrorHandler(null).catch(() => {
+                if (privateCtx.context.status !== SocketClose) {
+                    console.error("disconnectTask: incorrect socket state", privateCtx.context.status);
+                    privateCtx.context.flags |= SocketFlagError;
+                    privateCtx.context.status = SocketClose;
+                }
+                return Promise.resolve(privateCtx.context.status);
+            })
+        },
+        connectionErrorHandler: (reason) => {
+            if (privateCtx.context.status === SocketAuthorize) {
+                return privateCtx.deauthorizeTask().then(() => {
+                    return Promise.reject(reason);
+                }).catch(privateCtx.connectionErrorHandler);
+            } else if (privateCtx.context.status === SocketOpen) {
+                return privateCtx.closeTask().then(() => {
+                    return Promise.reject(reason);
+                })
+            } else {
+                return Promise.reject(reason);
+            }
+        },
+        socketOpenHandler: (data) => {
+            privateCtx.context.status = SocketOpen;
+            privateCtx.context.flags |= SocketFlagWasOpened;
+            if (isCallable(privateCtx.onconnect)) {
+                try { privateCtx.onconnect.call(publicCtx, data); } catch (e) {}
+            }
+            return data;
+        },
+        socketCloseHandler: (reason) => {
+            const status = privateCtx.context.status;
+            privateCtx.context.status = SocketClose;
+            if (!(reason instanceof Error)) {
+                reason = new ConnectionError(reason);
+            }
+            privateCtx.lastDisconnectReason = reason;
+            privateCtx.pendingSend.forEach((task, key, map) => {
+                clearTimeout(task.timeout);
+                task.reject(reason);
+            });
+            privateCtx.pendingSend.clear();
+            if (!reason.wasClean) {
+                privateCtx.context.flags |= SocketFlagError;
+                if (privateCtx.wasAuthorizeAt) {
+                    if (((privateCtx.context.flags&SocketFlagWasOpened)        === SocketFlagWasOpened) &&
+                        ((privateCtx.context.flags&SocketFlagWasAuthorized)    === 0x00)
+                    ) {
+                        privateCtx.context.flags |= SocketFlagClosedImmediately;
+                    }
+                }
+            }
+            if (isCallable(privateCtx.ondisconnect)) {
+                try { privateCtx.ondisconnect.call(publicCtx, reason); } catch (e) {}
+            }
+            return reason;
+        },
+        messageHandler: (evt, ...args) => {
 
-    let publicCtx = plainObjectFrom({
+            const msg = evt.data
+            console.log(msg, typeof msg, ...args);
+
+            if (msg === "authfail") {
+                console.error("auth fail");
+                privateCtx.authFailureHandler(evt);
+            }
+            if (msg === "sessionclose") {
+                console.error("session closed");
+                privateCtx.sessionErrors = 2;
+            }
+
+            let namespace;
+            if (msg instanceof Blob) {
+
+                if (privateCtx.namespaces.has("ctr")) {
+                    const nsHandler = privateCtx.namespaces.get("ctr");
+                    nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
+                }
+
+            } else if (msg instanceof ArrayBuffer) {
+
+                if (privateCtx.namespaces.has("ctr")) {
+                    const nsHandler = privateCtx.namespaces.get("ctr");
+                    nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
+                }
+
+            } else {
+                let index = -1;
+                if ((index = msg.indexOf(":")) !== -1) {
+                    namespace = msg.substring(0, index);
+                    let taskId = undefined;
+                    let data = undefined;
+                    if ((index = msg.indexOf(":", index+1)) !== -1) {
+                        taskId = msg.substring(0, index);
+                        if (privateCtx.pendingSend.has(taskId)) {
+                            const ctrl = privateCtx.pendingSend.get(taskId);
+                            clearTimeout(ctrl.timeout);
+                            if (msg.substring(index+1, index+1+2) === "ok") {
+                                data = msg.substring(index+1+2+1);
+                                ctrl.resolve(data);
+                            } else {
+                                index = msg.indexOf(":", index+1);
+                                data = msg.substring(index === -1 ? msg.length : index+1);
+                                ctrl.reject(data);
+                            }
+                            privateCtx.pendingSend.delete(taskId);
+                        }
+                    } else {
+                        console.warn("probably malformed message", msg);
+                    }
+
+                    if (privateCtx.namespaces.has(namespace)) {
+                        const nsHandler = privateCtx.namespaces.get(namespace);
+                        if (data === undefined) {
+                            data = msg.substring(index+1);
+                        }
+                        if (taskId && (index = taskId.indexOf(":")) !== -1) {
+                            taskId = taskId.substring(index+1);
+                        }
+                        nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, taskId, data, ...store.args));
+                    }
+                }
+            }
+        },
+        errorHandler: (error) => {
+            console.error(error);
+            privateCtx.lastError = error;
+        },
+        authFailureHandler: (evt) => {
+            if (privateCtx.context.status === SocketAuthorize) {
+                privateCtx.context.status = SocketOpen;
+                privateCtx.authorizeTask();
+            }
+        },
+        signalHandler: () => {
+            let reason = new Error("aborted");
+            reason.name = "AbortError";
+            privateCtx.reconnect = false;
+            privateCtx.connectionErrorHandler(reason);
+            //alert("aborted");
+        }
+    }
+
+    return {
         send(topic, msg) {
-            if (privateCtx.status !== SocketAuthorized) {
+            if (privateCtx.context.status !== SocketAuthorize) {
                 throw new Error("socket was not authorize");
             }
-            return privateCtx.send(topic, msg);
+            return privateCtx.send(topic, msg, false);
         },
         sendBinary(topic, msg) {
-            if (privateCtx.status !== SocketAuthorized) {
+            if (privateCtx.context.status !== SocketAuthorize) {
                 throw new Error("socket was not authorize");
             }
-            return privateCtx.sendBinary(topic, msg);
+            return privateCtx.sendBinary(topic, msg, true);
         },
         sendConf(topic, msg, timeoutMs = 1000) {
-            if (privateCtx.status !== SocketAuthorized) {
+            if (privateCtx.context.status !== SocketAuthorize) {
                 throw new Error("socket was not authorize");
             }
-            return privateCtx.sendConf(topic, msg, timeoutMs);
+            return privateCtx.sendConf(topic, msg, false, timeoutMs);
         },
-        open() {
-            return privateCtx.connect();
+        begin: () => {
+            const task = privateCtx.connectTask();
+            privateCtx.monitor();
+            return task;
         },
-        async openAsync() {
-            return privateCtx.connectAsync();
+        end: () => {
+            privateCtx.reconnect = false;
+            return privateCtx.disconnectTask();
         },
-        close() {
-            console.log("begin disconnect seq");
-            clearTimeout(privateCtx.reconnectHndl);
-            return privateCtx.disconnect();
-        },
-        async closeAsync() {
-            clearTimeout(privateCtx.reconnectHndl);
-            return privateCtx.disconnectAsync();
-        },
-        renew() {
-            return privateCtx.disconnectTask().then(() => {
-               return privateCtx.connectTask();
-            });
-        },
-/*        async renewAsync() {
-            await publicCtx.close();
-            return publicCtx.open();
-        },*/
-        set onmessage(callback) {
-            privateCtx.onmessage = callback;
+        reconnect: () => {
+            return privateCtx.reconnectTask.apply(privateCtx, arguments);
         },
         identity(callback) {
             privateCtx.auth = callback;
         },
         session(callback) {
-            privateCtx.sess = callback;
+            privateCtx.sessRenew = callback;
         },
         ns(namespace, callback = function (){}, async = true, ...args) {
             let ctrl;
-            if (!privateCtx._ns.has(namespace)) {
-                privateCtx._ns.set(namespace, ctrl = {
-                    async: true,
+            if (!privateCtx.namespaces.has(namespace)) {
+                privateCtx.namespaces.set(namespace, ctrl = {
                     callbacks: [],
                 });
             } else {
-                ctrl = privateCtx._ns.get(namespace);
+                ctrl = privateCtx.namespaces.get(namespace);
             }
             if (arguments.length >= 2) {
-                ctrl.async &= async;
                 ctrl.callbacks.push({
                     callback,
                     args,
@@ -807,7 +660,6 @@ function Socket(target) {
             } else {
                 return {
                     add: (callback, async = true, ...args) => {
-                        ctrl.async &= async;
                         ctrl.callbacks.push({
                             callback,
                             args,
@@ -825,22 +677,44 @@ function Socket(target) {
                 }
             }
         },
-        available()  { return privateCtx.status === SocketAuthorized; },
-        status(){ return privateCtx.status  },
+        available()  { return privateCtx.context.status === SocketAuthorize; },
+        status(){ return privateCtx.context.status; },
         get disconnectReason() { return privateCtx.lastDisconnectReason; },
-        get reconnectReason() { return privateCtx.lastDisconnectReason; },
         get error() { return privateCtx.lastError },
-        set onconnect(callback) { privateCtx.onconnectnect = callback },
-        get onconnect() { return privateCtx.onconnectnect },
+        set onconnect(callback) { privateCtx.onconnect = callback },
+        get onconnect() { return privateCtx.onconnect },
         set onauthorize(callback) { privateCtx.onauthorized  = callback},
         get onauthorize() { return privateCtx.onauthorized },
         set ondeauthorize(callback) { privateCtx.ondeauthorized  = callback},
         get ondeauthorize() { return privateCtx.ondeauthorized },
         set ondisconnect(callback) { privateCtx.ondisconnect = callback },
         get ondisconnect() { return privateCtx.ondisconnect },
-    });
-
-    return publicCtx;
+        set signal(signal) {
+            if (privateCtx.signal) {
+                privateCtx.signal.removeEventListener("abort", privateCtx.signalHandler);
+                privateCtx.signal = null;
+            }
+            if (signal) {
+                privateCtx.signal = signal;
+                privateCtx.signal.addEventListener("abort", privateCtx.signalHandler);
+            }
+        },
+        get signal() { return privateCtx.signal },
+        set keepAlive(ms) {
+            console.info("setting keepAlive", ms);
+            if (privateCtx.kaHandler) {
+                clearInterval(privateCtx.kaHandler);
+                privateCtx.kaHandler = undefined;
+            }
+            if (ms) {
+                privateCtx.kaHandler = setInterval(() => {
+                    if (privateCtx.context.status === SocketAuthorize) {
+                        privateCtx.send("ping", "", false);
+                    }
+                }, ms);
+            }
+        }
+    }
 }
 
 function Registry() {

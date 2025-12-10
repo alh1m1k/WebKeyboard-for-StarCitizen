@@ -1,14 +1,15 @@
 #pragma once
 
-#include "file.h"
 #include "result.h"
-#include "cacheControl.h"
+#include "request.h"
+#include "response.h"
+#include "server.h"
 
 namespace http::resource::cache {
 
 	class dummy {
 		public:
-			result<codes> operator()(const memory::file& file, request& req, response& resp, server& serv) const noexcept {
+			result<codes> operator()(request& req, response& resp, server& serv) noexcept {
 				return ESP_OK;
 			}
 	};

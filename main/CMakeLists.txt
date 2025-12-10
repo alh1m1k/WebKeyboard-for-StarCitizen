@@ -6,7 +6,7 @@ idf_component_register(
 
     					resultStream.cpp http/uri.cpp http/network.cpp http/headers.cpp http/cookie.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
 						http/socket/socket.cpp http/socket/asyncSocket.cpp
-    					http/resource/memory/file.cpp http/action.cpp http/server.cpp http/secure.cpp
+    					http/resource/file.cpp http/action.cpp http/server.cpp http/secure.cpp
 
 						crypto/hash/sha256Engine.cpp
     					hid/usbDevice.cpp
@@ -22,7 +22,7 @@ idf_component_register(
     					# list the source files of this component
     INCLUDE_DIRS        
     					. ./exception
-    					./http ./http/exception ./http/resource ./http/session ./http/resource/memory ./http/resource/cache
+    					./http ./http/exception ./http/resource ./http/session ./http/resource ./http/resource/cache
     					./http/socket
 						./syncing
 						./crypto

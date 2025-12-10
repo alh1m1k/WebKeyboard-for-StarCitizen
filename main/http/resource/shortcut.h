@@ -8,19 +8,16 @@
 #define STRINGIZE_NX(A) #A
 #define STRINGIZE(A) STRINGIZE_NX(A)
 
-#define ___extern_res_start(file) extern const uint8_t PPCAT(file, _start)[] asm(STRINGIZE(PPCAT(PPCAT(_binary_, file), _start)))
-#define ___extern_res_end(file)   extern const uint8_t PPCAT(file, _end)[] asm(STRINGIZE(PPCAT(PPCAT(_binary_, file), _end)))
+#define ___extern_res_start(file) extern const uint8_t PPCAT(file, _start)[] 	asm(STRINGIZE(PPCAT(PPCAT(_binary_, file), _start)))
+#define ___extern_res_end(file)   extern const uint8_t PPCAT(file, _end)[] 		asm(STRINGIZE(PPCAT(PPCAT(_binary_, file), _end)))
 
 #define __decl_memory_resource(file) \
 ___extern_res_start(file); \
 ___extern_res_end(file)
 
-#define __checksum(name)  { \
-	name \
-}
 
 #define __decl_res1(name, varname, endingsValue, humanName, contentTypeValue, cacheControl) \
-http::resource::memory::file PPCAT(varname, _memory_file) = { \
+http::resource::file PPCAT(varname, _memory_file) = { \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
@@ -31,16 +28,17 @@ http::resource::memory::file PPCAT(varname, _memory_file) = { \
 };
 
 #define __decl_res2(name, varname, endingsValue) \
-http::resource::memory::file PPCAT(varname, _memory_file) = { \
+http::resource::file PPCAT(varname, _memory_file) = { \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
-	nullptr, \
-	nullptr  \
+	nullptr,  \
+	nullptr,  \
+	nullptr   \
 };
 
 #define __return_res1(name, endingsValue, humanName, contentTypeValue, cacheControl) \
-http::resource::memory::file( \
+http::resource::file( \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
@@ -51,12 +49,13 @@ http::resource::memory::file( \
 );
 
 #define __return_res2(name, endingsValue) \
-http::resource::memory::file( \
+http::resource::file( \
 	(int)PPCAT(name, _start), \
 	(int)PPCAT(name, _end),\
 	endingsValue, \
-	nullptr, \
-	nullptr \
+	nullptr,    \
+	nullptr,    \
+    nullptr		\
 );
 
 #define decl_memory_file(fileV, endingV) \
@@ -71,7 +70,7 @@ __decl_res2(fileV, fileV, endingV)
 
 #define decl_web_resource(fileV, endingV, nameV, contentTypeV, cacheControl) \
 __decl_memory_resource(PPCAT(fileV, _gz));                                	\
-__decl_res1(PPCAT(fileV, _gz), fileV, http::resource::memory::endings::BINARY, nameV, contentTypeV, cacheControl)
+__decl_res1(PPCAT(fileV, _gz), fileV, http::resource::endings::BINARY, nameV, contentTypeV, cacheControl)
 
 #else
 
@@ -81,4 +80,4 @@ __decl_res1(fileV, fileV, endingV, nameV, contentTypeV)
 
 #endif
 
-#define take_memory_file(fileV, endingV, nameV, contentTypeV) ({ http::resource::memory::file retval; __decl_memory_resource(fileV); retval = __return_res(fileV, endingV, nameV, contentTypeV); retval; })
+#define take_memory_file(fileV, endingV, nameV, contentTypeV) ({ http::resource::file retval; __decl_memory_resource(fileV); retval = __return_res(fileV, endingV, nameV, contentTypeV); retval; })
