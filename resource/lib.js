@@ -349,7 +349,7 @@ function wsocket(target) {
                 const prefix = (new TextEncoder()).encode(topic + ":" + privateCtx.taskId.toString() + ":");
                 let msg = new Uint8Array(prefix.byteLength + buffer.byteLength);
                 msg.set(prefix, 0);
-                msg.set(new Uint8Array(msg), prefix.byteLength);
+                msg.set(new Uint8Array(buffer), prefix.byteLength);
                 privateCtx.context.socket.send(msg);
             } else {
                 privateCtx.context.socket.send(topic + ":" + privateCtx.taskId.toString() + ":" + buffer);
@@ -492,6 +492,7 @@ function wsocket(target) {
                     return Promise.reject(reason);
                 })
             } else {
+                privateCtx.context.status = SocketClose;
                 return Promise.reject(reason);
             }
         },
@@ -627,7 +628,7 @@ function wsocket(target) {
             if (privateCtx.context.status !== SocketAuthorize) {
                 throw new Error("socket was not authorize");
             }
-            return privateCtx.sendBinary(topic, msg, true);
+            return privateCtx.send(topic, msg, true);
         },
         sendConf(topic, msg, timeoutMs = 1000) {
             if (privateCtx.context.status !== SocketAuthorize) {

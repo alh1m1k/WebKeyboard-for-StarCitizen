@@ -69,6 +69,9 @@ class wsproto {
         sing_type&                  persistenceSign;
         sing_type&                  bootingSign;
 
+		mutable std::atomic<uint32_t>       joystickCounter 	= 0;
+		mutable int64_t 					joystickFlushAt 	= 0;
+
 
 
         wsproto(
@@ -94,7 +97,7 @@ class wsproto {
                 tailScheduler(tailScheduler),
                 entropySource(entropySource),
                 persistenceSign(persistenceSign),
-                bootingSign(bootingSign)
+                bootingSign(bootingSign),
         {
             sessions.notification = [proto= this](int type, sessionManager::session_ptr_type& context, void* data) -> void  {
                 proto->handleEvents(type, context, data);
@@ -175,8 +178,6 @@ class wsproto {
 				}
 			}
 
-            info("client:", "id: ", pSession->index(), " name: ", clientName.empty() ? "new(undefined)" : clientName.c_str());
-
             if (rawMessage.starts_with("auth:")) {
 
                 auto pack = unpackMsg(rawMessage);
@@ -192,7 +193,7 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                info("client is connecting", clientName, " ", pack.taskId);
+                info("client is connecting", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
 
                 if (auto w = pSession->write(); w) {
                     w->clientName = clientName;
@@ -230,7 +231,7 @@ class wsproto {
             }
 
             if (!IS(flags, (uint32_t)sessionFlags::AUTHODIZED)) {
-                info("authfail");
+				info("force client to authorize", "id: ", clientId, " name: ", clientName, " pid: n/a");
                 socket.write("authfail");
                 return ESP_OK;
             }
@@ -241,7 +242,7 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                info("client is leaving", pack.taskId, " ", clientName);
+				info("client is leaving", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
 
                 socket.write(resultMsg("leave", pack.taskId, true));
                 if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
@@ -285,8 +286,20 @@ class wsproto {
                     error("unable send notifications (ctr)", ret.code());
                 }
 
+				++joystickCounter;
+				if (auto time = esp_timer_get_time(); (time - joystickFlushAt >= 1000000) && joystickCounter > 1) {
+					//that probably not thread safe add spinlock
+					infoIf( "client activity", "from: ", joystickFlushAt,  "to `now` processed: ", joystickCounter, " joystick event(s)");
+					joystickCounter = 0;
+					joystickFlushAt = time;
+				}
+
                 return ESP_OK; //no respond
-            } else if (rawMessage.starts_with("kb:")) {
+            }
+
+			info("client activity", "id: ", pSession->index(), " name: ", clientName.c_str());
+
+			if (rawMessage.starts_with("kb:")) {
                 auto pack = unpackMsg(rawMessage);
                 if (!pack.success) {
                     return ESP_FAIL;
