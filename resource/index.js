@@ -995,15 +995,15 @@ const invertAspectRatio = 2/3.1; //@see CSS
         let settingsStore = storage.rubric("settings");
         if (settingsStore.get("clientId", false) === false) {
             if (window.crypto.subtle) {
-                window.crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(window.navigator.userAgent)).then(sha => {
+                return window.crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(window.navigator.userAgent)).then(sha => {
                     const hashArray = Array.from(new Uint8Array(sha)); // convert buffer to byte array
-                    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join(""); // convert bytes to hex string
+                    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").substring(0, 10); // convert bytes to hex string
                 })
             } else {
-                return simpleHash(window.navigator.userAgent);
+                return Promise.resolve(simpleHash(window.navigator.userAgent));
             }
         } else {
-            return settingsStore.get("clientId", false);
+            return Promise.resolve(settingsStore.get("clientId", false));
         }
     }
 
@@ -1859,8 +1859,8 @@ const invertAspectRatio = 2/3.1; //@see CSS
     let socket = wsocket("/socks");
     window.socket = socket;
 
-    const identityV = identity();
-    socket.identity(() => identityV);
+    //(identV) => () => identV)(identity())) callback that every call return first return of identity()
+    socket.identity(((identV) => () => identV)(identity()));
     socket.session( () => fetch("/renew", { method: 'POST' }) );
     socket.keepAlive = 5000;
     socket.begin();
@@ -2606,8 +2606,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                                 }
                                 if (clientIdUpdated) {
                                     return socket.reconnect(() => {
-                                        const identityV = identity();
-                                        socket.identity(() => identityV);
+                                        socket.identity(((identV) => () => identV)(identity()));
                                         return Promise.resolve();
                                     });
                                 } else {

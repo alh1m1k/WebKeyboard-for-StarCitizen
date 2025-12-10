@@ -398,23 +398,33 @@ function wsocket(target) {
             return privateCtx.context.closed;
         },
         authorizeTask: (timeoutMs = 1000) => {
-            return privateCtx.sendConf("auth", privateCtx.auth(), false, timeoutMs).then(()=> {
-                privateCtx.context.status = SocketAuthorize;
-                privateCtx.context.flags |= SocketFlagWasAuthorized;
-                privateCtx.wasAuthorizeAt = new Date();
-                privateCtx.sessionErrors  = 0;
-                if (isCallable(privateCtx.onauthorized)) {
-                    try { privateCtx.onauthorized.call(publicCtx, privateCtx.auth()); } catch (e) {}
-                }
-            })
+            return privateCtx.auth().then((authData) => {
+                return privateCtx.sendConf("auth", authData, false, timeoutMs).then(()=> {
+                    privateCtx.context.status = SocketAuthorize;
+                    privateCtx.context.flags |= SocketFlagWasAuthorized;
+                    privateCtx.wasAuthorizeAt = new Date();
+                    privateCtx.sessionErrors  = 0;
+                    if (isCallable(privateCtx.onauthorized)) {
+                        try { privateCtx.onauthorized.call(publicCtx, authData); } catch (e) {}
+                    }
+                });
+            }, (e) => {
+                console.error(e);
+                return Promise.reject(new Error("malformed identity impl"));
+            });
         },
         deauthorizeTask: (timeoutMs = 1000) => {
-            return privateCtx.sendConf("leave", privateCtx.auth(), false, timeoutMs).then(()=> {
-                privateCtx.context.status = SocketOpen;
-                if (isCallable(privateCtx.ondeauthorized)) {
-                    try { privateCtx.ondeauthorized.call(publicCtx, "socketError"); } catch (e) {}
-                }
-                return privateCtx.context.status;
+            return privateCtx.auth().then((authData) => {
+                return privateCtx.sendConf("leave", authData, false, timeoutMs).then(()=> {
+                    privateCtx.context.status = SocketOpen;
+                    if (isCallable(privateCtx.ondeauthorized)) {
+                        try { privateCtx.ondeauthorized.call(publicCtx, "socketError"); } catch (e) {}
+                    }
+                    return privateCtx.context.status;
+                });
+            }, (e) => {
+                console.error(e);
+                return Promise.reject(new Error("malformed identity impl"));
             });
         },
         connectTask: () => {
