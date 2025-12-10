@@ -84,7 +84,7 @@ namespace http::resource {
 
 	response& operator<<(response& stream, const file& f) {
 
-		info("dumping memory file: ", f.name, " ", (void*)f.addressStart, " ", (void*)f.addressEnd, " sizeof ", f.addressEnd - f.addressStart);
+		info("dumping memory file: ", f.name, " sizeof ", f.addressEnd - f.addressStart);
 		
 		if (f.ending == (int)endings::TEXT) {
 			stream.write((const char*)f.addressStart);

@@ -46,7 +46,6 @@ namespace http {
         }
 
         if (result == ESP_OK) {
-            debug("cookies::get", key +"="+ buffer, " ",  (key +"="+ buffer).size(), " ", cookie(key +"="+ buffer).value);
             return cookie(key +"="+ buffer); //todo change it
         } else {
             debugIf(LOG_COOKIES, "cookies::get fail", key.c_str());

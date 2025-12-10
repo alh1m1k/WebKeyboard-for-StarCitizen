@@ -143,6 +143,10 @@
 #define LOG_HTTPD_HEAP	false
 #endif
 
+#ifndef LOG_SERVER_SOCK_RECYCLE
+#define LOG_SERVER_SOCK_RECYCLE	false
+#endif
+
 #ifndef SESSION_TIMEOUT
 #define SESSION_TIMEOUT 60*20
 #endif

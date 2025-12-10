@@ -433,7 +433,7 @@ std::string connectedNotify(uint32_t packetId, std::string& clientId, int reason
 		buffer.resize(templateDisconnectedSize + clientId.size() + maxPacketIdSize);
 		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_DISCONNECTED, packetId, clientId.c_str());
 	} else {
-		throw new std::invalid_argument("reason invalid");
+		throw std::invalid_argument("reason invalid");
 	}
 
 	if (wr == buffer.capacity()) {
@@ -442,8 +442,6 @@ std::string connectedNotify(uint32_t packetId, std::string& clientId, int reason
 	
 	buffer.resize(wr);
 
-    debug("connectedNotify", buffer.c_str());
-	
 	return buffer;
 }
 

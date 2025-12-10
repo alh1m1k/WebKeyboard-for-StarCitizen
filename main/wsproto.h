@@ -175,7 +175,7 @@ class wsproto {
 				}
 			}
 
-            info("session credits", pSession->sid().c_str(), " i: ", pSession->index(), " n: ", clientName.c_str(), " stack: ", uxTaskGetStackHighWaterMark(nullptr));
+            info("client:", "id: ", pSession->index(), " name: ", clientName.empty() ? "new(undefined)" : clientName.c_str());
 
             if (rawMessage.starts_with("auth:")) {
 

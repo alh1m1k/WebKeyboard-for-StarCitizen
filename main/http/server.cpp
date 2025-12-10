@@ -94,7 +94,7 @@ namespace http {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
     static void freeSessionPtr(void* ptr) {
-        debug("freeSessionPtr", ptr);
+        debugIf(LOG_SESSION, "freeSessionPtr", ptr);
         if (ptr != nullptr) {
             delete static_cast<session::pointer*>(ptr);
         }
@@ -253,23 +253,37 @@ namespace http {
 		return ESP_OK;
 	}
 
+	static void logRequest(http::request& req, const char* prefix) {
+		std::cout << "[info] " << prefix << " -> " << req.native()->uri
+				  << " [" << req.native()->method 	 << "]"
+				  << "[" << esp_timer_get_time() << "] from: ";
+		if (req.getRemote().version() == 6) {
+			std::cout << req.getRemote().ipv6();
+		} else if (req.getRemote().version() == 4) {
+			std::cout << req.getRemote().ipv4();
+		}
+		std::cout << std::endl;
+	}
+
 	class routeLogger {
 		httpd_req_t *esp_req;
 		public:
 			inline routeLogger(httpd_req_t *esp_req) : esp_req(esp_req) {
+				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
 				debugIf(LOG_HTTPD_TASK_STACK, "stack enter: ", uxTaskGetStackHighWaterMark(nullptr));
 				debugIf(LOG_HTTPD_HEAP, "heap enter: ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
-				debugIf(LOG_HTTP, "---> static routing begin", esp_req->uri, " t ", esp_timer_get_time());
-				if (esp_req->method == 0) {
-					info("handle request (websocket)");
-				} else {
-					info("handle request", esp_req->uri, " m: ", esp_req->method);
+				if constexpr (LOG_HTTP) {
+					if (esp_req->method == 0) {
+						info("handle request (websocket)");
+					} else {
+						info("handle request", esp_req->uri, " m: ", esp_req->method);
+					}
 				}
 			}
 			inline ~routeLogger()  {
-				debugIf(LOG_HTTP, "---> static routing end", esp_req->uri, " t ", esp_timer_get_time());
 				debugIf(LOG_HTTPD_TASK_STACK, "stack leave: ", uxTaskGetStackHighWaterMark(nullptr));
 				debugIf(LOG_HTTPD_HEAP, "heap leave: ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
+				debugIf(LOG_HTTP, "---> static routing end", esp_req->uri, " t ", esp_timer_get_time());
 			}
 	};
 
@@ -290,12 +304,6 @@ namespace http {
 		if (!(esp_req->method == 0 && req.isWebsocket())) {
 			//http handler
 
-			if (req.getRemote().version() == 6) {
-				std::cout << "[info] clientData -> " << req.getRemote().ipv6() << " " << req.getRemote().mac() << std::endl;
-			} else if (req.getRemote().version() == 4) {
-				std::cout << "[info] clientData -> " << req.getRemote().ipv4() << " " << req.getRemote().mac() << std::endl;
-			}
-
 			if (auto host = req.getHeaders().host(); !isHostValid(host)) {
 				error("incorrect host rcv", host.c_str(), " t ", esp_timer_get_time());
 				return runAction(captiveOf(*serv), req, resp, *serv);
@@ -309,8 +317,12 @@ namespace http {
 				return ESP_FAIL;
 			}
 
-		} else {
+			logRequest(req, "http(s) request");
+		} else  {
 			//webSocket handler
+			if (esp_req->method != 0) {
+				logRequest(req, "http(s) switch protocol request");
+			}
 		}
 
 		return runAction(act, req, resp, *serv);
@@ -374,12 +386,12 @@ namespace http {
 	}
 
 	esp_err_t server::socketOpen(httpd_handle_t hd, int sockfd) noexcept {
-		debug("using socket", sockfd);
+		debugIf(LOG_SERVER_SOCK_RECYCLE, "using socket", sockfd);
 		return ESP_OK;
 	}
 
 	void server::socketClose(httpd_handle_t hd, int sockfd) noexcept {
-		debug("done with socket", sockfd);
+		debugIf(LOG_SERVER_SOCK_RECYCLE, "done with socket", sockfd);
 		if (auto weakSessPtr = httpd_sess_get_ctx(hd, sockfd); weakSessPtr != nullptr) {
 			if (auto absSessPtr = static_cast<session::pointer*>(weakSessPtr)->lock(); absSessPtr != nullptr) {
 				infoIf(LOG_SESSION, "session ", absSessPtr->sid().c_str(), " socket closing: ", sockfd);

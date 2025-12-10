@@ -120,37 +120,39 @@
 
 //different subsytem log
 
-//#define LOG_JOYSTICK 	true
+//#define LOG_JOYSTICK 		false
 
-//#define LOG_KEYBOARD 	true
+//#define LOG_KEYBOARD 		false
 
-//#define LOG_ENTROPY 	true
+//#define LOG_ENTROPY 		false
 
-//#define LOG_SOCKET 	true
+//#define LOG_SOCKET 		false
 
-//#define LOG_HTTP 		true
+//#define LOG_HTTP 			false
 
-//#define LOG_LED 		true
+//#define LOG_LED 			false
 
-//#define LOG_MESSAGES true
+//#define LOG_MESSAGES 		false
 
-//#define LOG_SCHEDULER true
+//#define LOG_SCHEDULER 	false
 
-//#define LOG_WIFI 		true
+//#define LOG_WIFI 			false
 
-#define LOG_SESSION      false
+//#define LOG_SESSION      	false
 
-#define LOG_SESSION_EVT  false
+//#define LOG_SESSION_EVT  	false
 
-#define LOG_COOKIES      false
+//#define LOG_COOKIES      	false
 
-#define LOG_COOKIE_BUILD false
+//#define LOG_COOKIE_BUILD 	false
 
-#define LOG_SERVER_GC    false
+//#define LOG_SERVER_GC    	false
 
-#define LOG_HTTPD_TASK_STACK false
+//#define LOG_HTTPD_TASK_STACK 	false
 
-#define LOG_HTTPD_HEAP false
+//#define LOG_HTTPD_HEAP 		false
+
+//#define LOG_SERVER_SOCK_RECYCLE false
 
 
 
