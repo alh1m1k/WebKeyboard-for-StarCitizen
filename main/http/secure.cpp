@@ -1,5 +1,7 @@
 #include "secure.h"
 
+#if HTTP_USE_HTTPS
+
 #include "esp_tls.h"
 
 namespace http {
@@ -73,3 +75,5 @@ namespace http {
 	}
 
 }
+
+#endif
