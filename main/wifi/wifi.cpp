@@ -78,15 +78,14 @@ namespace wifi {
 		static void ap_connect_disconnect(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
 			client_s* client = static_cast<struct client_s*>(arg);
 			debugIf(LOG_WIFI, "wifi_event", event_id);
-			std::string macAddres = {};
-			macAddres.resize(20);
+			char mac[20];
 			switch (event_id) {
 				case WIFI_EVENT_AP_STACONNECTED:
 					client->connected = true;
 					client->status = status_e::CONNECTED;
 					client->ap_sta_count++;
-					std::snprintf(macAddres.data(), macAddres.capacity(), MACSTR, MAC2STR(static_cast<wifi_event_ap_stadisconnected_t*>(event_data)->mac));
-					info("STA CONNECTED", macAddres);
+					std::snprintf(mac, 20, MACSTR, MAC2STR(static_cast<wifi_event_ap_stadisconnected_t*>(event_data)->mac));
+					info("STA CONNECTED", mac);
 					break;
 				case WIFI_EVENT_AP_STOP:
 					client->ap_sta_count = 0;
@@ -99,8 +98,8 @@ namespace wifi {
 						client->connected = false;
 						client->status = status_e::DISCONNECTED;
 					}
-					std::snprintf(macAddres.data(), macAddres.capacity(), MACSTR, MAC2STR(static_cast<wifi_event_ap_stadisconnected_t*>(event_data)->mac));
-					info("STA DISCONNECTED", macAddres);
+					std::snprintf(mac, 20, MACSTR, MAC2STR(static_cast<wifi_event_ap_stadisconnected_t*>(event_data)->mac));
+					info("STA DISCONNECTED", mac);
 					break;
 				default:
 					error("handlers::ap_connect_disconnect rcv invalid eventId", event_id);
@@ -111,10 +110,9 @@ namespace wifi {
 			auto data= static_cast<ip_event_ap_staipassigned_t*>(event_data);
 			
 			{
-				std::string macAddres = {};
-				macAddres.resize(20);
-				std::snprintf(macAddres.data(), macAddres.capacity(), MACSTR, MAC2STR(data->mac));
-				info("ASSIGN IP FROM AP", macAddres, " -> ", IP2STR(&data->ip));
+				char mac[20];
+				std::snprintf(mac, 20, MACSTR, MAC2STR(data->mac));
+				info("ASSIGN IP FROM AP", mac, " -> ", IP2STR(&data->ip));
 			}
 		}
 	};

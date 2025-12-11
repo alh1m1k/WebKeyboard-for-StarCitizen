@@ -36,15 +36,15 @@ namespace http {
 
 		config.port_secure = config.port_insecure = port;
 
-		assert(
-			(config.servercert == nullptr && config.servercert == config.prvtkey_pem) ||
-			(config.servercert != config.prvtkey_pem)
-		);
-
 		if (config.servercert == nullptr || config.prvtkey_pem == nullptr) {
 			config.transport_mode = HTTPD_SSL_TRANSPORT_INSECURE;
 			assert(!ASSERT_IF_INSECURE_HTTPS);
 		}
+
+		assert(
+			(config.servercert == nullptr && config.servercert == config.prvtkey_pem) ||
+			(config.servercert != config.prvtkey_pem)
+		);
 
 		return config;
 	}

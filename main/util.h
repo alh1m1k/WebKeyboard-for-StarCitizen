@@ -58,26 +58,6 @@ constexpr bool strings_equal(char const * a, char const * b) {
 	return std::string_view(a)==b;
 }
 
-template<typename ... Args>
-std::string sprintf( const std::string& format, Args ... args ) {
-    int size_s = std::snprintf( nullptr, 0, format.c_str(), args ... ) + 1; // Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    std::unique_ptr<char[]> buf( new char[ size ] );
-    std::snprintf( buf.get(), size, format.c_str(), args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
-}
-
-template<typename ... Args>
-std::string sprintf( const char* format, Args ... args ) {
-    int size_s = std::snprintf( nullptr, 0, format, args ... ) + 1; // Extra space for '\0'
-    if( size_s <= 0 ){ throw std::runtime_error( "Error during formatting." ); }
-    auto size = static_cast<size_t>( size_s );
-    std::unique_ptr<char[]> buf( new char[ size ] );
-    std::snprintf( buf.get(), size, format, args ... );
-    return std::string( buf.get(), buf.get() + size - 1 ); // We don't want the '\0' inside
-}
-
 template<typename vector>
 inline void eraseByReplace(vector& v, typename vector::iterator eraseIt) {
 	auto replaceWith =  v.end() - 1;
@@ -105,23 +85,33 @@ inline std::string randomString(const int len, rndT& rnd = rand) {
 }
 
 // Function to trim leading whitespace
-static inline void ltrim(std::string &s) {
+inline void ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if_not(s.begin(), s.end(), [](unsigned char ch) {
         return std::isspace(ch);
     }));
 }
 
 // Function to trim trailing whitespace
-static inline void rtrim(std::string &s) {
+inline void rtrim(std::string &s) {
     s.erase(std::find_if_not(s.rbegin(), s.rend(), [](unsigned char ch) {
         return std::isspace(ch);
     }).base(), s.end());
 }
 
 // Function to trim both leading and trailing whitespace
-static inline void trim(std::string &s) {
+inline void trim(std::string &s) {
     ltrim(s);
     rtrim(s);
+}
+
+inline std::string_view trim(std::string_view s) {
+	while (!s.empty() && s.front() == ' ') {
+		s.remove_prefix(1);
+	}
+	while (!s.empty() &&  s.back() == ' ') {
+		s.remove_suffix(1);
+	}
+	return s;
 }
 
 //does not ?guarantee? FIFO

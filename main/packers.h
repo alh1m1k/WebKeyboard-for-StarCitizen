@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <charconv>
+#include <limits>
 
 #include <esp_wifi_types.h>
 
@@ -16,15 +17,16 @@
 
 using namespace std::literals;
 
-std::string_view trim(std::string_view s) {
-	while (!s.empty() && s.front() == ' ') {
-		s.remove_prefix(1);
-	}
-	while (!s.empty() &&  s.back() == ' ') {
-		s.remove_suffix(1);
-	}
-	return s;
-} 
+
+/*
+	Why is std::sprintf and not a std::format?
+	The cost of std::sprintf is <<1% (eq to 0) for a 4MB flash.
+	The cost of std::format is ~8% for a 4MB flash.
+	Deleting std::sprintf does not reduce the binary size.
+*/
+
+
+constexpr size_t maxPacketIdSize = std::numeric_limits<uint32_t>::max();
 
 wifi_auth_mode_t checkWifi(wifi_auth_mode_t mode) {
 	switch (mode) {          
@@ -70,7 +72,7 @@ pack unpackMsg(const http::socket::socket::message& rawMessage, const char separ
 }
 
 struct kbPack {
-	std::string_view input 		= {};    //key or bunch keys
+	std::string_view input 		= {};   //key or bunch keys
 	std::string_view actionId 	= {};  	//aka ctrlId
 	std::string_view actionType = {}; 	//aka click dbclick other
 	bool hasAction 				= false;
@@ -138,7 +140,6 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 		
     auto repeatItStart= std::find(rawMessage.rbegin(), rawMessage.rend(), separator);
 	if (repeatItStart == rawMessage.rend()) {
-		debugIf(LOG_MESSAGES, "failt1");
 		return {};
 	}
 	
@@ -152,7 +153,6 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 
 	auto intervalMSItEnd = std::find(++repeatItStart, rawMessage.rend(), separator);
 	if (intervalMSItEnd == rawMessage.rend()) {
-		debugIf(LOG_MESSAGES, "failt2");
 		return {};
 	}
 	
@@ -165,7 +165,6 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
    	);
 	                                
 	if (++intervalMSItEnd == rawMessage.rend()) {
-		debugIf(LOG_MESSAGES, "failt3");
 		return {};
 	}
 		                                
@@ -191,7 +190,6 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 			
     auto idItStart= std::find(KbPackView.rbegin(), KbPackView.rend(), separator);
 	if (idItStart == KbPackView.rend()) {
-		debugIf(LOG_MESSAGES, "failt4");
 		return {};
 	}
 	
@@ -205,7 +203,6 @@ kbRepeatPack unpackKbRepeatPack(const std::string_view rawMessage, const char se
 	
 	auto idItEnd = std::find(++idItStart, KbPackView.rend(), separator);
 	if (idItEnd == KbPackView.rend()) {
-		debugIf(LOG_MESSAGES, "failt5");
 		return {};
 	}
 	
@@ -383,8 +380,8 @@ settignsPack unpackSettings(const std::string_view rawMessage, const char separa
 }
 
 std::string resultMsg(const char* prefix, std::string_view id, bool status) {
-	constexpr auto ok_size 	= strlen(MSG_OK);
-	constexpr auto fail_size 	= strlen(MSG_FAIL);
+	constexpr auto ok_size 	= std::string_view(MSG_OK).size();
+	constexpr auto fail_size= std::string_view(MSG_FAIL).size();
 	 
 	std::string buffer = prefix;
 	buffer.reserve(strlen(prefix) + 1 + id.size() + 1 + (status ? ok_size : fail_size));
@@ -403,6 +400,8 @@ std::string settingsGetMsg(std::string_view id, const std::string& ssid, wifi_au
 	auto auth = std::to_string(authMode == wifi_auth_mode_t::WIFI_AUTH_MAX ? 100 : (int)authMode);
 
 	auto buffer = resultMsg("settings-get", id, true);
+
+	buffer.reserve(100+ssid.size()+auth.size()+10);
 	
 	buffer += ":SSID:" + std::to_string(ssid.size()) + ":" + ssid;
 	buffer += ":AUTH:" + std::to_string(auth.size()) + ":" + auth;
@@ -414,104 +413,84 @@ std::string settingsGetMsg(std::string_view id, const std::string& ssid, wifi_au
 //reason 1 - connected
 //reason 2 - reconnected
 //reason 3 - disconnect
-std::string connectedNotify(uint32_t packetId, std::string& clientId, int reason) {
+std::string connectedNotify(uint32_t packetId, const std::string& clientId, int reason) {
 
-	constexpr auto templateConnectedSize 		= strlen(MSG_CLIENT_CONNECTED);
-	constexpr auto templateReConnectedSize 		= strlen(MSG_CLIENT_RECONNECTED);
-	constexpr auto templateDisconnectedSize 	= strlen(MSG_CLIENT_DISCONNECTED);
-	constexpr auto maxPacketIdSize 				= 10; //std::snprintf(nullptr, 0, "%d", 1);
+	constexpr auto bufferForMessage = std::max(
+		std::max(
+			std::string_view(MSG_CLIENT_CONNECTED).size(),
+			std::string_view(MSG_CLIENT_RECONNECTED).size()
+		),
+		std::string_view(MSG_CLIENT_DISCONNECTED).size()
+	);
 
-	std::string buffer = "";
+	std::string buffer;
+	buffer.resize(bufferForMessage+clientId.size()+maxPacketIdSize+1);
+	//we must use +1 symbol as std::snprintf will cut string to write 0 if buffer is shrink to fit
 	int wr;
 	if (reason == 1) {
-		buffer.resize(templateConnectedSize + clientId.size() + maxPacketIdSize);
-		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_CONNECTED, packetId, clientId.c_str());
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_CONNECTED, 		packetId, clientId.c_str());
 	} else if (reason == 2) {
-		buffer.resize(templateReConnectedSize + clientId.size() + maxPacketIdSize);
-		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_RECONNECTED, packetId, clientId.c_str());
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_RECONNECTED, 	packetId, clientId.c_str());
 	} else if (reason == 3) {
-		buffer.resize(templateDisconnectedSize + clientId.size() + maxPacketIdSize);
-		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_DISCONNECTED, packetId, clientId.c_str());
+		wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_DISCONNECTED, 	packetId, clientId.c_str());
 	} else {
 		throw std::invalid_argument("reason invalid");
 	}
 
-	if (wr == buffer.capacity()) {
-		throw std::runtime_error("buffer capacity safeguard");
-	}
-	
 	buffer.resize(wr);
 
 	return buffer;
 }
 
 std::string signNotify(uint32_t packetId, const std::string& ns, const std::string& sign) {
-	
-	constexpr auto maxPacketIdSize 				= 10; //std::snprintf(nullptr, 0, "%d", 1);
-		
-	std::string buffer = "";
-	buffer.resize(ns.size() + sign.size() + maxPacketIdSize + 8);
+
+	std::string buffer;
+	buffer.resize(ns.size() + sign.size() + maxPacketIdSize + 3);
 
 	auto wr = std::snprintf(buffer.data(), buffer.capacity(), "%s:%lu:%s" , ns.c_str(), packetId, sign.c_str());
-	
-	if (wr == buffer.capacity()) {
-		throw std::runtime_error("buffer capacity safeguard");
-	}
-	
+
 	buffer.resize(wr);
 
 	return buffer;
 }
 			
 std::string kbNotify(uint32_t packetId, std::string_view actionId, std::string_view actionType) {
-	
-	constexpr auto _template = "kba:%lu:%.*s:%.*s";
-	constexpr auto maxPacketIdSize= 10; ///std::snprintf(nullptr, 0, "%lu", std::numeric_limits<uint32_t>::max);
-			
-	std::string buffer = "";
+
+	std::string buffer;
 	buffer.resize(10 + maxPacketIdSize + actionId.size() + actionType.size());
 	
 	if (actionId.size() > std::numeric_limits<int>::max() || actionType.size() > std::numeric_limits<int>::max()) {
 		throw unsupported();
 	}
 
-	auto wr = std::snprintf(buffer.data(), buffer.capacity(), _template, packetId, (int)actionId.size(), actionId.data(), (int)actionType.size(), actionType.data());
-	
-	if (wr == buffer.capacity()) {
-		throw std::runtime_error("buffer capacity safeguard");
-	}
+	auto wr = std::snprintf(buffer.data(), buffer.capacity(), "kba:%lu:%.*s:%.*s", packetId, (int)actionId.size(), actionId.data(), (int)actionType.size(), actionType.data());
 	
 	buffer.resize(wr);
 
-	return buffer; //copy easing
+	return buffer;
 }
 
 
 std::string ctrNotify(uint32_t packetId, std::string_view byteStream) {
-	
-	constexpr auto maxPacketIdSize= 10; ///std::snprintf(nullptr, 0, "%lu", std::numeric_limits<uint32_t>::max);
-			
-	std::string buffer = "";
+
+	std::string buffer;
 	buffer.reserve(10 + maxPacketIdSize + byteStream.size());
 	
 	buffer  = "ctr:";
 	buffer += std::to_string(packetId);
 	buffer += ":";
 	buffer += byteStream;
-	
-	debugIf(LOG_MESSAGES, "ctrNotify", buffer.size());
 
-	return buffer; //copy easing
+	return buffer;
 }
 
 
 std::string settingsSetNotify(uint32_t packetId) {
-	
+
 	constexpr auto _template = "nt:%lu:Settings updated";
-	constexpr auto maxPacketIdSize= 10; 
-	constexpr auto bufferSize= maxPacketIdSize + strlen(_template);
+	constexpr auto bufferSize= maxPacketIdSize + std::string_view(_template).size() + 1;
 			
-	std::string buffer = "";
+	std::string buffer;
 	buffer.resize(bufferSize);
 	
 	auto wr = std::snprintf(buffer.data(), buffer.capacity(), _template, packetId);

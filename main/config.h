@@ -85,7 +85,7 @@
 //#define SESSION_MAX_CLIENT_COUNT 			10
 
 
-#define HTTP_USE_HTTPS      true
+//#define HTTP_USE_HTTPS      false
 
 //#define HTTP_CACHE_USE_ETAG true
 

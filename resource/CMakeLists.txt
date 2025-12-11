@@ -7,7 +7,7 @@ resource(index.css   TEXT)
 resource(index.js    TEXT)
 resource(symbols.svg TEXT)
 
-option(EMBED_CAPTIVE "Include captive portal page" ON)
+option(EMBED_CAPTIVE "Include captive portal page" OFF)
 set(CAPTIVE_PORTAL_BACK_URL "wkb.local" CACHE STRING "Captive portal back button url")
 
 MESSAGE("EMBED_CAPTIVE=${EMBED_CAPTIVE}")

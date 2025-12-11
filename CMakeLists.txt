@@ -7,7 +7,7 @@ project(WebKeyboard)
 
 option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
-option(EMBED_CERT           "Include ssl certificate" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+option(EMBED_CERT           "Include ssl certificate" OFF) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 
 set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
 set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)

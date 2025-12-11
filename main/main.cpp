@@ -158,7 +158,7 @@ void trap(const char* msg, esp_err_t code = ESP_FAIL) {
 static_assert(WIFI_AP_DNS, "WIFI_AP_DNS");
 static_assert(!HTTP_USE_HTTPS, "!HTTP_USE_HTTPS");
 static_assert(strings_equal(CAPTIVE_PORTAL_BACK_URL, WIFI_AP_DNS_DOMAIN), "PORTAL_BACK_URL != WIFI_AP_DNS_DOMAIN");
-static_assert(EMBED_CAPTIVE, "EMBED_CAPTIVE must be set to use captive portal");
+static_assert(EMBED_CAPTIVE, "Using captive without captive portal make no sense. Embed captive portal by adding flag -DEMBED_CAPTIVE=ON or disable captive");
 #endif
 
 #if (WIFI_AP_DNS)
@@ -167,6 +167,11 @@ static_assert(WIFI_MODE == WIFI_MODE_AP);
 
 #if (HTTP_USE_HTTPS)
 static_assert(!WIFI_AP_DNS_CAPTIVE);
+static_assert(EMBED_CERT, "Using https without cert make no sense. Embed cert by adding flag -DEMBED_CERT=ON or disable https");
+#endif
+
+#if (HTTP_USE_HTTPS && EMBED_CERT && !EMBED_CACERT)
+#warning "cacert not provided, self-signed cert may be ignored by the browser"
 #endif
 
 void app_main(void)
@@ -331,28 +336,21 @@ void app_main(void)
 	debugIf(LOG_HTTPD_HEAP, "app_main web", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting webServer " << std::endl;
-	static auto webServer = []() -> auto {
-		if constexpr (HTTP_USE_HTTPS) {
-			return https::server{};
-		} else {
-			return http::server{};
-		}
-	}();
-
-    webServer.attachSessions<sessionManager>(persistenceSign);
-
-	if constexpr (HTTP_USE_HTTPS) {
-		if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
-			trap("fail 2 setup webServer", status.code());
-		}
-	} else {
-		if (auto status = webServer.begin(HTTP_PORT); !status) {
-			trap("fail 2 setup webServer", status.code());
-		}
-	}
+#if HTTP_USE_HTTPS
+	 static auto webServer = https::server{};
+	 webServer.attachSessions<sessionManager>(persistenceSign);
+	 if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
+		 trap("fail 2 setup webServer", status.code());
+	 }
+#else
+	 static auto webServer = http::server{};
+	 webServer.attachSessions<sessionManager>(persistenceSign);
+	 if (auto status = webServer.begin(HTTP_PORT); !status) {
+		 trap("fail 2 setup webServer", status.code());
+	 }
+#endif
 
 	resBool status = ESP_OK;
-
 	debugIf(LOG_HTTPD_HEAP, "app_main web handlers", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	if (status = webServer.addHandler("/", httpd_method_t::HTTP_GET, index_html_memory_file); !status) {

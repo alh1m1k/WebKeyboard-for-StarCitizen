@@ -189,7 +189,7 @@
 
 
 #ifndef WIFI_AP_DNS_CAPTIVE
-#if !WIFI_AP_DNS || HTTP_USE_HTTPS
+#if !WIFI_AP_DNS || HTTP_USE_HTTPS || !EMBED_CAPTIVE
 #define WIFI_AP_DNS_CAPTIVE false
 #endif
 #endif
