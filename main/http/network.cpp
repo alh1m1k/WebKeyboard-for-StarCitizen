@@ -171,7 +171,9 @@ namespace http {
 #ifdef CONFIG_LWIP_IPV4
         _POPULATE;
         if (family() == AF_INET) {
-            return *(network::ipv4_address_type*)&((struct sockaddr_in*)_buffer.get())->sin_addr;
+			//accessor allow "safe" access through optimization level aka dereferencing type-punned pointer
+			void* accessor = &((struct sockaddr_in*)_buffer.get())->sin_addr;
+            return *reinterpret_cast<network::ipv4_address_type*>(accessor);
         }
 #endif
         return invalidIpv4;
@@ -181,7 +183,9 @@ namespace http {
 #ifdef CONFIG_LWIP_IPV6
         _POPULATE;
         if (family() == AF_INET6) {
-            return *(network::ipv6_address_type*)&((struct sockaddr_in6*)_buffer.get())->sin6_addr;
+			//accessor allow "safe" access through optimization level aka dereferencing type-punned pointer
+			void* accessor = &((struct sockaddr_in6*)_buffer.get())->sin6_addr;
+			return *reinterpret_cast<network::ipv6_address_type*>(accessor);
         }
 #endif
         return invalidIpv6;

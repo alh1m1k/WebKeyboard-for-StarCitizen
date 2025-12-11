@@ -10,7 +10,7 @@ namespace http::resource::cache {
 	class cacheControl {
 		const char* token;
 		public:
-			constexpr explicit cacheControl(const std::string& value) noexcept : token(value.c_str()) {};
+			constexpr explicit cacheControl(const char* token) noexcept : token(token) {};
 			result<codes> operator()(request& req, response& resp, server& serv) noexcept {
 				resp.getHeaders().cacheControl(token);
 				return ESP_OK;

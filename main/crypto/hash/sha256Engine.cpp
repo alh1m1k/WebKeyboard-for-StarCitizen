@@ -2,6 +2,8 @@
 
 namespace crypto::hash {
 
+	sha256Engine::data_type sha256Engine::invalidHash = {};
+
     sha256Engine::~sha256Engine() {
         if (_ctx != nullptr) {
             mbedtls_sha256_free(_ctx.get());
@@ -17,7 +19,7 @@ namespace crypto::hash {
         return false;
     }
 
-    const sha256Engine::data_type sha256Engine::hash(const ptr_type_in& in) {
+    sha256Engine::data_type sha256Engine::hash(const ptr_type_in& in) {
         data_type out(hash_size);
         if (hash(in, out)) {
             return out;

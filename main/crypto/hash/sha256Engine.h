@@ -21,7 +21,7 @@ namespace crypto::hash {
 
             static constexpr size_t hash_size = 256/8;
 
-            static constexpr data_type invalidHash = {};
+            static data_type invalidHash;
 
             sha256Engine()          = default;
             virtual ~sha256Engine();
@@ -29,8 +29,8 @@ namespace crypto::hash {
             int error = 0; //change it to result<std::vector<uint8_t>> aster resolve all question about copy/move
 
             using trait_inplace_hash = std::true_type;
-            const data_type hash(const ptr_type_in& in);
-                  bool      hash(const ptr_type_in& in, const ptr_type_out& out);
+            data_type hash(const ptr_type_in& in);
+            bool      hash(const ptr_type_in& in, const ptr_type_out& out);
 
             using trait_chunk_hash   = std::true_type;
             bool begin();
