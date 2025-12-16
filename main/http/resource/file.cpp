@@ -66,7 +66,7 @@ namespace http::resource {
 				// resp << nextBuffer;
 				// }
 				//or refactor file to template
-				error("fixme", "runtime decompression", " ", req.getHeaders().acceptEncoding());
+				error("fixme", "runtime decompression", " ", req.getUri().raw(), " ", req.getHeaders().acceptEncoding());
 				return codes::UNSUPPORTED_MEDIA;
 			}
 		}

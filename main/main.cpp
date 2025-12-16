@@ -47,6 +47,7 @@
 #include "storage.h"
 #include "wsproto.h"
 #include "cache.h"
+#include "filter.h"
 
 #ifdef WIFI_AP_DNS
 #include "dns/server.h"
@@ -81,7 +82,7 @@ decl_web_resource(index_css,	http::resource::endings::TEXT, 		"index.css", 		htt
 decl_web_resource(symbols_svg,	http::resource::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl);
 
 #if EMBED_CAPTIVE
-decl_web_resource(captive_html,	http::resource::endings::TEXT, 		"captive.html", 	http::contentType::HTML,    noCacheHandler);
+decl_web_resource(captive_html,	http::resource::endings::TEXT, 		"captive.html", 	http::contentType::HTML,    filterCaptiveAcceptHtmlHandler);
 #endif
 
 #if EMBED_CERT
