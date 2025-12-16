@@ -13,10 +13,10 @@ const pageDefaultLayout = {
 const versions = {
     protocol: 0.1,
     storage:  0.4,
-    server:   0.1,
-    client:   0.1,
+    server:   0.3,
+    client:   0.2,
 
-    incremental: 2,
+    incremental: 3,
 };
 
 const timeouts = {

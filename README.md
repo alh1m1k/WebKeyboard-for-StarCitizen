@@ -72,7 +72,7 @@ Features included:
 ## Usage
 Main usage of application assume tablet(s) with landscape orientation connected to host via *host wifi hostspot*.
 That it, all clients connect to host through same host net. SSID and password are build in and declared in `config.h` file.
-After client(s) connected to wifi they can access host main page, by default `192.168.5.1` also declared in `config.h`.
+After client(s) connected to wifi they can access host main page, by default `wkb.local` or `192.168.5.1` also declared in `config.h`.
 When first connected, it is crucial to change wifi password and optionally change ssid and wifi type. 
 Make it via [Application settings](#application-Settings). <br>
 
@@ -128,7 +128,7 @@ if the answer is yes, it will wipe the internal storage of this particular clien
 There are also events that the client will notify the user about:
 connection success,
 connection error,
-new client connected,
+new client connected, reconnected, disconnected
 client changed its id,
 system factory reset,
 host rebooted,
@@ -146,18 +146,17 @@ device screen too small or incorrectly oriented,
 
 ### Security
 The WBK designed to be host for one or multiple client that behave like MFD for ONE user.
-So this is single user system. No identification or session. <br/> 
+So this is single user system. <br/> 
 Application have all it's resource build in, and do not require any kind of internet connection to work. <br/>
-It have no tls/ssl on webserver, mostly due to lack of embed dns implementation and lack of time. But application enforce closed encrypted wifi connection.<br/>
-It use primitive text/binary protocol and rudimentary client authentication.</br>
+It have optional ssl webserver with user defined certs, and encrypted wifi connection.<br/>
 
 > [!WARNING]
 > Do not use and do not provide internet connection of any kind to application wifi network.</br>
 > Do not share network with other device that internet connected, like phones with mobile internet.</br>
 > Host in "hotspot mode" more preferable than in STA(Station Mode). Don't connect to host net devices that not host client(display).</br>
+> Use encrypted ssl server with your own cert for better security,
 > Change password for wifi (and optionally SSID) every factory reset and firmware update (every first enter).</br>
 > Remember: every device in network can access host, and host can control your keyboard and joystick, keyboard controls PC</br>
-> Host will notify every client about new client that connected.<br/>
 > If PC contain sensitive information do not use application.<br/>
 > As precaution usb descriptors also can be changed in `config.h` do it if you know what you doing.<br/>
 
@@ -216,7 +215,7 @@ The application main settings (normal and compact view).
 - Overlay - Toggle controls/widgets highlighting based on common overlay-groups
 
 > [!WARNING] 
-> Do not use same ClientId on different device, it will lead to undefined behavior. Leave it blank if you're not sure
+> Do not use same ClientId on different device. Leave it blank if you're not sure
 
 If Wifi settings change - all client will be notified.
 
@@ -377,6 +376,9 @@ As alternative - modern phone with big screen was also fine, but WBK only partia
 
 This application ~~toasted~~ tested on Tegra 2 tablet.
 
+> [!NOTE]
+> Some version of app with specific configuration able to fit inside 2MB flash memory esp32s3
+
 ## Software
 
 Firefox at least 52. Small graphical degradation, small to medium performance degradation.
@@ -395,9 +397,8 @@ Windows and Linux machines with latest chrome and firefox but also with chrome57
  - binary files are available under [Release](https://github.com/alh1m1k/WebKeyboard-for-StarCitizen/releases/latest) section. They may lag behind the version in the repository.
  - docker builder(container) not available.
 
-For manual build you need ESP-IDF toolchain version at least 5.1.3 with some modules:
+For manual build you need ESP-IDF toolchain version at least 5.5.1 with some modules:
 - espressif/esp_tinyusb
-- espressif/mdns
 
 But, eventually you need setup working environment to make `ifd.py` available at project root. Select target by `idf.py set-target esp32s3` or `esp32s2`<br/>
 Then, with internet available, just type:
@@ -433,7 +434,7 @@ When after binary write is complete, it will be useful to check internal logs by
 The WKB in PREVIEW stage. <br/>
 Preview both to test app codebase and determine the need for such application. <br/>
 The app will have to compete with macro-keyboards, touch panels, voice-copilots, self-made cockpits and even some services.
-Given some limitations, security questions and the need for hardware, the question of the necessity of such an application is open.
+Given some limitations and the need for hardware, the question of the necessity of such an application is open.
 And I will leave it to its end users.
 
 ## Limitation
@@ -453,11 +454,10 @@ And I will leave it to its end users.
 - Key handling native and on WINE may perform differently, for specific combination, why it is mystery for me.
 - Currently widget may look creepy. It is initial implementation, it lacking some feature and have some bugs too.
 - You will not see "factory reset" led indication if you board use addressable led as generic indicator led.
-- Host suffer from net problem that looks like socket pool depletion (it freezes on periodic bases at `select`). The more files need to be downloaded and the more clients, the higher the probability of appearing. It looks like a hang on download for 0-30 seconds. Eventually it fixes itself. This is definitely a bug, but at the moment it is not clear why the network stack behaves this way.
 - Some bugs exist here and there. Caused by the static nature of the memory management inside the LWIP, rudimentary server implementation and legacy partially textual protocol of client-server communication. These are extreme cases (enabling all possible switches, extremely long names) and will remain at least until the next major refactoring of the server.
 - Currently client setting belong to that client. While there are probably cases where this is convenient, it most often results in strange behavior from clients with different settings. In the future, there will probably be an explicit or implicit way to synchronize settings.
 
 ## Dependencies 
-- idf >= 5.1.4
-  - espressif/esp_tinyusb >= 0.17.0~2
+- idf >= 5.5.1
+  - espressif/esp_tinyusb >= 0.19.0~2
 - main logo created with MockUPhone

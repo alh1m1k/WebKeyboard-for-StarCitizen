@@ -28,3 +28,9 @@ static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s discon
 #define DEFAULT_WIFI_AP_DHCP_STATIC_MASK "255.255.255.0"
 #define DEFAULT_WIFI_AP_DNS_DOMAIN		 "wkb.local"
 
+#define PROTOCOL_VERSION 	1
+#define STORAGE_VERSION  	4
+#define SERVER_VERSION 	 	3
+#define CLIENT_VERSION 	 	2
+#define INCREMENTAL_VERSION 3
+

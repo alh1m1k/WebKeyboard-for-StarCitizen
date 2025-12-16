@@ -118,7 +118,7 @@
 //use secure connection, make sense only if -DEMBED_CERT=ON compile flag is set.
 //2 or 3 file certificates must be provided in cert directory see ../cert/readme.md
 //WARNING: use https version of ASSERT_IF_SOCKET_COUNT_LESS for https
-//WARNING: idf.py menuconfig CONFIG_LWIP_MAX_SOCKETS=10 for https or system will-be out of resources
+//WARNING: idf.py menuconfig set CONFIG_LWIP_MAX_SOCKETS=10 for https or system will-be out of resources
 //#define HTTP_USE_HTTPS false
 
 //enable ETAG cache, resource will-be cached using they compile time checksum
