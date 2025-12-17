@@ -46,13 +46,11 @@ namespace http {
 	}
 
 	resBool headers::set(const char* headerId, const char* str) noexcept {
-
         if (auto code = httpd_resp_set_hdr(handler, headerId, str); code != ESP_OK) {
             return code;
         } else {
             return ResBoolOK;
         }
-
 	}
 	
 	const uri& headers::getUri() const {

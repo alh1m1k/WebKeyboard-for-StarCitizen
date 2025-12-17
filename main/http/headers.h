@@ -2,8 +2,7 @@
 
 #include "generated.h"
 
-#include <sys/_stdint.h>
-#include <cstring>
+#include <forward_list>
 
 #include "esp_http_server.h"
 #include "esp_err.h"
@@ -18,7 +17,7 @@
 
 
 namespace http {
-	
+
 	class headers {
 		
 		httpd_req_t* handler;
@@ -26,9 +25,16 @@ namespace http {
 		mutable std::unique_ptr<uri> 		_uri;
 		mutable std::unique_ptr<cookies> 	_cookies;
 
-		public: 
+		//unable to use vector as short string optimization
+		//and vector expand will break c_str() pointer to header value
+		//ie value.c_str() will change after vector::expand() if value.is_short_str()
+		std::forward_list<std::string> preserve = {};
+
+		public:
 
 			explicit headers(httpd_req_t* handler) noexcept;
+
+			~headers() noexcept {}
 			
 			bool has(const char* headerId) const noexcept;
 								
@@ -41,6 +47,26 @@ namespace http {
             std::string get(const char* headerId);
 
 			resBool set(const char* headerId, const char* str) noexcept;
+
+/*			template<std_string_concept TValue>
+			resBool set(const char* header_c_str, TValue&& value) noexcept {
+				//for some reason std::is_rvalue_reference<TValue> deduces
+				//type incorrectly while std::is_rvalue_reference<TValue&&> is valid
+				auto value_c_str = value.c_str();
+				if constexpr (std::is_rvalue_reference<TValue&&>::value) {
+					preserve.push_back(std::move(value));
+				}
+				return set(header_c_str, value_c_str);
+			}*/
+
+			inline resBool set(const char* header_c_str, std::string&& value) noexcept {
+				preserve.push_front(std::move(value));
+				return set(header_c_str, preserve.front());
+			}
+
+			inline resBool set(const char* header_c_str, std::string& value) noexcept {
+				return set(header_c_str, value.c_str());
+			}
 
             const uri& getUri() const;
 
@@ -146,58 +172,49 @@ namespace http {
 				return get("If-None-Match");
 			}
 
-            inline resBool contentEncoding(const std::string& str) noexcept {
-                return set("Content-Encoding", str.c_str());
+			inline resBool contentEncoding(std::string&& str) noexcept {
+                return set("Content-Encoding", std::move(str));
             }
 
-            inline resBool contentLength(const std::string& str) noexcept {
-                return set("Content-Length", str.c_str());
+            inline resBool contentLength(std::string&& str) noexcept {
+                return set("Content-Length", std::move(str));
             }
 
 			inline resBool contentLength(size_t size) noexcept {
 				return contentLength(std::to_string(size));
 			}
 
+			inline resBool contentType(const char* ct) noexcept {
+				return httpd_resp_set_type((httpd_req_t*)handler, ct);
+			}
+
             inline resBool contentType(const enum contentType& ct) noexcept {
                 return contentType(contentType2Symbols(ct));
             }
 
-            inline resBool contentType(const std::string& ct) noexcept {
-                return contentType(ct.c_str());
+            inline resBool contentType(std::string&& str) noexcept {
+				preserve.push_front(std::move(str));
+                return contentType(preserve.front().c_str());
             }
 
-            inline resBool contentType(const char* ct) noexcept {
-                return httpd_resp_set_type((httpd_req_t*)handler, ct);
+            inline resBool server(std::string&& str) noexcept {
+                return set("Server", std::move(str));
             }
 
-            inline resBool server(const std::string& str) noexcept {
-                return set("Server", str.c_str());
+            inline resBool setCookie(std::string&& str) noexcept {
+                return set("Set-Cookie", std::move(str));
             }
 
-            inline resBool setCookie(const std::string& str) noexcept {
-                return set("Set-Cookie", str.c_str());
+            inline resBool connection(std::string&& str) noexcept {
+                return set("Connection", std::move(str));
             }
 
-            inline resBool connection(const std::string& str) noexcept {
-                return set("Connection", str.c_str());
-            }
-
-			//temporal workaround until header not prolong live time of str
-			inline resBool connection(const char* str) noexcept {
-				return set("Connection", str);
+			inline resBool eTag(std::string&& str) noexcept {
+				return set("ETag", std::move(str));
 			}
 
-			inline resBool eTag(const std::string& str) noexcept {
-				return set("ETag", str.c_str());
-			}
-
-			//temporal workaround until header not prolong live time of str
-			inline resBool eTag(const char* str) noexcept {
-				return set("ETag", str);
-			}
-
-			inline resBool cacheControl(const std::string& str) noexcept {
-				return set("CacheControl", str.c_str());
+			inline resBool cacheControl(std::string&& str) noexcept {
+				return set("CacheControl", std::move(str));
 			}
 	};
 	

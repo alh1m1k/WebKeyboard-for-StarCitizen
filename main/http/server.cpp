@@ -412,6 +412,7 @@ namespace http {
 		httpd_config_t config 			= HTTPD_DEFAULT_CONFIG();
 		config.max_uri_handlers 		= 20;
 		config.max_open_sockets 		= CONFIG_LWIP_MAX_SOCKETS - SYSTEM_SOCKET_RESERVED;
+		config.max_resp_headers			= HTTP_MAX_RESPONSE_HEADERS;
 		config.stack_size 		    	= HTTPD_TASK_STACK_SIZE;
 		config.open_fn  				= &socketOpen;
 		config.close_fn 				= &socketClose;

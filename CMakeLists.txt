@@ -9,15 +9,15 @@ option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing defau
 option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(EMBED_CERT           "Include ssl certificate" OFF) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 
-set (RESOURCE_SRC_DIR ${PROJECT_DIR}/resource)
-set (RESOURCE_BIN_DIR ${CMAKE_BINARY_DIR}/resource)
+set (WEB_ROOT_SRC ${PROJECT_DIR}/resource)
+set (WEB_ROOT_BIN ${CMAKE_BINARY_DIR}/resource)
 set (DISCLAIMER "do not touch! content is auto generated on every build!")
 set (EMBED_CACERT OFF)
 
 file(REMOVE "${PROJECT_DIR}/main/resourceChecksum.h")
 file(APPEND "${PROJECT_DIR}/main/resourceChecksum.h" "#pragma once \n\n \/\/${DISCLAIMER}\n\n")
 if(RESOURCE_COMPRESSION)
-    file(MAKE_DIRECTORY "${RESOURCE_BIN_DIR}")
+    file(MAKE_DIRECTORY "${WEB_ROOT_BIN}")
 endif ()
 
 if (EMBED_CERT)
@@ -52,23 +52,35 @@ endfunction()
 
 function(resource file type)
     if (RESOURCE_COMPRESSION)
-        set(embedFile "${RESOURCE_BIN_DIR}/${file}.gz")
+        set(embedFile "${file}.gz")
         set(embedType BINARY)
         get_filename_component(path "${embedFile}" PATH)
         file(MAKE_DIRECTORY ${path})
-        file(ARCHIVE_CREATE PATHS "${RESOURCE_SRC_DIR}/${file}" OUTPUT ${embedFile} FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
+        file(ARCHIVE_CREATE PATHS "${WEB_ROOT_SRC}/${file}" OUTPUT ${embedFile} FORMAT raw COMPRESSION GZip COMPRESSION_LEVEL 9)
     else ()
-        set(embedFile "${RESOURCE_SRC_DIR}/${file}")
-        set(embedType ${type})
+        set(embedFile  ${file})
+        set(embedType  ${type})
     endif ()
     target_add_binary_data(WebKeyboard.elf "${embedFile}" ${embedType})
+    get_filename_component(embedName "${embedFile}" NAME)
     if (RESOURCE_CHECKSUM)
         resourceHash(${embedFile} hashVal)
-        get_filename_component(embedName "${embedFile}" NAME)
-        message(STATUS "Processing resource: ${file}(${embedName}) hash: ${hashVal}")
+        message(STATUS "Processing resource: ${embedName} hash: ${hashVal}")
     else ()
         appendHashValue(${embedFile} nullptr)
-        message(STATUS "Processing resource: ${file}")
+        message(STATUS "Processing resource: ${embedName}")
+    endif ()
+endfunction()
+
+function(temporal directory)
+    if(NOT IS_DIRECTORY ${directory})
+        file(MAKE_DIRECTORY "${directory}")
+        add_custom_command(
+            TARGET WebKeyboard.elf
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E rm -r "${directory}"
+            COMMENT "remove ${directory}"
+        )
     endif ()
 endfunction()
 

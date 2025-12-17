@@ -167,6 +167,10 @@
 #define HTTP_USE_HTTPS false
 #endif
 
+#ifndef HTTP_MAX_RESPONSE_HEADERS
+#define HTTP_MAX_RESPONSE_HEADERS 10
+#endif
+
 #ifndef HTTP_PORT
 #define	HTTP_PORT 80
 #endif

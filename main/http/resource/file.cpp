@@ -72,7 +72,7 @@ namespace http::resource {
 		}
 
         if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
-            resp.getHeaders().contentLength(addressEnd - addressStart - (ending == (int)endings::TEXT ? 1 : 0));
+            resp.getHeaders().contentLength(size - (ending == (int)endings::TEXT ? 1 : 0));
 		} else {
 			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
 		}

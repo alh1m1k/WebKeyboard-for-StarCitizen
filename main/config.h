@@ -126,6 +126,9 @@
 //there is no real reason to disable etag except debugging.
 //#define HTTP_CACHE_USE_ETAG true
 
+//maximum response headers per request
+//#define HTTP_MAX_RESPONSE_HEADERS 10
+
 //server port for incoming connections
 //#define HTTP_PORT 		80
 //#define HTTP_HTTPS_PORT 	443
