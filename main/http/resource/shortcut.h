@@ -74,9 +74,9 @@ __decl_res1(PPCAT(fileV, _gz), fileV, http::resource::endings::BINARY, nameV, co
 
 #else
 
-#define decl_web_resource(fileV, endingV, nameV, contentTypeV) \
+#define decl_web_resource(fileV, endingV, nameV, contentTypeV, cacheControl) \
 __decl_memory_resource(fileV);                                \
-__decl_res1(fileV, fileV, endingV, nameV, contentTypeV)
+__decl_res1(fileV, fileV, endingV, nameV, contentTypeV, cacheControl)
 
 #endif
 
