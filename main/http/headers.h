@@ -46,7 +46,7 @@ namespace http {
 
             std::string get(const char* headerId);
 
-			resBool set(const char* headerId, const char* str) noexcept;
+			resBool c_set(const char* headerId, const char* str) noexcept;
 
 /*			template<std_string_concept TValue>
 			resBool set(const char* header_c_str, TValue&& value) noexcept {
@@ -60,12 +60,14 @@ namespace http {
 			}*/
 
 			inline resBool set(const char* header_c_str, std::string&& value) noexcept {
+				debugIf(LOG_HEADERS, "set by move", header_c_str);
 				preserve.push_front(std::move(value));
-				return set(header_c_str, preserve.front());
+				return c_set(header_c_str, preserve.front().c_str());
 			}
 
-			inline resBool set(const char* header_c_str, std::string& value) noexcept {
-				return set(header_c_str, value.c_str());
+			inline resBool set(const char* header_c_str, const std::string& value) noexcept {
+				debugIf(LOG_HEADERS, "set as ref", header_c_str);
+				return c_set(header_c_str, value.c_str());
 			}
 
             const uri& getUri() const;
@@ -184,17 +186,17 @@ namespace http {
 				return contentLength(std::to_string(size));
 			}
 
-			inline resBool contentType(const char* ct) noexcept {
+			inline resBool c_contentType(const char* ct) noexcept {
 				return httpd_resp_set_type((httpd_req_t*)handler, ct);
 			}
 
             inline resBool contentType(const enum contentType& ct) noexcept {
-                return contentType(contentType2Symbols(ct));
+                return c_contentType(contentType2Symbols(ct));
             }
 
             inline resBool contentType(std::string&& str) noexcept {
 				preserve.push_front(std::move(str));
-                return contentType(preserve.front().c_str());
+                return c_contentType(preserve.front().c_str());
             }
 
             inline resBool server(std::string&& str) noexcept {
@@ -209,12 +211,23 @@ namespace http {
                 return set("Connection", std::move(str));
             }
 
+			inline resBool cacheControl(std::string&& str) noexcept {
+				return set("CacheControl", std::move(str));
+			}
+
+			//handle str live time
 			inline resBool eTag(std::string&& str) noexcept {
 				return set("ETag", std::move(str));
 			}
 
-			inline resBool cacheControl(std::string&& str) noexcept {
-				return set("CacheControl", std::move(str));
+			//not handle str live time
+			inline resBool eTag(const std::string& str) noexcept {
+				return set("ETag", str);
+			}
+
+			//not handle str live time
+			inline resBool c_eTag(const char* str) noexcept {
+				return c_set("ETag", str);
 			}
 	};
 	

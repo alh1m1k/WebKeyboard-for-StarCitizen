@@ -60,13 +60,13 @@ namespace http {
 
     //this one used to write data to response, and make it available to non const read
     //ie used in request.getCookies().set*(
-    resBool cookies::set(const std::string&& entry) {
-        preserve.push_back(entry);
-        if (auto code = httpd_resp_set_hdr((httpd_req_t*)_handler, "Set-Cookie", preserve[preserve.size()-1].c_str()); code == ESP_OK) {
-            debugIf(LOG_COOKIES, "cookies::set", entry.c_str());
+    resBool cookies::set(std::string&& entry) {
+        preserve.push_front(std::move(entry));
+        if (auto code = httpd_resp_set_hdr((httpd_req_t*)_handler, "Set-Cookie", preserve.front().c_str()); code == ESP_OK) {
+            debugIf(LOG_COOKIES, "cookies::set", preserve.front().c_str());
             return code;
         } else {
-            errorIf(LOG_COOKIES, "cookies::set", entry.c_str(), " code ", code);
+            errorIf(LOG_COOKIES, "cookies::set", preserve.front().c_str(), " code ", code);
             return code;
         }
     }

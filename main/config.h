@@ -191,6 +191,8 @@
 
 //#define LOG_SESSION_EVT  	false
 
+//#define LOG_HEADERS false
+
 //#define LOG_COOKIES      	false
 
 //#define LOG_COOKIE_BUILD 	false

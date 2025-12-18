@@ -16,7 +16,7 @@ namespace http::resource::cache {
 					if (req.getHeaders().ifNoneMatch() == tag) {
 						return codes::NOT_MODIFIED;
 					} else {
-						resp.getHeaders().eTag(tag);
+						resp.getHeaders().c_eTag(tag);
 					}
 				}
 				return ESP_OK;

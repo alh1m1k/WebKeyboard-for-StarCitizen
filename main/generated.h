@@ -127,6 +127,10 @@
 #define LOG_COOKIES	false
 #endif
 
+#ifndef LOG_HEADERS
+#define LOG_HEADERS	false
+#endif
+
 #ifndef LOG_COOKIE_BUILD
 #define LOG_COOKIE_BUILD	false
 #endif

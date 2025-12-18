@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <forward_list>
 
 #include "esp_http_server.h"
 
@@ -15,7 +15,7 @@ namespace http {
 
         const httpd_req_t* _handler;
 
-        std::vector<std::string> preserve = {};
+        std::forward_list<std::string> preserve = {};
 		
 		public:
 
@@ -31,7 +31,7 @@ namespace http {
 
             resBool set(const cookie& cook);
 
-            resBool set(const std::string&& entry);
+            resBool set(std::string&& entry);
 			
 	};
 	

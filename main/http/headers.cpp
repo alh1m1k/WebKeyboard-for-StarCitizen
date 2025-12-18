@@ -24,7 +24,7 @@ namespace http {
 					
 			size_t size = httpd_req_get_hdr_value_len(handler, headerId);
 			
-			debugIf(LOG_HTTP, "headers::get", headerId, size);
+			debugIf(LOG_HEADERS, "headers::get", headerId, " ", size);
 			
 			if (size == 0) {
 				return {};
@@ -45,7 +45,8 @@ namespace http {
 		throw not_impleneted("response headers read");
 	}
 
-	resBool headers::set(const char* headerId, const char* str) noexcept {
+	resBool headers::c_set(const char* headerId, const char* str) noexcept {
+		debugIf(LOG_HEADERS, "headers::set", headerId, " ", str);
         if (auto code = httpd_resp_set_hdr(handler, headerId, str); code != ESP_OK) {
             return code;
         } else {
