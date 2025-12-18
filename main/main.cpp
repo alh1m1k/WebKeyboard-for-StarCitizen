@@ -48,6 +48,7 @@
 #include "wsproto.h"
 #include "cache.h"
 #include "filter.h"
+#include "resourceChecksum.h"
 
 #ifdef WIFI_AP_DNS
 #include "dns/server.h"
@@ -60,10 +61,6 @@
 extern "C" {
 	void app_main(void);
 }
-
-#if RESOURCE_CHECKSUM
-#include "resourceChecksum.h"
-#endif
 
 #if HTTP_CACHE_USE_ETAG
 	auto defaultCacheControl = eTagHandler;
@@ -173,6 +170,10 @@ static_assert(EMBED_CERT, "Using https without cert make no sense. Embed cert by
 
 #if (HTTP_USE_HTTPS && EMBED_CERT && !EMBED_CACERT)
 #warning "cacert not provided, self-signed cert may be ignored by the browser"
+#endif
+
+#if HTTP_CACHE_USE_ETAG
+static_assert(RESOURCE_CHECKSUM, "Etag cache engine require checksum data. Embed checksum data by adding flag -DRESOURCE_CHECKSUM=ON or disable etag");
 #endif
 
 void app_main(void)

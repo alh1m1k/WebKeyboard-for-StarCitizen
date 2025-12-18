@@ -71,11 +71,19 @@ namespace http::resource {
 			}
 		}
 
-        if (size > RESPONSE_MAX_UNCHUNKED_SIZE) {
-            resp.getHeaders().contentLength(size - (ending == (int)endings::TEXT ? 1 : 0));
-		} else {
-			//if size <= RESPONSE_MAX_UNCHUNKED_SIZE idf will set correct size by itself
+		//"Content-Length and Transfer-Encoding must not be set together or Content-Length must be unset"
+		//it seems esp.idf internal send_fn is implicit split buffer in to chunks(but not sure how), so much of socket.cpp
+		//is reimplemented by me, in future it must be dropped for cleaner code
+		//also Content-Length is internally set to appropriate value
+		//if this data is transferred in full or droped if transferred in chunks.
+		//HTTP/1.1 specification, RFC 2616, Section 4.4, Point 3
+
+/*
+		//no need
+        if (size <= RESPONSE_MAX_UNCHUNKED_SIZE) {
+			resp.getHeaders().contentLength(size - (ending == (int)endings::TEXT ? 1 : 0));
 		}
+*/
 
 		resp << *this;
 
@@ -84,14 +92,15 @@ namespace http::resource {
 
 	response& operator<<(response& stream, const file& f) {
 
-		info("dumping memory file:", f.name, " sizeof ", f.addressEnd - f.addressStart);
+		ssize_t size = f.addressEnd - f.addressStart;
+		info("dumping memory file:", f.name, " sizeof ", size);
 		
 		if (f.ending == (int)endings::TEXT) {
-			stream.write((const char*)f.addressStart);
+			stream.write((const uint8_t*)f.addressStart, size - 1);
 		} else {
 			stream.write((const uint8_t*)f.addressStart, f.addressEnd - f.addressStart);
-		}		
-	
+		}
+
 		return stream;
 	}
 }

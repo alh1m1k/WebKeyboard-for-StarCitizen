@@ -122,6 +122,7 @@
 //#define HTTP_USE_HTTPS false
 
 //enable ETAG cache, resource will-be cached using they compile time checksum
+//that require -RESOURCE_CHECKSUM=ON compile flag is set
 //preventing expensive content steaming and improving load time.
 //there is no real reason to disable etag except debugging.
 //#define HTTP_CACHE_USE_ETAG true

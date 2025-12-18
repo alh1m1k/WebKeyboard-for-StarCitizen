@@ -15,6 +15,7 @@ namespace http {
 
         const httpd_req_t* _handler;
 
+		//todo make it prt ie std::unique_prt<std::forward_list<std::string>> = nullptr;
         std::forward_list<std::string> preserve = {};
 		
 		public:

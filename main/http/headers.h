@@ -28,6 +28,7 @@ namespace http {
 		//unable to use vector as short string optimization
 		//and vector expand will break c_str() pointer to header value
 		//ie value.c_str() will change after vector::expand() if value.is_short_str()
+		//todo make it prt ie std::unique_prt<std::forward_list<std::string>> = nullptr;
 		std::forward_list<std::string> preserve = {};
 
 		public:
