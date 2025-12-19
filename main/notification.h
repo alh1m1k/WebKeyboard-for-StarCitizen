@@ -29,7 +29,7 @@ class notificationManager {
 
         message(const std::string& data, std::vector<typename TSessions::index_type>&& to, bool binary, notificationManager* manager)
                 : data(data), to(std::move(to)), manager(manager), binary(binary) {
-            debugIf(LOG_MESSAGES, "message::message", this->data.c_str(), " ", this->data.size(), " address cnt: ", to.size());
+            debugIf(LOG_MESSAGES, "message::message", this->data.c_str(), " size: ", this->data.size(), " address cnt: ", to.size());
         };
 
     };

@@ -25,8 +25,8 @@ using namespace std::literals;
 	Deleting std::sprintf does not reduce the binary size.
 */
 
-
-constexpr size_t maxPacketIdSize = std::numeric_limits<uint32_t>::max();
+//constexpr size_t maxPacketIdSize = std::to_string(std::numeric_limits<uint32_t>::max())::size();
+constexpr size_t maxPacketIdSize = std::string_view("4294967295").size();
 
 wifi_auth_mode_t checkWifi(wifi_auth_mode_t mode) {
 	switch (mode) {          
@@ -436,6 +436,20 @@ std::string connectedNotify(uint32_t packetId, const std::string& clientId, int 
 	} else {
 		throw std::invalid_argument("reason invalid");
 	}
+
+	buffer.resize(wr);
+
+	return buffer;
+}
+
+std::string renameNotify(uint32_t packetId, const std::string& clientName, const std::string& oldClientName) {
+
+	constexpr auto bufferForMessage = std::string_view(MSG_CLIENT_RENAMED).size();
+
+	std::string buffer;
+	buffer.resize(bufferForMessage+clientName.size()+oldClientName.size()+maxPacketIdSize+1);
+
+	int wr = std::snprintf(buffer.data(), buffer.capacity(), MSG_CLIENT_RENAMED, packetId, oldClientName.c_str(), clientName.c_str());
 
 	buffer.resize(wr);
 

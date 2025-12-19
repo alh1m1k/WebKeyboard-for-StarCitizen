@@ -256,6 +256,30 @@ class wsproto {
 
             pSession->keepAlive(esp_timer_get_time());
 
+			if (rawMessage.starts_with("idnt:")) {
+				auto pack = unpackMsg(rawMessage);
+				if (!pack.success) {
+					return ESP_FAIL;
+				}
+
+				auto newClientName = std::string(trim(pack.body));
+				if (newClientName.empty()) {
+					error("auth block fail2clientid");
+					return ESP_FAIL;
+				}
+
+				pSession->write()->clientName = newClientName;
+				socket.write(resultMsg("idnt", pack.taskId, true));
+
+				info("client is rename itself", "id: ", clientId, " name: ", clientName, " newname: ", newClientName, " pid: ", pack.taskId);
+
+				if (auto ret = notifications.notifyExcept(renameNotify(packetCounter(), newClientName, clientName), clientId); !ret) {
+					error("unable send notifications (auth)", ret.code());
+				}
+
+				return ESP_OK;
+			}
+
             if (rawMessage.starts_with("ctr:")) {
                 //control axis request must be fixed size: 8 axis(2byte each) + buttons(32 one bit each) = 20bytes
                 auto pack = unpackMsg(rawMessage);

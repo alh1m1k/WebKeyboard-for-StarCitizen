@@ -11,6 +11,7 @@ static constexpr const char* MSG_FAIL 	= "fail";
 static constexpr const char* MSG_CLIENT_CONNECTED 		= "nt:%lu:Client %s connected";
 static constexpr const char* MSG_CLIENT_RECONNECTED		= "nt:%lu:Client %s reconnected";
 static constexpr const char* MSG_CLIENT_DISCONNECTED 	= "nt:%lu:Client %s disconnected";
+static constexpr const char* MSG_CLIENT_RENAMED 		= "nt:%lu:Client %s is now %s";
 
 #define LED_GREEN  (gpio_num_t)15  // the light is lit when set high level.
 #define LED_YELLOW (gpio_num_t)16  // the light is lit when set high level.

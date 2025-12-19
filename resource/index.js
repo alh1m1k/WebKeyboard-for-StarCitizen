@@ -1859,11 +1859,11 @@ const invertAspectRatio = 2/3.1; //@see CSS
     let socket = wsocket("/socks");
     window.socket = socket;
 
-    //(identV) => () => identV)(identity())) callback that every call return first return of identity()
-    socket.identity(((identV) => () => identV)(identity()));
-    socket.session( () => fetch("/renew", { method: 'POST' }) );
     socket.keepAlive = 5000;
-    socket.begin();
+    socket.begin({
+        identityCB: ((identV) => () => identV)(identity()),
+        recoverCB:  () => fetch("/renew", { method: 'POST' })
+    });
 
 /*
     socket termination opt
@@ -2568,7 +2568,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                                                                //to mess up with deadline so wait until request finish
                         if (result.data.clientId && result.data.clientId !== settingsStore.get("clientId","")) {
                             settingsStore.set("clientId", result.data.clientId);
-                            notificator.addNotification("ClientId updated", "clientId", "info");
+                            notificator.addNotification("Client name updated", "clientId", "info");
                             clientIdUpdated = true;
                         }
                         if (result.data.hapticResp !== undefined && result.data.hapticResp !== settingsStore.get("hapticResp","")) {
@@ -2605,10 +2605,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                                     updateOverlay(); //@see mustUpdateOverlay;
                                 }
                                 if (clientIdUpdated) {
-                                    return socket.reconnect(() => {
-                                        socket.identity(((identV) => () => identV)(identity()));
-                                        return Promise.resolve();
-                                    });
+                                    return socket.updateIdentity(((identityV) => () => identityV)(identity()));
                                 } else {
                                     return a;
                                 }

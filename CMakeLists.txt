@@ -50,9 +50,13 @@ function(resourceHash file out)
     set(${out} ${hashValue} PARENT_SCOPE)
 endfunction()
 
+#there is problem when hierarchical fs structure collapse in to single directory
+#currently this is work, but later is must be changed to random prefixes or hierarchical subdirectories or optional new name parameter
+#it will continue to work until file name unique
 function(resource file type)
     if (RESOURCE_COMPRESSION)
-        set(embedFile "${file}.gz")
+        get_filename_component(fileName ${file} NAME)
+        set(embedFile "${WEB_ROOT_BIN}/${fileName}.gz")
         set(embedType BINARY)
         get_filename_component(path "${embedFile}" PATH)
         file(MAKE_DIRECTORY ${path})

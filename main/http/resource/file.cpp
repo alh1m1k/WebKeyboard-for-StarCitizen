@@ -51,8 +51,6 @@ namespace http::resource {
 			return std::get<codes>(result);
 		}
 
-		ssize_t size = addressEnd - addressStart;
-
 		resp.getHeaders().contentType(contentType);
 
 		if constexpr (RESOURCE_COMPRESSION) {
@@ -80,6 +78,7 @@ namespace http::resource {
 
 /*
 		//no need
+		ssize_t size = addressEnd - addressStart;
         if (size <= RESPONSE_MAX_UNCHUNKED_SIZE) {
 			resp.getHeaders().contentLength(size - (ending == (int)endings::TEXT ? 1 : 0));
 		}

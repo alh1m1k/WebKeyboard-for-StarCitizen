@@ -120,6 +120,14 @@ function isCallable(fn) {
     return fn instanceof Function;
 }
 
+function resolve() {
+    return Promise.resolve();
+}
+
+function reject() {
+    return Promise.reject();
+}
+
 function countEntrys(str, subst) {
     let count = 0, index = 0;
     for (index = str.indexOf(subst); index !== -1; count++, index = str.indexOf(subst, index + subst.length )) {};
@@ -326,6 +334,7 @@ function wsocket(target) {
     let publicCtx = null;
     let privateCtx = {
         context:                null,
+        session:                { identityCB: reject, recoverCB: reject },
         wasAuthorizeAt:         undefined,
         reconnect:              false,
         taskId:                 0,
@@ -334,7 +343,6 @@ function wsocket(target) {
         lastError:              null,
         pendingSend:    new Map(),
         namespaces:     new Map(),
-        sessRenew:      emptyFn,
         signal:         null,
         kaHandler:      undefined,
         onconnect:      null,
@@ -397,8 +405,16 @@ function wsocket(target) {
             privateCtx.context.socket.close();
             return privateCtx.context.closed;
         },
+        updateIdentityTask: (timeoutMs = 1000) => {
+            return privateCtx.session.identityCB().then((authData) => {
+                return privateCtx.sendConf("idnt", authData, false, timeoutMs);
+            }, (e) => {
+                console.error(e);
+                return Promise.reject(new Error("malformed identity impl"));
+            });
+        },
         authorizeTask: (timeoutMs = 1000) => {
-            return privateCtx.auth().then((authData) => {
+            return privateCtx.session.identityCB().then((authData) => {
                 return privateCtx.sendConf("auth", authData, false, timeoutMs).then(()=> {
                     privateCtx.context.status = SocketAuthorize;
                     privateCtx.context.flags |= SocketFlagWasAuthorized;
@@ -414,7 +430,7 @@ function wsocket(target) {
             });
         },
         deauthorizeTask: (timeoutMs = 1000) => {
-            return privateCtx.auth().then((authData) => {
+            return privateCtx.session.identityCB().then((authData) => {
                 return privateCtx.sendConf("leave", authData, false, timeoutMs).then(()=> {
                     privateCtx.context.status = SocketOpen;
                     if (isCallable(privateCtx.ondeauthorized)) {
@@ -428,21 +444,7 @@ function wsocket(target) {
             });
         },
         connectTask: () => {
-            return privateCtx.openTask().then(() => {
-                return privateCtx.authorizeTask();
-            }).catch(privateCtx.connectionErrorHandler);
-        },
-        reconnectTask: (middleWare = Promise.resolve()) => {
-            privateCtx.disconnectTask().then(() => {
-                return middleWare.then(() => {
-                    const flags = privateCtx.context.flags;
-                    if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.sessRenew !== emptyFn) {
-                        return privateCtx.sessRenew().then(() => privateCtx.connectTask());
-                    } else {
-                        return privateCtx.connectTask();
-                    }
-                });
-            });
+            return privateCtx.openTask().then(() => privateCtx.authorizeTask()).catch(privateCtx.connectionErrorHandler);
         },
         monitorHelper: (reason) => {
             if (!privateCtx.reconnect) {
@@ -456,9 +458,9 @@ function wsocket(target) {
                 return;
             }
             const flags = privateCtx.context.flags;
-            if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.sessRenew !== emptyFn) {
+            if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.session.recoverCB !== reject) {
                 privateCtx.sessionErrors++;
-                privateCtx.sessRenew().then(() => {
+                privateCtx.session.recoverCB().then(() => {
                     privateCtx.connectTask();
                     privateCtx.context.closed.then(privateCtx.monitorHelper);
                 });
@@ -484,13 +486,11 @@ function wsocket(target) {
         },
         connectionErrorHandler: (reason) => {
             if (privateCtx.context.status === SocketAuthorize) {
-                return privateCtx.deauthorizeTask().then(() => {
-                    return Promise.reject(reason);
-                }).catch(privateCtx.connectionErrorHandler);
+                return privateCtx.deauthorizeTask().then(
+                    () => Promise.reject(reason)
+                ).catch(privateCtx.connectionErrorHandler);
             } else if (privateCtx.context.status === SocketOpen) {
-                return privateCtx.closeTask().then(() => {
-                    return Promise.reject(reason);
-                })
+                return privateCtx.closeTask().then(() => Promise.reject(reason))
             } else {
                 privateCtx.context.status = SocketClose;
                 return Promise.reject(reason);
@@ -636,23 +636,34 @@ function wsocket(target) {
             }
             return privateCtx.sendConf(topic, msg, false, timeoutMs);
         },
-        begin: () => {
+        begin: (session = { identityCB: reject, recoverCB: reject }) => {
+            privateCtx.session = session;
             const task = privateCtx.connectTask();
             privateCtx.monitor();
             return task;
         },
         end: () => {
             privateCtx.reconnect = false;
+            return privateCtx.disconnectTask().then(() => privateCtx.session   = null);
+        },
+        connect: (session = { identityCB: reject, recoverCB: reject }) => {
+            privateCtx.session = session;
+            return privateCtx.disconnectTask().then(() => privateCtx.connectTask());
+        },
+        disconnect: () => {
             return privateCtx.disconnectTask();
         },
-        reconnect: () => {
-            return privateCtx.reconnectTask.apply(privateCtx, arguments);
+        reconnect: (updatedSession = {}) => {
+            return privateCtx.disconnectTask().then(() => {
+                privateCtx.session = Object.assign(privateCtx.session, updatedSession);
+                return privateCtx.connectTask();
+            });
         },
-        identity(callback) {
-            privateCtx.auth = callback;
-        },
-        session(callback) {
-            privateCtx.sessRenew = callback;
+        updateIdentity: (optNewIdentity) => {
+            if (optNewIdentity) {
+                privateCtx.session.identityCB = optNewIdentity;
+            }
+            return privateCtx.updateIdentityTask();
         },
         ns(namespace, callback = function (){}, async = true, ...args) {
             let ctrl;
@@ -724,7 +735,8 @@ function wsocket(target) {
                     }
                 }, ms);
             }
-        }
+        },
+        get priv() {  return privateCtx }
     }
 }
 
