@@ -460,25 +460,28 @@ void app_main(void)
 		infoIf(LOG_SERVER_GC, "system gc end");
     }, 11000, -1);
 
-	tailScheduler.schedule("socket gc", []() -> void {
-		//no better solution for now
-		infoIf(LOG_SERVER_GC, "socket gc start");
-		auto timestamp = esp_timer_get_time();
-		webServer.getSessions()->walk([&timestamp](sessionManager::session_ptr_type& sessPrt, size_t index) -> bool {
-			if (auto sess = pointer_cast<session>(sessPrt); sess != nullptr) {
-				if (auto lastActiveAt = (int64_t)sess->read()->heartbeatAtMS * 1000;
-					timestamp - lastActiveAt > ((int64_t)SOCKET_KEEP_ALIVE_TIMEOUT * 1000000)
-				) {
-					if (auto& sock = sess->getWebSocket(); sock != http::socket::noAsyncSocket) {
-						debug("find inactive socket", sess->sid(), " last active at: ", lastActiveAt, " close it now");
-						sock.close();
+	if constexpr (SOCKET_KEEP_ALIVE_TIMEOUT > 0) {
+		tailScheduler.schedule("socket gc", []() -> void {
+			//no better solution for now
+			infoIf(LOG_SERVER_GC, "socket gc start");
+			auto timestamp = esp_timer_get_time();
+			webServer.getSessions()->walk([&timestamp](sessionManager::session_ptr_type& sessPrt, size_t index) -> bool {
+				if (auto sess = pointer_cast<session>(sessPrt); sess != nullptr) {
+					if (auto lastActiveAt = (int64_t)sess->read()->heartbeatAtMS * 1000;
+						timestamp - lastActiveAt > ((int64_t)SOCKET_KEEP_ALIVE_TIMEOUT * 1000000)
+					) {
+						if (auto& sock = sess->getWebSocket(); sock != http::socket::noAsyncSocket) {
+							debug("find inactive socket", sess->sid(), " last active at: ", lastActiveAt, " close it now");
+							sock.close();
+						}
 					}
 				}
-			}
-			return true;
-		});
-		infoIf(LOG_SERVER_GC, "socket gc end");
-	}, 3000, -1);
+				return true;
+			});
+			infoIf(LOG_SERVER_GC, "socket gc end");
+		}, SOCKET_KEEP_ALIVE_TIMEOUT * 1000 / 3 - 1, -1);
+	}
+
 	
 	//todo fix schedule faild before .begin
 /*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {
@@ -494,7 +497,7 @@ void app_main(void)
 	
 	info("setup done, app now operational");
 	
-	while  (true) {
+	while (true) {
 		if (WIFI_MODE == wifi_mode_t::WIFI_MODE_STA && wifi::status() != wifi::status_e::CONNECTED) {
 			storage persistence = storage();
 			while (wifi::status() != wifi::status_e::CONNECTED) {

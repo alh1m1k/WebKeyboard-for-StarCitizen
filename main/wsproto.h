@@ -201,7 +201,7 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                info("client is connecting", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId, " sid: ", pSession->sid(), " socket: ", socket.fileDescriptor());
+                info("client is connecting", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
 
                 if (auto w = pSession->write(); w) {
                     w->clientName = clientName;

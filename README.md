@@ -16,6 +16,7 @@ All technical details about build, flash or toolchain setup are simplified becau
 - [Usage](#usage)<br/>
   - [Security](#security)
   - [Configuration](#configuration)
+    - [Https](#https)
   - [UI](#ui)
     - [Application settings](#application-Settings)
     - [Keyboard LED Indicators](#keyboard-led-indicators)
@@ -128,7 +129,7 @@ if the answer is yes, it will wipe the internal storage of this particular clien
 There are also events that the client will notify the user about:
 connection success,
 connection error,
-new client connected, reconnected, disconnected
+new client connected, reconnected, disconnected,
 client changed its id,
 system factory reset,
 host rebooted,
@@ -163,6 +164,54 @@ It have optional ssl webserver with user defined certs, and encrypted wifi conne
 ### Configuration
 Default wifi SSID and password defined in `config.h`. <br/>
 Most configuration are runtime, rest explained in `config.h`.
+
+#### HTTPS
+In order to enable secure http following configuration must be made:<br>
+config.h
+```
+HTTP_USE_HTTPS true
+```
+put 2- or 3-file certificate inside cert directory, where:
+- cert.pem - server certificate in pem format
+- privkey.pem - server private key in pem format
+- cacert.pem - (optional, presence will be detected) server authority chain in pem format
+
+Files must be readable form user that perform compilation.  
+
+> [!NOTE]
+> Certificate acquiring, or cert differences is outside the scope of this topic.
+
+compile with flag:
+```
+idf.py build -DEMBED_CERT=ON
+```
+
+It is recommended to use dns with some domain for application and cert signing that domain.
+to enable dns following configuration must be made:<br>
+config.h
+```
+WIFI_MODE           WIFI_MODE_AP
+WIFI_AP_DNS         true
+WIFI_AP_DNS_CAPTIVE false
+```
+
+Handling https is extremely resource consuming for esp32. The following settings are recommended to maintain acceptable 
+system responsiveness and prevent resource exhaustion.<br>
+config.h
+```
+SOCKET_RECYCLE_CLOSE_RESOURCE_REQ_VIA_HTTP_HEADER true
+SOCKET_RECYCLE_USE_LRU_COUNTER                    true
+```
+
+sdkconfig or `idf.py menuconfig`
+```
+CONFIG_LWIP_MAX_SOCKETS=10
+```
+
+> [!Note]
+> Server configured to be secure or not secure at compile time. Secured server does not support unsecured connection
+> at port 80 and vice versa. If connection error appear, check protocol with what you're connecting to server `http` or `https`
+> it can be implicitly changed by the browser
 
 ### UI
 

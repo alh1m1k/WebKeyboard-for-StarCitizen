@@ -105,8 +105,14 @@
 //session inactivity timeout(before it close) in seconds
 //#define SESSION_TIMEOUT                   60*30
 
-//timeout before inactive socket will be closed
-//#define SOCKET_KEEP_ALIVE_TIMEOUT			10
+//timeout before inactive socket will be closed, 0 - newer
+//there is tradeoff: without this feature server unable to detect when client go away
+//without close connection, but on mobile device this feature can be annoying
+//as sleep mode prevent keep_alive packet to be sent, forcing the server to break
+//the connection and send notification for every device entering sleep
+//on every device that awake.
+//this default value is subject to change
+//#define SOCKET_KEEP_ALIVE_TIMEOUT			0
 
 //interval in seconds between ssid was regenerated and cookies was updated
 //#define SESSION_SID_REFRESH_INTERVAL      3600
