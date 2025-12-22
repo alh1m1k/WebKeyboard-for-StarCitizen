@@ -8,7 +8,6 @@
 #include <mutex>
 #endif
 
-
 #include "esp_err.h"
 #include "esp_http_server.h"
 
@@ -24,36 +23,40 @@ namespace http::socket {
 		
 		httpd_handle_t hd;
 		int			   fd;
-		
+
 		public:
 							
 			typedef std::string message;
 
-			asyncSocket(): hd(nullptr), fd(0) {}; //only use as memory allocator
+			asyncSocket() noexcept : hd(nullptr), fd(0) {} ; //only use as memory allocator
 			
-			explicit asyncSocket(httpd_handle_t hd, int fd);
+			explicit asyncSocket(httpd_handle_t hd, int fd) noexcept;
 			
-			bool	valid();
-					
-			resBool write(const uint8_t* buffer, size_t size, 	httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_BINARY);
+			bool	valid() const noexcept;
+
+			resBool write(const uint8_t* buffer, size_t size, 	httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_BINARY) noexcept;
 			
-			resBool write(const message& msg, 					httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	);
+			resBool write(const message& msg, 					httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	) noexcept;
 			
-			resBool write(const char* msg, 						httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	);
-			
+			resBool write(const char* msg, 						httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	) noexcept;
+
 			inline bool operator==(const asyncSocket& sock) const {
 				return hd == sock.hd && fd == sock.fd;
 			}
+
+			inline resBool close() noexcept {
+				return httpd_sess_trigger_close(hd, fd);
+			}
 			
-			inline httpd_handle_t serverHandler() {
+			inline httpd_handle_t serverHandler() const noexcept {
 				return hd;
 			}	
 			
-			inline int fileDescriptor() {
+			inline int fileDescriptor() const noexcept {
 				return fd;
 			}	
 			
-			inline int native() {
+			inline int native() const noexcept {
 				return fd;
 			}
 	};

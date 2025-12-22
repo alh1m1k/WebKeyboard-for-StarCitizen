@@ -27,6 +27,8 @@ namespace http::session {
             typedef uint32_t                             index_type;
             typedef std::string                          sid_type;
 
+			typedef std::function<bool(session_ptr_type& sess, size_t index)>  walker_type;
+
             iManager(){};
             virtual ~iManager() {};
 
@@ -36,6 +38,9 @@ namespace http::session {
             virtual resBool     close(const std::string& sid) = 0;
 
             virtual result_type fromIndex(index_type index, bool markAlive = false) = 0;
+
+			//temporal
+			virtual void walk(const walker_type& walker) = 0; //will be replaced with non virtual iterator retrival
 
             virtual size_t count() const  = 0;
 

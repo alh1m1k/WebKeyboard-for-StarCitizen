@@ -454,11 +454,31 @@ void app_main(void)
     tailScheduler.begin();
 
     tailScheduler.schedule("server gc", []() -> void {
-        infoIf(LOG_SERVER_GC, "server gc start");
+        infoIf(LOG_SERVER_GC, "system gc start");
 		webServer.collect();
 		ctrl.collect();
-        infoIf(LOG_SERVER_GC, "server gc end");
-    }, 10000, -1);
+		infoIf(LOG_SERVER_GC, "system gc end");
+    }, 11000, -1);
+
+	tailScheduler.schedule("socket gc", []() -> void {
+		//no better solution for now
+		infoIf(LOG_SERVER_GC, "socket gc start");
+		auto timestamp = esp_timer_get_time();
+		webServer.getSessions()->walk([&timestamp](sessionManager::session_ptr_type& sessPrt, size_t index) -> bool {
+			if (auto sess = pointer_cast<session>(sessPrt); sess != nullptr) {
+				if (auto lastActiveAt = (int64_t)sess->read()->heartbeatAtMS * 1000;
+					timestamp - lastActiveAt > ((int64_t)SOCKET_KEEP_ALIVE_TIMEOUT * 1000000)
+				) {
+					if (auto& sock = sess->getWebSocket(); sock != http::socket::noAsyncSocket) {
+						debug("find inactive socket", sess->sid(), " last active at: ", lastActiveAt, " close it now");
+						sock.close();
+					}
+				}
+			}
+			return true;
+		});
+		infoIf(LOG_SERVER_GC, "socket gc end");
+	}, 3000, -1);
 	
 	//todo fix schedule faild before .begin
 /*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {

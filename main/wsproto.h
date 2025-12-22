@@ -154,6 +154,22 @@ class wsproto {
                 return ESP_FAIL;
             }
 
+			//ping is not member of keepAlive, it is network fail discovery
+			if (rawMessage.starts_with("ping:")) {
+				if (!IS(pSession->read()->flags, (uint32_t)sessionFlags::AUTHORIZE)) {
+					socket.write("authfail");
+					return ESP_OK;
+				}
+				pSession->write()->heartbeatAtMS = heartbeat();
+				auto pack = unpackMsg(rawMessage);
+				if (pack.success) {
+					socket.write(resultMsg("echo", pack.taskId, pack.success));
+					return ESP_OK;
+				} else {
+					return ESP_FAIL;
+				}
+			}
+
             std::string clientName = {};
             uint32_t    clientId   = 0;
             uint32_t    flags      = 0;
@@ -164,19 +180,11 @@ class wsproto {
             }
 
             if (IS(flags, (uint32_t)sessionFlags::SOCKET_CHANGE)) {
-                flags = UNSET(pSession->write()->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHODIZED);
-            }
-
-			//ping is not member of keepAlive, it is network fail discovery
-			if (rawMessage.starts_with("ping:") && IS(flags, (uint32_t)sessionFlags::AUTHODIZED)) {
-				auto pack = unpackMsg(rawMessage);
-				if (pack.success) {
-					socket.write(resultMsg("echo", pack.taskId, pack.success));
-					return ESP_OK;
-				} else {
-					return ESP_FAIL;
+				if (auto w = pSession->write(); w) {
+					flags = UNSET(w->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHORIZE);
+					w->heartbeatAtMS = heartbeat();
 				}
-			}
+            }
 
             if (rawMessage.starts_with("auth:")) {
 
@@ -186,18 +194,19 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED) || IS(flags, (uint32_t)sessionFlags::AUTHODIZED);
+                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED) || IS(flags, (uint32_t)sessionFlags::AUTHORIZE);
                 clientName = std::string(trim(pack.body));
                 if (clientName.empty()) {
                     error("auth block fail2clientid");
                     return ESP_FAIL;
                 }
 
-                info("client is connecting", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
+                info("client is connecting", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId, " sid: ", pSession->sid(), " socket: ", socket.fileDescriptor());
 
                 if (auto w = pSession->write(); w) {
                     w->clientName = clientName;
-                    flags = UNSET(SET(w->flags, (uint32_t)sessionFlags::AUTHODIZED), (uint32_t)sessionFlags::DISCONECTED);
+                    flags = UNSET(SET(w->flags, (uint32_t)sessionFlags::AUTHORIZE), (uint32_t)sessionFlags::DISCONECTED);
+					w->heartbeatAtMS = heartbeat();
                 }
 
                 debugIf(LOG_MESSAGES, "respond", pack.taskId, " ", resultMsg("auth", pack.taskId, true));
@@ -230,7 +239,7 @@ class wsproto {
                 return ESP_OK;
             }
 
-            if (!IS(flags, (uint32_t)sessionFlags::AUTHODIZED)) {
+            if (!IS(flags, (uint32_t)sessionFlags::AUTHORIZE)) {
 				info("force client to authorize", "id: ", clientId, " name: ", clientName, " pid: n/a");
                 socket.write("authfail");
                 return ESP_OK;
@@ -467,7 +476,7 @@ class wsproto {
 
                 if (repeatTask.pack.actionType == "switched-on") {
                     status = tailScheduler.schedule(taskId, [this, combination]() -> void {
-                        info("schedule delayed kb press", combination, " ", esp_timer_get_time() / 1000);
+                        info("schedule delayed kb press", combination, " ", heartbeat());
                         auto kbParser = parsers::keyboard();
                         if (kbParser.parse(std::string_view(combination))) {
                             auto kbResult = kbParser.writeTo(keyboard);
@@ -506,6 +515,11 @@ class wsproto {
             
         }
 
+		uint32_t heartbeat() const {
+			auto timestamp = esp_timer_get_time();
+			assert(timestamp <= 4294967295000000);
+			return timestamp / 1000;
+		}
 
 /*
  *      This code expects the manager to be unblocked when the event occurs. This is currently ensured by all manager methods;
@@ -536,11 +550,8 @@ class wsproto {
                             if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
                                 error("unable send notifications (ctr)", ret.code());
                             }
-                            auto ws = sess->getWebSocket();
                             info("closing now");
-                            if (httpd_sess_trigger_close(ws.serverHandler(), ws.native()) != ESP_OK) {
-                                error("unable to close socket");
-                            }
+							sess->getWebSocket().close();
                         } else {
                             debug("already disconnected yet");
                         }

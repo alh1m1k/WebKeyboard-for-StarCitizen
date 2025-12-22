@@ -106,20 +106,14 @@ namespace http::session {
             //not safe to call outside manager
             [[nodiscard]]
             bool expired(int64_t timestamp) const noexcept override {
-                if (timestamp > 4294967295000000) {
-                    error("session impl reach it's limit");
-                    esp_restart();
-                }
+				assert(timestamp <= 4294967295000000);
                 auto timeMark = _updatedExpiredS.load();
                 return (timestamp - (int64_t )timeMark * 1000000) > ((int64_t )duration() * 1000000);
             }
 
             [[nodiscard]]
             bool outdated(int64_t timestamp) const noexcept override {
-                if (timestamp > 4294967295000000) {
-                    error("session impl reach it's limit");
-                    esp_restart();
-                }
+				assert(timestamp <= 4294967295000000);
                 auto timeMark = _updatedOutdatedS.load();
                 return (timestamp - (int64_t )timeMark * 1000000) > ((int64_t )refreshInterval() * 1000000);
             }

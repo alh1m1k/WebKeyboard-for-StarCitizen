@@ -437,6 +437,15 @@ namespace http::session {
                 return ESP_ERR_NOT_FOUND;
             }
 
+			void walk(const walker_type& walker) final override {
+				auto guard = sharedGuardian();
+				for (auto it = begin(); it != end(); ++it) {
+					if (!walker(*it, (*it)->index())) {
+						return;
+					}
+				}
+			}
+
             //thread safe
             size_t count() const final {
                 if (storage.count > 0) {

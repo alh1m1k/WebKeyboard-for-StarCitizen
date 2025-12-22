@@ -105,6 +105,9 @@
 //session inactivity timeout(before it close) in seconds
 //#define SESSION_TIMEOUT                   60*30
 
+//timeout before inactive socket will be closed
+//#define SOCKET_KEEP_ALIVE_TIMEOUT			10
+
 //interval in seconds between ssid was regenerated and cookies was updated
 //#define SESSION_SID_REFRESH_INTERVAL      3600
 

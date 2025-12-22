@@ -41,7 +41,7 @@ class notificationManager {
 		debugIf(LOG_MESSAGES, "send message(async)", (void*)arg, " str:data ",  msg->data.c_str(), " address cnt: ", msg->to.size());
         for (auto i = msg->to.size() - 1; i < msg->to.size(); --i) {
             if (auto sessResult = msg->manager->resolve(msg->to[i]); sessResult) {
-                if (auto socket = std::get<std::shared_ptr<session>>(sessResult)->getWebSocket(); socket.valid()) {
+                if (auto& socket = std::get<std::shared_ptr<session>>(sessResult)->getWebSocket(); socket.valid()) {
 /*                  This code works with garbage sessions that can be created by the client during reconnection when a
                     concurrent socket opening and worker loading occurs, which in the current reality produces two
                     sessions, one of which never opens its socket and will-be collected later by gc*/

@@ -13,14 +13,15 @@ using http::session::pointer_cast;
 
 enum class sessionFlags: uint32_t {
     DISCONECTED     = 1 << 0,
-    AUTHODIZED      = 1 << 1,
+	AUTHORIZE= 1 << 1,
     SOCKET_CHANGE   = 1 << 2,
 };
 
 struct extendedSessionFields {
-    std::string clientName = {};
-    uint32_t    commandCnt = 0;
-    uint32_t    flags      = 0;
+    std::string clientName 	= {};
+	uint32_t 	heartbeatAtMS = 0;
+    uint32_t    commandCnt 	= 0;
+    uint32_t    flags      	= 0;
 };
 
 class session: public http::session::session<extendedSessionFields>, virtual public http::session::iWebSocketSession {
@@ -66,9 +67,9 @@ class session: public http::session::session<extendedSessionFields>, virtual pub
 
             if (isChange && notification != nullptr) {
                 if (isOpen) {
-                    notification((int)sessionNotification::WS_OPEN, this, nullptr);
+                    notification((int)sessionNotification::WS_OPEN,   this, nullptr);
                 } else if (isClose) {
-                    notification((int)sessionNotification::WS_CLOSE, this, nullptr);
+                    notification((int)sessionNotification::WS_CLOSE,  this, nullptr);
                 } else {
                     notification((int)sessionNotification::WS_CHANGE, this, nullptr);
                 }
@@ -76,7 +77,7 @@ class session: public http::session::session<extendedSessionFields>, virtual pub
         }
 
         bool updateWebSocketIfEq(
-            const socket_type &ifEqualToThis, const socket_type &setToThis
+            const socket_type& ifEqualToThis, const socket_type& setToThis
         ) override {
             bool isOpen, isClose, isChange = false;
             {
