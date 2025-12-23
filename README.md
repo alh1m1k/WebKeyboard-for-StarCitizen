@@ -505,6 +505,8 @@ And I will leave it to its end users.
 - You will not see "factory reset" led indication if you board use addressable led as generic indicator led.
 - Some bugs exist here and there. Caused by the static nature of the memory management inside the LWIP, rudimentary server implementation and legacy partially textual protocol of client-server communication. These are extreme cases (enabling all possible switches, extremely long names) and will remain at least until the next major refactoring of the server.
 - Currently client setting belong to that client. While there are probably cases where this is convenient, it most often results in strange behavior from clients with different settings. In the future, there will probably be an explicit or implicit way to synchronize settings.
+- Your device may not see or connect to the hotspot. This could be caused by an incorrect device name rules (typical for new devices)
+  or an inability to operate in the required WPA (or its compatibility) mode. In last case, you need to change the ```WIFI_AP_AUTH``` parameter to the appropriate one for your device.
 
 ## Dependencies 
 - idf >= 5.5.1
