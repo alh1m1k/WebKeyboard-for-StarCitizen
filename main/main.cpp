@@ -169,7 +169,7 @@ static_assert(EMBED_CERT, "Using https without cert make no sense. Embed cert by
 #endif
 
 #if (HTTP_USE_HTTPS && EMBED_CERT && !EMBED_CACERT)
-#warning "cacert not provided, self-signed cert may be ignored by the browser"
+#warning "cacert not provided, ignore if it intentional"
 #endif
 
 #if HTTP_CACHE_USE_ETAG
