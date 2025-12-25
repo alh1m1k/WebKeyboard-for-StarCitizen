@@ -45,10 +45,12 @@ namespace http::resource {
 	file::handler_res_type file::operator()(request& req, response& resp, server& serv) const noexcept {
 		//headers
 
-		if (auto result = callback(req, resp, serv, *this); !result) {
-			return ESP_FAIL;
-		} else if (std::holds_alternative<codes>(result)) {
-			return std::get<codes>(result);
+		if (callback != nullptr) {
+			if (auto result = callback(req, resp, serv, *this); !result) {
+				return ESP_FAIL;
+			} else if (std::holds_alternative<codes>(result)) {
+				return std::get<codes>(result);
+			}
 		}
 
 		resp.getHeaders().contentType(contentType);
