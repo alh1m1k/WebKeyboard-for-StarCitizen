@@ -13,7 +13,7 @@ This is the first major release after initial, focused primarily on technical fi
 > [!WARNING]
 > Changed default behavior:<br>
 > config.h before v0.3 WIFI_AP_AUTH was explicit set to WIFI_AUTH_WPA_WPA2_PSK, now by default WIFI_AP_AUTH is unset
-> and default value is such case: WIFI_AUTH_WPA2_WPA3_PSK
+> and default value in such case: WIFI_AUTH_WPA2_WPA3_PSK
 > This change may result in older devices not being able to connect or see the hotspot. In such case, 
 > it is worth rollback the value and making a custom build.
 
