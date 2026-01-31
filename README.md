@@ -13,7 +13,7 @@ My English is bad, sometimes I also use automatic translation. Edits are welcome
 All technical details about build, flash or toolchain setup are simplified because it wasn't subject for this page.
 
 > [!TIP]
-Since 30.01.2026 lamp action added to controls repository. No release was made, changes are available in upstream.
+Since 30.01.2026 lamp action added to the controls repository. No release was made, changes are available in upstream.
 lamp action can be found using [Placement mode/Select Control](#select-control) feature.
 
 - [Description](#description)<br/>
