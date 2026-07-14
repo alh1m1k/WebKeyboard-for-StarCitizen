@@ -4427,9 +4427,15 @@ function Overlay(canvas, config) {
             privateCtx.failbackLoadingPromise = Promise.resolve();
         }
     } else {
-        privateCtx.port = new Worker("overlay.js");
+        try { privateCtx.port = new Worker("overlay.js"); } catch (e) {
+            privateCtx.pending.forEach((pending, key, map) => {
+                pending.reject(e);
+            });
+            throw e;
+        }
         privateCtx.port.onmessage = privateCtx.port.onerror = (e) => {
             if (e instanceof ErrorEvent || e.type === "error") {
+                //we dont know what task are fail
                 console.error("cancel", e);
             } else {
                 const [data, options] = e.data;
