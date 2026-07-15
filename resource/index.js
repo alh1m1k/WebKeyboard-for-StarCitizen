@@ -1663,7 +1663,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                     return acc;
                 }, []),
                 fill: "rgb(16, 50, 70)",
-                networkCheckCb: () => socket.available(),
+                networkCheckCB: () => socket.available(),
             });
 
             let request = PendingRequest();
@@ -1896,12 +1896,13 @@ const invertAspectRatio = 2/3.1; //@see CSS
         notificator.addNotification("Page validator enabled", "page-validator", "warning", 0);
     }
 
+    let connectCount = 0;
     socket.ondisconnect = () => {
         notificator.removeNotification("connection_info");
         notificator.addNotification("Connection Lost", "connection_error", "error", 0);
         ctrlLocker.lock("no_connection");
     }
-    let connectCount = 0;
+
     socket.onauthorize = () => {
         notificator.removeNotification("connection_info");
         notificator.removeNotification("connection_error");

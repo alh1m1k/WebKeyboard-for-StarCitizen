@@ -4365,7 +4365,7 @@ Overlay.anyGroups = [];
 Overlay.default = {
     fill:   "",
     groups: Overlay.anyGroups,
-    networkCheckCb: null,
+    networkCheckCB: null,
 
 }
 function Overlay(canvas, config) {
@@ -4391,7 +4391,7 @@ function Overlay(canvas, config) {
         pair:           null,
         page:           null,
         selectPending:  null,
-        networkCheckCb: config.networkCheckCb,
+        networkCheckCB: config.networkCheckCB,
         reloadRequest:  null,
         requestCounter: 0,
         extract(collection) {
@@ -4466,9 +4466,9 @@ function Overlay(canvas, config) {
             }
         },
         reloadWorker() {
-            if (privateCtx.reloadRequest) { cancelRequest(privateCtx.reloadRequest); }
+            cancelRequest(privateCtx.reloadRequest || PendingRequest());
             privateCtx.reloadRequest = requestInterval(() => {
-                if (privateCtx.networkCheckCb === null || privateCtx.networkCheckCb()) {
+                if (privateCtx.networkCheckCB === null || privateCtx.networkCheckCB()) {
                     cancelRequest(privateCtx.reloadRequest);
                     privateCtx.loadWorker();
                 }
@@ -4479,14 +4479,14 @@ function Overlay(canvas, config) {
     privateCtx.loadWorker();
 
     return {
-        networkCheck(callback) { privateCtx.networkCheckCb = callback; },
+        networkCheck(callback) { privateCtx.networkCheckCB = callback; },
         clear() {
             privateCtx.context.fillStyle = privateCtx.config.fill;
             privateCtx.context.fillRect(0,0, privateCtx.canvas.width, privateCtx.canvas.height);
         },
         free() {
-            if (privateCtx.reloadRequest) { cancelRequest(privateCtx.reloadRequest); }
             this.invalidateAll();
+            if (privateCtx.reloadRequest) { cancelRequest(privateCtx.reloadRequest); }
             if (!privateCtx.failback) {
                 privateCtx.port.onmessage = privateCtx.port.onerror = null;
                 if (privateCtx.port.terminate) {

@@ -339,6 +339,7 @@ function wsocket(target) {
         reconnect:              false,
         taskId:                 0,
         sessionErrors:          0,
+        openingAttempts:        0,
         lastDisconnectReason:   null,
         lastError:              null,
         pendingSend:    new Map(),
@@ -387,6 +388,7 @@ function wsocket(target) {
             }
             privateCtx.context = open((location.protocol === "https:" ? "wss://" : "ws://") + location.hostname + target);
             privateCtx.wasClosedImmediately  = false;
+            privateCtx.openingAttempts++;
             privateCtx.context.opened = privateCtx.context.opened.then(privateCtx.socketOpenHandler);
             privateCtx.context.closed = privateCtx.context.closed.then(privateCtx.socketCloseHandler);
             privateCtx.context.socket.onmessage = privateCtx.messageHandler;
@@ -524,6 +526,12 @@ function wsocket(target) {
                     ) {
                         privateCtx.context.flags |= SocketFlagClosedImmediately;
                     }
+                }
+                if (privateCtx.openingAttempts === 1 && !privateCtx.wasAuthorizeAt) {
+                    //if we fail on our first attempt it's probably due server socket depletion after http's resource loading
+                    //forgive this one error (do not call privateCtx.ondisconnect)
+                    console.warn('ignoring first error on first connection attempt');
+                    return reason;
                 }
             }
             if (isCallable(privateCtx.ondisconnect)) {
