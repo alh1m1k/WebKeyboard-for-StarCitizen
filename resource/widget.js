@@ -107,6 +107,13 @@ function requestTimeout(callback, timeout, request = PendingRequest()) {
     return request;
 }
 
+function requestInterval(callback, interval, request = PendingRequest()) {
+    request.id          = setInterval(callback, interval);
+    request.canceler    = clearInterval;
+    request.ctx         = window;
+    return request;
+}
+
 function requestSync(callback, request = PendingRequest()) {
     callback();
     return request;
@@ -4358,6 +4365,8 @@ Overlay.anyGroups = [];
 Overlay.default = {
     fill:   "",
     groups: Overlay.anyGroups,
+    networkCheckCb: null,
+
 }
 function Overlay(canvas, config) {
 
@@ -4382,6 +4391,8 @@ function Overlay(canvas, config) {
         pair:           null,
         page:           null,
         selectPending:  null,
+        networkCheckCb: config.networkCheckCb,
+        reloadRequest:  null,
         requestCounter: 0,
         extract(collection) {
             return Array.prototype.reduce.call(collection, (accumulator, element) => {
@@ -4410,55 +4421,71 @@ function Overlay(canvas, config) {
         },
         requestId() {
             return privateCtx.requestCounter++;
-        }
-    }
-
-    if (privateCtx.failback) {
-        if (!document.querySelector('script[src="overlay.js"]')) {
-            privateCtx.failbackLoadingPromise = new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src      = 'overlay.js';
-                script.type     = "text/javascript";
-                script.onload   = resolve;
-                script.onerror  = reject;
-                document.head.appendChild(script);
-            });
-        } else {
-            privateCtx.failbackLoadingPromise = Promise.resolve();
-        }
-    } else {
-        try { privateCtx.port = new Worker("overlay.js"); } catch (e) {
-            privateCtx.pending.forEach((pending, key, map) => {
-                pending.reject(e);
-            });
-            throw e;
-        }
-        privateCtx.port.onmessage = privateCtx.port.onerror = (e) => {
-            if (e instanceof ErrorEvent || e.type === "error") {
-                //we dont know what task are fail
-                console.error("cancel", e);
-            } else {
-                const [data, options] = e.data;
-                if (privateCtx.pending.has(options.requestId)) {
-                    let pending = privateCtx.pending.get(options.requestId);
-                    if (data instanceof Error) {
-                        pending.reject(e.data);
-                    } else {
-                        pending.resolve(e.data);
-                    }
+        },
+        loadWorker() {
+            if (privateCtx.failback) {
+                if (!document.querySelector('script[src="overlay.js"]')) {
+                    privateCtx.failbackLoadingPromise = new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src      = 'overlay.js';
+                        script.type     = "text/javascript";
+                        script.onload   = resolve;
+                        script.onerror  = (e) => {
+                            script.remove();
+                            privateCtx.reloadWorker();
+                            reject(e);
+                        };
+                        document.head.appendChild(script);
+                    });
                 } else {
-                    console.error("cancel not found", e);
+                    privateCtx.failbackLoadingPromise = Promise.resolve();
+                }
+            } else {
+                privateCtx.port = new Worker("overlay.js");
+
+                privateCtx.port.onerror = (e) => {
+                    if (privateCtx.port.terminate) {
+                        privateCtx.port.terminate();
+                    }
+                    privateCtx.reloadWorker();
+                }
+
+                privateCtx.port.onmessage = (e) => {
+                    const [data, options] = e.data;
+                    if (privateCtx.pending.has(options.requestId)) {
+                        let pending = privateCtx.pending.get(options.requestId);
+                        if (data instanceof Error) {
+                            pending.reject(e.data);
+                        } else {
+                            pending.resolve(e.data);
+                        }
+                    } else {
+                        console.error("worker request not found", e);
+                    }
                 }
             }
+        },
+        reloadWorker() {
+            if (privateCtx.reloadRequest) { cancelRequest(privateCtx.reloadRequest); }
+            privateCtx.reloadRequest = requestInterval(() => {
+                if (privateCtx.networkCheckCb === null || privateCtx.networkCheckCb()) {
+                    cancelRequest(privateCtx.reloadRequest);
+                    privateCtx.loadWorker();
+                }
+            }, 1000);
         }
     }
 
+    privateCtx.loadWorker();
+
     return {
+        networkCheck(callback) { privateCtx.networkCheckCb = callback; },
         clear() {
             privateCtx.context.fillStyle = privateCtx.config.fill;
             privateCtx.context.fillRect(0,0, privateCtx.canvas.width, privateCtx.canvas.height);
         },
         free() {
+            if (privateCtx.reloadRequest) { cancelRequest(privateCtx.reloadRequest); }
             this.invalidateAll();
             if (!privateCtx.failback) {
                 privateCtx.port.onmessage = privateCtx.port.onerror = null;
