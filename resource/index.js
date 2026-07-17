@@ -1631,12 +1631,12 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
 
     let enableOverlayFnResizeHandler = null;
-    let pendingEnableOverlayRequest = PendingRequest();
+    let pendingEnableOverlayRequest = null;
 
     function enableOverlay(enable = true) {
         const vp        = document.querySelector(".viewport");
         const swipeEl   = document.querySelector(".swiper");
-        cancelRequest(pendingEnableOverlayRequest);
+
         if (enable) {
             if (overlay) {
                 console.warn("overlay already exist");
@@ -1655,18 +1655,37 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
             swiper.underlay(overlayEl);
 
-            overlay = Overlay(overlayEl, {
-                groups: Array.from(Group.registry).reduce((acc, group) => {
-                    if (group.logic) {
-                        acc.push({ id: group.id, color: group.data ? group.data.color : undefined });
-                    }
-                    return acc;
-                }, []),
-                fill: "rgb(16, 50, 70)",
-                networkCheckCB: () => socket.available(),
-            });
+            try {
+                overlay = Overlay(overlayEl, {
+                    groups: Array.from(Group.registry).reduce((acc, group) => {
+                        if (group.logic) {
+                            acc.push({ id: group.id, color: group.data ? group.data.color : undefined });
+                        }
+                        return acc;
+                    }, []),
+                    fill: "rgb(16, 50, 70)",
+                    networkCheckCB: () => socket.available(),
+                });
+            } catch (e) {
+                swiper.underlay(null);
+                overlayEl.remove();
+                cancelRequest(pendingEnableOverlayRequest = pendingEnableOverlayRequest || PendingRequest());
+                requestInterval(
+                    () => {
+                        if (socket.available()) {
+                            cancelRequest(pendingEnableOverlayRequest);
+                            enableOverlay(true);
+                        }
+                    },
+                    1000,
+                    pendingEnableOverlayRequest
+                );
+                return;
+            }
+
 
             let request = PendingRequest();
+            window.removeEventListener("resize", enableOverlayFnResizeHandler || emptyFn);
             window.addEventListener("resize", enableOverlayFnResizeHandler = () => {
                 cancelRequest(request);
                 showOverlay(false);
@@ -1707,6 +1726,10 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 overlay.free();
                 swiper.underlay(null);
                 overlayEl.remove();
+                if (pendingEnableOverlayRequest) {
+                    cancelRequest(pendingEnableOverlayRequest);
+                    pendingEnableOverlayRequest = null;
+                }
                 overlay = enableOverlayFnResizeHandler = window.overlay.obj = null;
             }
         }
