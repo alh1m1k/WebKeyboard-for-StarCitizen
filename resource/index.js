@@ -1742,8 +1742,10 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     }
 
+    let pendingUpdateOverlayRequest = PendingRequest();
     function cancelOverlay() {
         if (overlay) {
+            cancelRequest(pendingUpdateOverlayRequest);
             overlay.cancel();
         }
     }
@@ -1760,14 +1762,18 @@ const invertAspectRatio = 2/3.1; //@see CSS
             const path = router.path;
             //notificator.addNotification("overlay start " + path, "info", "overlay-" + path);
             if (info && info.page) {
-                requestDocumentFlushTime(() => {
+                cancelRequest(pendingUpdateOverlayRequest);
+                pendingUpdateOverlayRequest = requestDocumentFlushTime(() => {
+                    if (pendingUpdateOverlayRequest.canceled || router.info(router.path) !== info) {
+                        return;
+                    }
                     overlay.select(info.page, overlayFeeder).then(() => {
-                        requestAnimationFrame(() => {
+                        pendingUpdateOverlayRequest = requestAnimationFrameTime(() => {
                             console.info("select draw", info.page.id);
                             overlay.draw();
                             showOverlay(true);
                             //notificator.addNotification("overlay end " + path + " " + ((new Date()) - d), "info", "overlay-" + router.path);
-                        });
+                        }, pendingUpdateOverlayRequest);
                     });
                 });
             }
@@ -1868,7 +1874,11 @@ const invertAspectRatio = 2/3.1; //@see CSS
     socket.keepAlive = 5000;
     socket.begin({
         identityCB: ((identV) => () => identV)(identity()),
-        recoverCB:  () => fetch("/renew", { method: 'POST' })
+        /**
+          * ff52: credentials must be explicitly set, even if supposed to be defaulted to 'same-origin'
+          * or cookie will-be ignored
+         */
+        recoverCB:  () => fetch("/renew", { method: 'POST', credentials: 'same-origin' })
     });
 
 /*

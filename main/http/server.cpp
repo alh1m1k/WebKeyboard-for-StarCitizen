@@ -111,7 +111,7 @@ namespace http {
         infoIf(LOG_SESSION, "try session open(reuse)", req.native()->uri, " t ", esp_timer_get_time());
         if (auto cookieReadResult = req.getCookies().get("wkb-id"); cookieReadResult) {
             if (sessionResult = serv.getSessions()->open(std::get<const cookie>(cookieReadResult).value, &req); sessionResult) {
-                infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " t ", esp_timer_get_time(), std::get<const cookie>(cookieReadResult).value);
+                infoIf(LOG_SESSION, "session open(reuse)", req.native()->uri, " t ", esp_timer_get_time(), ' ', std::get<const cookie>(cookieReadResult).value);
                 if (auto absSess = std::get<session_ptr_type>(sessionResult); absSess->outdated(esp_timer_get_time())) {
                     infoIf(LOG_SESSION, "session is outdated", req.native()->uri, " t ", esp_timer_get_time());
                     if (sessionResult = serv.getSessions()->renew(absSess, &req); sessionResult) {
@@ -176,6 +176,8 @@ namespace http {
                 //predefined ssid (mod 2)
                 //also esp_server backend not allow to generate server error for upgrade request (it always response with 101 but then close connection
                 //if error happened), so session recovery needed
+            	debug("hit code", HTTP_SESSION_RECOVERY);
+            	debug("hit recovery", sessionResult.code());
             }
         }
 
