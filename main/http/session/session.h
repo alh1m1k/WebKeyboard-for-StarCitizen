@@ -9,6 +9,8 @@
 #include "http/session/interfaces/iSession.h"
 #include "http/session/interfaces/iSocksCntSession.h"
 #include "manager.h"
+#include "syncing/critical_shared.h"
+#include "syncing/critical_shared_nested.h"
 
 namespace http::session {
 
@@ -48,7 +50,7 @@ namespace http::session {
             std::atomic<uint32_t> _updatedExpiredS   = 0;
             std::atomic<uint32_t> _updatedOutdatedS  = 0;
             std::string _sid;
-            std::shared_mutex _mux;
+			syncing::critical_shared _mux;
             sharedData _data = {};
             bool _valid;
 
@@ -84,8 +86,8 @@ namespace http::session {
             static constexpr uint32_t TRAIT_ID = (uint32_t)traits::SESSION;
 
             typedef sharedData                                     shared_data_type;
-            typedef guardian<std::shared_lock<std::shared_mutex>, true>   read_guardian_type;
-            typedef guardian<std::unique_lock<std::shared_mutex>, false>  write_guardian_type;
+            typedef guardian<std::shared_lock<syncing::critical_shared>, true>   read_guardian_type;
+            typedef guardian<std::unique_lock<syncing::critical_shared>, false>  write_guardian_type;
 
 
             friend class manager<session<TSessionData>>;
