@@ -472,7 +472,7 @@ void app_main(void)
 					) {
 						if (auto& sock = sess->getWebSocket(); sock != http::socket::noAsyncSocket) {
 							debug("find inactive socket", sess->sid(), " last active at: ", lastActiveAt, " close it now");
-							sock.close();
+							sock.close(http::socket::wscodes::SOCKET_TIMEOUT, http::socket::codes2Symbols(http::socket::wscodes::SOCKET_TIMEOUT));
 						}
 					}
 				}

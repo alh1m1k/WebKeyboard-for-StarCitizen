@@ -78,7 +78,7 @@ namespace http {
 			
 			resBool write(const char* str) noexcept; //proxy to write
 
-			resBool status(const codes code) noexcept;
+			resBool status(codes code) noexcept;
 			
 			inline resBool status404() noexcept {
 				return status(codes::NOT_FOUND);

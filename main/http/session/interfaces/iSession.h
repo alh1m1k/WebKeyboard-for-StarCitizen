@@ -30,7 +30,7 @@ namespace http::session {
             static constexpr uint32_t TRAIT_ID = (uint32_t)traits::I_SESSION;
 
             //virtual destructor must present even for interface classes
-            virtual ~iSession() = default;
+            virtual ~iSession() = default; //must be pure?
 
             //not safe to call outside manager, group{ update, expired, invalidate }
             virtual bool expired( int64_t timestamp) const = 0;

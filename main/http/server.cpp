@@ -15,11 +15,12 @@
 #include "codes.h"
 #include "util.h"
 
+#include "network.h"
 #include "session/interfaces/iManager.h"
 #include "session/interfaces/iSocksCntSession.h"
 #include "session/interfaces/iWebSocketSession.h"
 #include "session/pointer.h"
-#include "network.h"
+#include "work.h"
 
 namespace http {
 
@@ -46,6 +47,10 @@ namespace http {
 		};
 	}
 
+
+	 // @fixme it seems this function using was invalid
+	 //    server call it and return ESP_FAIL
+	 //	   make this function call useless
 	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
 		if (resp.isHeadersSent()) {
 			//nothing we can do as this moment
@@ -208,8 +213,8 @@ namespace http {
 	static esp_err_t runAction(action& act, request& req, response& resp, server& serv) {
 		try {
 			if (auto result = act(req, resp, serv); !result) {
-				serverError(req, resp);
 				error("internal error", req.getUri().raw(), " t ", esp_timer_get_time(), " code ", result.code());
+				serverError(req, resp);
 				return ESP_FAIL;
 			} else {
 				if (req.isWebsocket()) {
@@ -315,7 +320,15 @@ namespace http {
 			//because ws not have cookies, but initial Get have, so socket will rcv it session on protocol upgrade stage until it closes
 			if (auto code = sessionOpen(req, resp, *serv); code != ESP_OK) {
 				error("session open", req.native()->uri, " t ", esp_timer_get_time(), " code ", code);
-				serverError(req, resp, err2code(code));
+				if (code == HTTP_SESSION_RECOVERY && act.isWebSocket() && req.isGet()) {
+					info("closing unauthorized socket for req", req.native());
+					socket::socket(req.native()).writeClose(
+						socket::wscodes::UNAUTHORIZED,
+						socket::codes2Symbols(socket::wscodes::UNAUTHORIZED)
+					);
+				} else {
+					serverError(req, resp, err2code(code));
+				}
 				return ESP_FAIL;
 			}
 
@@ -347,21 +360,6 @@ namespace http {
 		return ESP_FAIL; //close socket
 	}
 
-    struct jobWrapper {
-        const server::job_type job;
-    };
-    static void staticJobProcessor(void *arg) {
-        auto wrapper = static_cast<jobWrapper*>(arg);
-        try {
-            wrapper->job();
-        } catch (const std::exception& e) {
-            error("staticJobProcessorEx", e.what());
-        } catch (...) {
-            error("staticJobProcessorEx", "undefined exception");
-        };
-        delete wrapper;
-    }
-
 	server::server() noexcept :
 		captive([](request& req, response& resp, server& serv) -> result<codes> {
 			if (auto host = req.getHeaders().host(); host.empty()) {
@@ -373,7 +371,6 @@ namespace http {
 	{
 
 	}
-
 
 	server* server::of(httpd_handle_t handler) {
 		if (auto ptr = httpd_get_global_user_ctx(handler); ptr != nullptr) {
@@ -551,13 +548,7 @@ namespace http {
         if (handler == nullptr) {
             throw std::logic_error("server not start");
         }
-        auto wrapper = new jobWrapper{std::move(job)};
-        if (auto code = httpd_queue_work(handler, staticJobProcessor, (void*)wrapper); code != ESP_OK) {
-            delete wrapper;
-            return code;
-        } else {
-            return code;
-        }
+		return work::schedule(std::move(job), handler);
     }
 
 }

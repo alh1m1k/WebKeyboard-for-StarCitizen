@@ -7,12 +7,12 @@
 
 #include <esp_http_server.h>
 
-
-#include "result.h"
-#include "request.h"
-#include "response.h"
 #include "action.h"
 #include "http/session/interfaces/iManager.h"
+#include "request.h"
+#include "response.h"
+#include "result.h"
+#include "work.h"
 
 namespace http {
 
@@ -52,7 +52,7 @@ namespace http {
 			typedef result<codes> handler_res_type;
             typedef std::function<handler_res_type(request& req, response& resp, server& serv)> handler_type;
             typedef std::unique_ptr<session::iManager> sessions_ptr_type;
-			typedef std::function<void()> job_type;
+			typedef work::handler_type job_type;
 
 			static server* of(httpd_handle_t handler);
 
@@ -89,7 +89,6 @@ namespace http {
             }
 
 			resBool scheduleJob(job_type&& job);
-
 
             const sessions_ptr_type& getSessions() const;
 

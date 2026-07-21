@@ -5,7 +5,7 @@ idf_component_register(
     SRCS
 
     					resultStream.cpp http/uri.cpp http/network.cpp http/headers.cpp http/cookie.cpp http/cookies.cpp http/request.cpp http/response.cpp http/socket/handler.cpp
-						http/socket/socket.cpp http/socket/asyncSocket.cpp
+						http/socket/socket.cpp http/socket/asyncSocket.cpp http/work.cpp
     					http/resource/file.cpp http/action.cpp http/server.cpp http/secure.cpp
 
 						crypto/hash/sha256Engine.cpp

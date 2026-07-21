@@ -9,7 +9,7 @@
 #include "result.h"
 #include "request.h"
 #include "socket.h"
-#include "codes.h"
+#include "http/codes.h"
 #include "session/interfaces/iWebSocketSession.h"
 #include "session/session.h"
 #include "session/pointer.h"
@@ -22,7 +22,7 @@ namespace http {
 
 namespace http::socket {
 
-    typedef result<codes> handlerRes;
+    typedef result<http::codes> handlerRes;
 
 	class handler {
 				

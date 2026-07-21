@@ -15,11 +15,10 @@ namespace http::socket {
 				wsSessionPtr->setWebSocket(socket(req.native()).keep());
                 debugIf(LOG_SESSION || LOG_SOCKET, "websocket handshake", httpd_req_to_sockfd(req.native()));
             }
-	        return ESP_OK;
+	        return {static_cast<esp_err_t>(ESP_OK)};
 	    }
-	    debugIf(LOG_SOCKET, "socket::operator()");
-	    auto res = handle(req, resp, serv); //do not ret directly resBool != esp_err_t != handlerRes, !resBool(handlerRes)
-	    return res.code();
+		const auto res = handle(req, resp, serv); //do not ret directly resBool != esp_err_t != handlerRes, !resBool(handlerRes)
+	    return {static_cast<esp_err_t>(res.code())};
 	}
 
 }

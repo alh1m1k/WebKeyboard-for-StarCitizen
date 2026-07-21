@@ -551,7 +551,7 @@ class wsproto {
                                 error("unable send notifications (ctr)", ret.code());
                             }
                             info("closing now");
-							sess->getWebSocket().close();
+							sess->getWebSocket().close(http::socket::wscodes::SESSION_CLOSED, http::socket::codes2Symbols(http::socket::wscodes::SESSION_CLOSED));
                         } else {
                             debug("already disconnected yet");
                         }

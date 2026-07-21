@@ -34,7 +34,7 @@ namespace http {
             case codes::TOO_MANY_REQUESTS:  	return "429 Too Many Requests";
 			case codes::INTERNAL_SERVER_ERROR:  return "500 Internal Server Error";
             default:
-                assert("codes2Symbols no default value");
+                assert(false && "codes2Symbols no default value");
                 return nullptr;
         }
 	}
