@@ -180,8 +180,6 @@ namespace http {
                 //predefined ssid (mod 2)
                 //also esp_server backend not allow to generate server error for upgrade request (it always response with 101 but then close connection
                 //if error happened), so session recovery needed
-            	debug("hit code", HTTP_SESSION_RECOVERY);
-            	debug("hit recovery", sessionResult.code());
             }
         }
 
