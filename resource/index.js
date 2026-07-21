@@ -1930,9 +1930,15 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
 
     let connectCount = 0;
-    socket.ondisconnect = () => {
+    socket.ondisconnect = (reason) => {
         notificator.removeNotification("connection_info");
-        notificator.addNotification("Connection Lost", "connection_error", "error", 0);
+        switch (reason.code) {
+            case WSCodesSessionClosed:
+                notificator.addNotification("Connection Lost (inactivity)", "connection_error", "error", 0);
+                break;
+            default:
+                notificator.addNotification("Connection Lost", "connection_error", "error", 0);
+        }
         ctrlLocker.lock("no_connection");
     }
 

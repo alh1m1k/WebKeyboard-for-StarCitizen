@@ -10,6 +10,15 @@ const SocketFlagWasAuthorized =  1 << 1;
 const SocketFlagClosedImmediately     =  1 << 6;
 const SocketFlagError                 =  1 << 7;
 
+const WSCodesNormalClose = 1000;
+const WSCodesAway = 1001;
+const WSCodesUnsupportedData = 1003;
+const WSCodesInternalError = 1011;
+const WSCodesTryAgain = 1013;
+const WSCodesSocketTimeout = 3001;
+const WSCodesSessionClosed = 3002;
+const WSCodesUnauthorized = 3003;
+
 const quarterFingerPixels = ((2.75 - 2.25) / 2 + 2.25) / (Math.PI * 2) / 2 * ((window.devicePixelRatio || 1.0) * 96);
 
 const defaultLinkPattern =  { pattern: "^(\\/[\\w\\-]*)(\\/[\\w\\-]+)*\\/?" };
@@ -452,23 +461,33 @@ function wsocket(target) {
             if (!privateCtx.reconnect) {
                 return;
             }
-            if (reason instanceof ConnectionError && reason.wasClean) {
+            if (!(reason instanceof ConnectionError)) {
+                console.error("unsupported reason type, expect ConnectionError", reason);
                 return;
             }
-            if (privateCtx.sessionErrors >= 1) {
-                console.info("session closed");
-                return;
-            }
-            const flags = privateCtx.context.flags;
-            if (((flags&SocketFlagClosedImmediately) === SocketFlagClosedImmediately) && privateCtx.session.recoverCB !== reject) {
-                privateCtx.sessionErrors++;
-                privateCtx.session.recoverCB().then(() => {
+
+            switch (reason.code) {
+                case reason.wasClean:
+                case WSCodesNormalClose:
+                case WSCodesAway:
+                case WSCodesInternalError:
+                case WSCodesSessionClosed:
+                    console.info("code indicate that no reconnect required", reason);
+                    break;
+                case WSCodesUnauthorized:
+                    if (privateCtx.sessionErrors < 1 && privateCtx.session.recoverCB !== reject) {
+                        privateCtx.session.recoverCB().then(() => {
+                            privateCtx.connectTask();
+                            privateCtx.context.closed.then(privateCtx.monitorHelper);
+                        });
+                    } else {
+                        console.error("unable to recover from session error", privateCtx.session.recoverCB, privateCtx.sessionErrors);
+                    }
+                    privateCtx.sessionErrors++;
+                    break;
+                default:
                     privateCtx.connectTask();
                     privateCtx.context.closed.then(privateCtx.monitorHelper);
-                });
-            } else {
-                privateCtx.connectTask();
-                privateCtx.context.closed.then(privateCtx.monitorHelper);
             }
         },
         monitor: () => {
@@ -507,6 +526,7 @@ function wsocket(target) {
             return data;
         },
         socketCloseHandler: (reason) => {
+            console.info('close reason', reason);
             const status = privateCtx.context.status;
             privateCtx.context.status = SocketClose;
             if (!(reason instanceof Error)) {
@@ -625,7 +645,7 @@ function wsocket(target) {
         }
     }
 
-    return {
+    return publicCtx =  {
         send(topic, msg) {
             if (privateCtx.context.status !== SocketAuthorize) {
                 throw new Error("socket was not authorize");
