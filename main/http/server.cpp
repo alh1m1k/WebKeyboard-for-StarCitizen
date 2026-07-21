@@ -47,10 +47,9 @@ namespace http {
 		};
 	}
 
-
-	 // @fixme it seems this function using was invalid
-	 //    server call it and return ESP_FAIL
-	 //	   make this function call useless
+	// @fixme it seems this function using was invalid
+	//    server call it and return ESP_FAIL
+	//	   make this function call useless
 	static void serverError(request& req, response& resp, http::codes code = http::codes::INTERNAL_SERVER_ERROR) {
 		if (resp.isHeadersSent()) {
 			//nothing we can do as this moment

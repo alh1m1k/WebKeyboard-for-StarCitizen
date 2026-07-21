@@ -15,21 +15,20 @@ namespace http {
         protected:
 
             mutable std::unique_ptr<std::unordered_map<std::string, std::string>> _heap;
-            bool populate(std::string&& key, std::string&& value, uint16_t index);
+            void populate(std::string&& name_, std::string&& value_, uint16_t index);
 
 
         public:
 
             cookie();
-            cookie(const std::string& name, const std::string& value, bool httpOnly = false);
-            cookie(const std::string&& name, const std::string& value, bool httpOnly = false);
-            explicit cookie(const std::string& str);
+            cookie(std::string name, std::string value, bool httpOnly = false) noexcept;
+            explicit cookie(const std::string& cookies);
 
-            cookie(const cookie&  copy);
-            cookie(cookie&& move);
+            cookie(const cookie& copy)  noexcept;
+            cookie(cookie&& move) noexcept;
 
-            cookie& operator=(const cookie& copy);
-            cookie& operator=(cookie&& move);
+            cookie& operator=(const cookie& copy) noexcept;
+            cookie& operator=(cookie&& move) noexcept;
 
             std::string name;
             std::string value;

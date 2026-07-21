@@ -8,9 +8,7 @@
 namespace http {
 		
 	cookies::cookies(): _handler(nullptr) {};
-	
-	//cookies::cookies(const char* str) {};
-		
+
 	cookies::cookies(const httpd_req_t* esp_req): _handler(esp_req) {};
 
     //this one used to read data that already write by .set
@@ -28,7 +26,7 @@ namespace http {
 
     //this one used to read data from incoming request
     //ie used in request.getCookies().get*(
-    result<const cookie> cookies::get(const std::string& key, uint16_t expectedSize) const {
+    result<const cookie> cookies::get(const std::string& key, const uint16_t expectedSize) const {
 
         std::string buffer = {};
         buffer.resize(expectedSize);
@@ -46,7 +44,7 @@ namespace http {
         }
 
         if (result == ESP_OK) {
-            return cookie(key +"="+ buffer); //todo change it
+            return cookie(key + "=" + buffer);
         } else {
             debugIf(LOG_COOKIES, "cookies::get fail", key.c_str());
             return result;
