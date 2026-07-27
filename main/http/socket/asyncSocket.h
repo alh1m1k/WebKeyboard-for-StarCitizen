@@ -45,32 +45,36 @@ namespace http::socket {
 			resBool write(const char* msg, 						httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	) noexcept;
 
 			//this function queued it execution
-			resBool close(wscodes code = wscodes::NORMAL_CLOSE, const uint8_t* buffer = nullptr, size_t size = 0, callback_type&& callback = nullptr) noexcept;
+			resBool close(wscodes code, const uint8_t* buffer, size_t size, callback_type&& callback = nullptr) noexcept;
 
-			//this function queued it execution
-			inline resBool close(const wscodes code = wscodes::NORMAL_CLOSE, const char* reason = nullptr, callback_type&& callback = nullptr) noexcept {
-				//at this point we not transfer NIL and end of string
-				return close(code, (const uint8_t*)reason, reason == nullptr ? 0 : strlen(reason), std::move(callback));
+			inline resBool close(const wscodes code = wscodes::NORMAL_CLOSE) noexcept {
+				return close(code, codes2Symbols(code));
 			}
 
-			//this function queued it execution
-			inline resBool close(const wscodes code = wscodes::NORMAL_CLOSE, const std::string& reason = "", callback_type&& callback = nullptr) noexcept {
+			inline resBool close(const wscodes code, const char* reason) noexcept {
+				//at this point we not transfer NIL and end of string
+				return close(code, (const uint8_t*)reason, reason == nullptr ? 0 : strlen(reason));
+			}
+
+			inline resBool close(const wscodes code, const std::string& reason) noexcept {
 				//at this point we not transfer NIL and end of string
 				const auto size = reason.size();
-				return close(code, size ? (const uint8_t*)reason.data() : nullptr, size, std::move(callback));
+				return close(code, size ? (const uint8_t*)reason.data() : nullptr, size);
 			}
 
-	    			//this function queued it execution
-			resBool closeWait(wscodes code = wscodes::NORMAL_CLOSE, const uint8_t* buffer = nullptr, size_t size = 0) noexcept;
+	    	//this function queued it execution
+			resBool closeWait(wscodes code, const uint8_t* buffer, size_t size) noexcept;
 
-			//this function queued it execution
-			inline resBool closeWait(const wscodes code = wscodes::NORMAL_CLOSE, const char* reason = nullptr) noexcept {
+			resBool closeWait(wscodes code = wscodes::NORMAL_CLOSE) noexcept {
+				return closeWait(code, codes2Symbols(code));
+			}
+
+			inline resBool closeWait(const wscodes code, const char* reason) noexcept {
 				//at this point we not transfer NIL and end of string
 				return closeWait(code, (const uint8_t*)reason, reason == nullptr ? 0 : strlen(reason));
 			}
 
-			//this function queued it execution
-			inline resBool closeWait(const wscodes code = wscodes::NORMAL_CLOSE, const std::string& reason = "") noexcept {
+			inline resBool closeWait(const wscodes code, const std::string& reason) noexcept {
 				//at this point we not transfer NIL and end of string
 				const auto size = reason.size();
 				return closeWait(code, size ? (const uint8_t*)reason.data() : nullptr, size);

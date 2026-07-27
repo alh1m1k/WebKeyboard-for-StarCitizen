@@ -15,6 +15,7 @@ idf_component_register(
     					hid/joystick.cpp
     					parsers/keyboard.cpp
     					wifi/wifi.cpp
+						packers.cpp
 						sessionManager.cpp
     					main.cpp
 

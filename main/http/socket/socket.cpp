@@ -93,10 +93,13 @@ namespace http::socket {
 	resBool socket::writeClose(const wscodes code, const uint8_t* buffer, const size_t size) noexcept {
 		const auto txBuffSize = size+2;
 		const auto codeNetOrder = lwip_htons((int16_t)code);
-		auto txBuff = std::make_unique_for_overwrite<uint8_t[]>(txBuffSize);
-		memcpy(txBuff.get(), &codeNetOrder, 2);
-		memcpy(&txBuff[2], buffer, size);
-
-		return write(txBuff.get(), txBuffSize, httpd_ws_type_t::HTTPD_WS_TYPE_CLOSE);
+		if (size != 0) {
+			auto txBuff = std::make_unique_for_overwrite<uint8_t[]>(txBuffSize);
+			memcpy(txBuff.get(), &codeNetOrder, 2);
+			memcpy(&txBuff[2], buffer, size);
+			return write(txBuff.get(), txBuffSize, httpd_ws_type_t::HTTPD_WS_TYPE_CLOSE);
+		} else {
+			return write((uint8_t*)&codeNetOrder, sizeof(codeNetOrder), httpd_ws_type_t::HTTPD_WS_TYPE_CLOSE);
+		}
 	}
 }

@@ -49,7 +49,7 @@ namespace http::socket {
 		const auto codeNetOrder = lwip_htons((int16_t)code);
 		auto txBuff = std::make_unique_for_overwrite<uint8_t[]>(txBuffSize);
 		memcpy(txBuff.get(), &codeNetOrder, 2);
-		memcpy(&txBuff[2], buffer, size);
+		memcpy(&txBuff[2], buffer, size); //memcpy from zero-sized must-be noop
 
 		return work::schedule([=, txBuff = std::move(txBuff), callback = std::move(callback)]() mutable -> esp_err_t {
 			//create new interface object in case previous was dead

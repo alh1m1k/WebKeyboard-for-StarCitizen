@@ -28,10 +28,10 @@ hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_typ
     return stream;
 }
 
-#define IS(flags, entity)    ((flags&entity)==entity)
-#define SET(flags, entity)   (flags |= entity)
-#define UNSET(flags, entity) (flags &= ~entity)
-#define SWITCH(flags, entity) (flags ^= entity)
+#define IS(flags, entity)    ((flags&(entity))==(entity))
+#define SET(flags, entity)   (flags |= (entity))
+#define UNSET(flags, entity) (flags &= ~(entity))
+#define SWITCH(flags, entity) (flags ^= (entity))
 
 class wsproto {
 
@@ -154,6 +154,9 @@ class wsproto {
                 return ESP_FAIL;
             }
 
+        	/*auto fgs = pSession->read()->flags;
+        	info("session flags", (int)fgs);*/
+
 			//ping is not member of keepAlive, it is network fail discovery
 			if (rawMessage.starts_with("ping:")) {
 				if (!IS(pSession->read()->flags, (uint32_t)sessionFlags::AUTHORIZE)) {
@@ -181,7 +184,7 @@ class wsproto {
 
             if (IS(flags, (uint32_t)sessionFlags::SOCKET_CHANGE)) {
 				if (auto w = pSession->write(); w) {
-					flags = UNSET(w->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHORIZE);
+					flags = UNSET(w->flags, (uint32_t)sessionFlags::SOCKET_CHANGE|(uint32_t)sessionFlags::AUTHORIZE|(uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT);
 					w->heartbeatAtMS = heartbeat();
 				}
             }
@@ -194,7 +197,7 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONECTED) || IS(flags, (uint32_t)sessionFlags::AUTHORIZE);
+                bool isReconnect = IS(flags, (uint32_t)sessionFlags::DISCONNECTED) || IS(flags, (uint32_t)sessionFlags::AUTHORIZE);
                 clientName = std::string(trim(pack.body));
                 if (clientName.empty()) {
                     error("auth block fail2clientid");
@@ -205,7 +208,7 @@ class wsproto {
 
                 if (auto w = pSession->write(); w) {
                     w->clientName = clientName;
-                    flags = UNSET(SET(w->flags, (uint32_t)sessionFlags::AUTHORIZE), (uint32_t)sessionFlags::DISCONECTED);
+                    flags = UNSET(SET(w->flags, (uint32_t)sessionFlags::AUTHORIZE), (uint32_t)sessionFlags::DISCONNECTED|(uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT);
 					w->heartbeatAtMS = heartbeat();
                 }
 
@@ -251,14 +254,14 @@ class wsproto {
                     return ESP_FAIL;
                 }
 
-				info("client is leaving", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
+				info("client is leaving soon", "id: ", clientId, " name: ", clientName, " pid: ", pack.taskId);
 
                 socket.write(resultMsg("leave", pack.taskId, true));
-                if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
-                    error("unable send notifications (leave)", ret.code());
-                }
+            	if (auto ret = sessions.close(pSession->sid()); !ret) {
+            		error("unable close session", pSession->sid().c_str(), " code:", ret.code());
+            	}
 
-                sessions.close(pSession->sid());
+            	//notification will-be send later by session/socket close seq
 
                 return ESP_OK;
             }
@@ -530,36 +533,40 @@ class wsproto {
             using sessionT = session::sessionNotification;
             auto sess = pointer_cast<session>(context);
             std::string clientName;
-            uint32_t    clientId;
+            uint32_t    clientId, flags;
             if (auto r = sess->read(); r) {
                 clientName  = r->clientName;
                 clientId    = r->index;
+            	flags       = r->flags;
             }
-
+			//debug("handleEvents", type);
             switch (type) {
                 case (int)managerT::OPEN:
                     infoIf(LOG_SESSION_EVT, "evt session open", sess->sid().c_str(), " reason: ", ((sessionManager::note_open_type*)data)->reason);
                     break;
                 case (int)managerT::CLOSE:
-                    infoIf(LOG_SESSION_EVT, "evt session close", sess->sid().c_str(), " reason: ", *(uint32_t*)data);
+                    infoIf(true, "evt session close", flags);
+            		if (!IS(flags, (uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT)) {
+            			 infoIf(true,"sending notification");
+            			if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
+            				error("unable send notifications (ctr)", ret.code());
+            			}
+            			flags = SET(sess->write()->flags, (uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT);
+            		}
                     if (sess->getWebSocket() != http::socket::noAsyncSocket) {
-                        debug("have non empty sock");
                         //we not junk session (read about it in notification.h)
-                        if (!IS(sess->read()->flags, (uint32_t)sessionFlags::DISCONECTED)) {
-                            debug("not disconnected yet");
-                            if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
-                                error("unable send notifications (ctr)", ret.code());
-                            }
-                            info("closing now");
-							sess->getWebSocket().close(
-								http::socket::wscodes::SESSION_CLOSED,
-								http::socket::codes2Symbols(
-									http::socket::wscodes::SESSION_CLOSED
-								)
-							);
+                        if (!IS(flags, (uint32_t)sessionFlags::DISCONNECTED)) {
+                            info("closing session ws", sess->sid().c_str());
+							if (auto codes = sess->getWebSocket().close(
+								http::socket::wscodes::SESSION_CLOSED
+							); !codes) {
+								error("unable close socket", sess->getWebSocket().native());
+							}
                         } else {
-                            debug("already disconnected");
+                            debug("session ws already closed", sess->sid().c_str());
                         }
+                    } else {
+                    	debug("session does not have a valid ws", sess->sid().c_str());
                     }
                     break;
                 case (int)sessionT::WS_OPEN:
@@ -569,11 +576,14 @@ class wsproto {
                     infoIf(LOG_SESSION_EVT, "evt session ws change", sess->sid().c_str(), " name: ", sess->read()->clientName.c_str());
                     break;
                 case (int)sessionT::WS_CLOSE:
-                    infoIf(LOG_SESSION_EVT, "evt session ws close", sess->sid().c_str(), " name: ", sess->read()->clientName.c_str());
-                    SET(sess->write()->flags, (uint32_t)sessionFlags::DISCONECTED);
-                    if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
-                        error("unable send notifications (ctr)", ret.code());
-                    }
+                    infoIf(true, "evt session ws close", flags);
+            		if (!IS(flags, (uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT)) {
+            			 infoIf(true, "sending notification");
+            			if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
+            				error("unable send notifications (ctr)", ret.code());
+            			}
+            		}
+            		flags = SET(sess->write()->flags, (uint32_t)sessionFlags::DISCONNECTED|(uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT);
                     break;
                 default:
                     error("sessions.notification: undefined event", type, " ", data);

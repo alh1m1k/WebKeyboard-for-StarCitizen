@@ -43,14 +43,18 @@ namespace http::socket {
 			
 			resBool write(const char* msg, 						httpd_ws_type_t type = httpd_ws_type_t::HTTPD_WS_TYPE_TEXT	) noexcept;
 
-			resBool writeClose(wscodes code = wscodes::NORMAL_CLOSE, const uint8_t* buffer = nullptr, size_t size = 0) noexcept;
+			resBool writeClose(wscodes code, const uint8_t* buffer, size_t size) noexcept;
 
-			inline resBool writeClose(const wscodes code = wscodes::NORMAL_CLOSE, const char* reason = nullptr) noexcept {
+			inline resBool writeClose(const wscodes code = wscodes::NORMAL_CLOSE) noexcept {
+				return writeClose(code, codes2Symbols(code));
+			}
+
+			inline resBool writeClose(const wscodes code, const char* reason) noexcept {
 				//at this point we not transfer NIL and end of string
 				return writeClose(code, (const uint8_t*)reason, reason == nullptr ? 0 : strlen(reason));
 			}
 
-			inline resBool writeClose(const wscodes code = wscodes::NORMAL_CLOSE, const std::string& reason = "") noexcept {
+			inline resBool writeClose(const wscodes code, const std::string& reason) noexcept {
 				//at this point we not transfer NIL and end of string
 				const auto size = reason.size();
 				return writeClose(code, size ? (const uint8_t*)reason.data() : nullptr, size);

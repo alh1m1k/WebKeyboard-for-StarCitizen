@@ -1895,11 +1895,12 @@ const invertAspectRatio = 2/3.1; //@see CSS
     window.socket = socket;
 
     socket.keepAlive = 5000;
+
     socket.begin({
         identityCB: ((identV) => () => identV)(identity()),
         /**
-          * ff52: credentials must be explicitly set, even if supposed to be defaulted to 'same-origin'
-          * or cookie will-be ignored
+         * ff52: credentials must be explicitly set, even if supposed to be defaulted to 'same-origin'
+         * or cookie will-be ignored
          */
         recoverCB:  () => fetch("/renew", { method: 'POST', credentials: 'same-origin' })
     });
@@ -2059,7 +2060,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     });
 
-    window.addEventListener("unload", (e) => {
+/*    window.addEventListener("unload", (e) => {
         let type, name;
 
         if (window.PerformanceObserver) {
@@ -2083,13 +2084,18 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
         console.log("unload", name, type);
 
-        if (/*name === "document" &&*/ type === "navigate") {
+        if (/!*name === "document" &&*!/ type === "navigate") {
             console.log("page is moveout");
             socket.end();
         } else {
             console.log("page is reloading");
         }
-    });
+    });*/
+
+    Promise.any([
+        new Promise(r => window.addEventListener("beforeunload", r, { once: true })),
+        new Promise(r => window.addEventListener("unload", r, { once: true })),
+    ]).then(socket.end);
 
     document.querySelectorAll(".group-decl .group").forEach((elm, i ) => {
         try {

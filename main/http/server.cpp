@@ -194,11 +194,11 @@ namespace http {
                 sessionSocks->socksCntInc();
                 infoIf(LOG_SESSION, "session", sessionSocks->sid().c_str(), " new connection, pendingSockets: ", sessionSocks->socksCnt());
             }
-            //if (act.)
             if (auto sessionWS = pointer_cast<session::iWebSocketSession>(req.getSession()); sessionWS != nullptr) {
                 infoIf(LOG_SESSION, "session", sessionWS->sid().c_str(), " new connection");
             }
         } else {
+        	req.native()->sess_ctx = nullptr;
             return sessionResult.code();
         }
 
@@ -318,11 +318,21 @@ namespace http {
 			if (auto code = sessionOpen(req, resp, *serv); code != ESP_OK) {
 				error("session open", req.native()->uri, " t ", esp_timer_get_time(), " code ", code);
 				if (code == HTTP_SESSION_RECOVERY && act.isWebSocket() && req.isGet()) {
-					info("closing unauthorized socket for req", req.native());
-					socket::socket(req.native()).writeClose(
+					info("closing unauthorized socket for req", req.native(), ' ', httpd_req_to_sockfd(esp_req));
+					if (auto socketCode = socket::socket(req.native()).writeClose(
 						socket::wscodes::UNAUTHORIZED,
 						socket::codes2Symbols(socket::wscodes::UNAUTHORIZED)
-					);
+					); !socketCode) {
+						error("unable to \"write close\" unauthorized socket", httpd_req_to_sockfd(esp_req));
+					}
+					return ESP_FAIL;
+					//this version allow connection to happen to close it later via async server work
+					/*return serv->scheduleJob([hd = esp_req->handle, fd = httpd_req_to_sockfd(esp_req)] -> esp_err_t {
+						auto socket = socket::asyncSocket(hd, fd);
+						const uint16_t codeNetOrder = lwip_htons((uint16_t)socket::wscodes::UNAUTHORIZED);
+						socket.write((uint8_t*)&codeNetOrder, sizeof(codeNetOrder), httpd_ws_type_t::HTTPD_WS_TYPE_CLOSE);
+						return socket.terminate().code();
+					}).code();*/
 				} else {
 					serverError(req, resp, err2code(code));
 				}
@@ -331,7 +341,15 @@ namespace http {
 
 			logRequest(req, req.isWebsocket() ? "http(s) switch protocol request" : "http(s) request");
 		} else  {
-			//webSocket handler
+			//ws handler
+
+			//this for async close
+			/*if (esp_req->sess_ctx == nullptr) {
+				//this connection probably already closing, allow it to close gracefully
+				//or it fail at proto
+				info("drop ws message from closing socket");
+				return ESP_OK;
+			}*/
 		}
 
 		return runAction(act, req, resp, *serv);

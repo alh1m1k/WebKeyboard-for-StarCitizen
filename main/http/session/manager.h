@@ -140,7 +140,8 @@ namespace http::session {
             for (size_t i = 0; i < total; ++i) {
                 if (storage.data[i] != nullptr) {
                     if (callback(storage.data[i])) {
-                        auto& prev = storage.data[i];
+                    	//do not ref shared_ptr must have storage space
+                        auto prev = storage.data[i];
                         storage.data[i] = nullptr;
                         return prev;
                     }

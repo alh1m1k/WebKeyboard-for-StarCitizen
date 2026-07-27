@@ -12,9 +12,10 @@
 using http::session::pointer_cast;
 
 enum class sessionFlags: uint32_t {
-    DISCONECTED     = 1 << 0,
-	AUTHORIZE= 1 << 1,
-    SOCKET_CHANGE   = 1 << 2,
+    DISCONNECTED     = 1 << 0,
+	AUTHORIZE		 = 1 << 1,
+    SOCKET_CHANGE    = 1 << 2,
+	DISCONNECTED_NOTE_SENT = 1 << 3,
 };
 
 struct extendedSessionFields {
@@ -24,6 +25,10 @@ struct extendedSessionFields {
     uint32_t    flags      	= 0;
 };
 
+/**
+ * TODO refactor this, make it lock free
+ * detect socket close by free_sess
+ */
 class session: public http::session::session<extendedSessionFields>, virtual public http::session::iWebSocketSession {
 
     friend class sessionManager;
@@ -53,7 +58,7 @@ class session: public http::session::session<extendedSessionFields>, virtual pub
         };
 
         void setWebSocket(const socket_type &socket) override {
-            bool isOpen, isClose, isChange = false;
+            bool isOpen = false, isClose = false, isChange = false;
             {
                 auto guardian = write();
                 if (_socket != socket) {
@@ -79,7 +84,7 @@ class session: public http::session::session<extendedSessionFields>, virtual pub
         bool updateWebSocketIfEq(
             const socket_type& ifEqualToThis, const socket_type& setToThis
         ) override {
-            bool isOpen, isClose, isChange = false;
+            bool isOpen = false, isClose = false, isChange = false;
             {
                 auto guardian = write();
                 if (_socket == ifEqualToThis) {

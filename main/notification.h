@@ -49,7 +49,7 @@ class notificationManager {
                     if (msg->binary) {
                         result = socket.write(msg->data, HTTPD_WS_TYPE_BINARY);
                     } else {
-                        //keep msg->data.c_str() owervice header willbe damaged fixme
+                        //keep msg->data.c_str() otherwise header will-be damaged fixme
                         result = socket.write(msg->data.c_str(), HTTPD_WS_TYPE_TEXT);
                     }
                     if (result) {

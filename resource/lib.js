@@ -13,6 +13,7 @@ const SocketFlagError                 =  1 << 7;
 const WSCodesNormalClose = 1000;
 const WSCodesAway = 1001;
 const WSCodesUnsupportedData = 1003;
+const WSCodesNoStatusReceived = 1005;
 const WSCodesInternalError = 1011;
 const WSCodesTryAgain = 1013;
 const WSCodesSocketTimeout = 3001;
@@ -44,6 +45,25 @@ if (!Object.hasOwn(Promise, "withResolvers")) {
             reject = rej;
         });
         return {promise, resolve, reject};
+    }
+}
+
+if (!Object.hasOwn(Promise, "any")) {
+    Promise.any = (iterable) => {
+        return new Promise((resolve, reject) => {
+            let i = 0;
+            let errors = [];
+            let remaining = 1;
+            for (const promise of iterable) {
+                let eIndex = i++;
+                remaining++;
+                promise.then(resolve, (error) => {
+                    errors[eIndex] = error;
+                    --remaining || reject(errors);
+                });
+            }
+            --remaining || reject(errors);
+        });
     }
 }
 
@@ -458,6 +478,9 @@ function wsocket(target) {
             return privateCtx.openTask().then(() => privateCtx.authorizeTask()).catch(privateCtx.connectionErrorHandler);
         },
         monitorHelper: (reason) => {
+
+            console.warn("monitorHelper", privateCtx.reconnect, reason);
+
             if (!privateCtx.reconnect) {
                 return;
             }
@@ -467,8 +490,6 @@ function wsocket(target) {
             }
 
             switch (reason.code) {
-                case reason.wasClean:
-                case WSCodesNormalClose:
                 case WSCodesAway:
                 case WSCodesInternalError:
                 case WSCodesSessionClosed:
@@ -485,6 +506,20 @@ function wsocket(target) {
                     }
                     privateCtx.sessionErrors++;
                     break;
+                case WSCodesNoStatusReceived:
+                    /**
+                     * this can cause be page unload, server problem or socket.close
+                     */
+                    const context = privateCtx.context;
+                    new Promise(rs => setTimeout(rs, 3000)).then(() => {
+                        if (privateCtx.context === context) {
+                            privateCtx.connectTask();
+                            privateCtx.context.closed.then(privateCtx.monitorHelper);
+                        } else {
+                            console.error("context changed for WSCodesNoStatusReceived");
+                        }
+                    })
+                    break;
                 default:
                     privateCtx.connectTask();
                     privateCtx.context.closed.then(privateCtx.monitorHelper);
@@ -492,6 +527,7 @@ function wsocket(target) {
         },
         monitor: () => {
             privateCtx.reconnect = true;
+            console.log("monitor", privateCtx.reconnect);
             if (!privateCtx.context) { privateCtx.connectTask(); }
             privateCtx.context.closed.then(privateCtx.monitorHelper);
         },
@@ -672,6 +708,7 @@ function wsocket(target) {
         },
         end: () => {
             privateCtx.reconnect = false;
+            console.warn("end", privateCtx.reconnect);
             return privateCtx.disconnectTask().then(() => privateCtx.session   = null);
         },
         connect: (session = { identityCB: reject, recoverCB: reject }) => {
@@ -683,8 +720,13 @@ function wsocket(target) {
         },
         reconnect: (updatedSession = {}) => {
             return privateCtx.disconnectTask().then(() => {
+                //ret code must be clean at this point
                 privateCtx.session = Object.assign(privateCtx.session, updatedSession);
-                return privateCtx.connectTask();
+                const task = privateCtx.connectTask();
+                if (privateCtx.reconnect) {
+                    privateCtx.monitor();
+                }
+                return task;
             });
         },
         updateIdentity: (optNewIdentity) => {
@@ -758,8 +800,10 @@ function wsocket(target) {
             }
             if (ms) {
                 privateCtx.kaHandler = setInterval(() => {
-                    if (privateCtx.context.status === SocketAuthorize) {
-                        privateCtx.send("ping", "", false);
+                    if (privateCtx.context) {
+                        if (privateCtx.context.status === SocketAuthorize) {
+                            privateCtx.send("ping", "", false);
+                        }
                     }
                 }, ms);
             }
