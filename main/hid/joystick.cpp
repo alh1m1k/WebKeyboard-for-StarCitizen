@@ -25,7 +25,7 @@ namespace hid {
 		
 	    debugIf(LOG_JOYSTICK,  "joystick::install usb initialization DONE");
 		
-		return true;
+		return _installed = true;
 	}
 	
 	bool joystick::writeAxis(const int axisId, uint16_t value) {
@@ -59,6 +59,7 @@ namespace hid {
 		
 	void joystick::deinstall() {
 		UsbDevice->detach(this);
+		_installed = false;
 	}
 	
 	bool joystick::mounted() const noexcept {

@@ -59,7 +59,7 @@ namespace hid {
 				return true;
 			}
 						
-			operator bool() {
+			operator bool() const noexcept {
 				return !!backend;
 			}
 	};

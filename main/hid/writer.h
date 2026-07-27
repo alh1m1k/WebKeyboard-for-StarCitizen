@@ -30,11 +30,11 @@ namespace hid {
 						
 			bool writeSymbol(const char symbol, uint8_t modifier, const uint8_t type) {
 												
-				if (dictionay[(uint8_t)symbol][0]) {
+				if (dictionary[(uint8_t)symbol][0]) {
 					modifier |= KEYBOARD_MODIFIER_LEFTSHIFT;
 				}
 				
-				uint8_t charCode = dictionay[(uint8_t)symbol][1];
+				uint8_t charCode = dictionary[(uint8_t)symbol][1];
 				
 				return write(charCode, modifier, type);
 			}
@@ -56,7 +56,7 @@ namespace hid {
 			
 		public:
 		
-			static constexpr char dictionay[128][2] = {HID_ASCII_TO_KEYCODE}; 
+			static constexpr char dictionary[128][2] = {HID_ASCII_TO_KEYCODE};
 				
 			writer(BACK_PUSHER& bp, uint8_t modifier): backend(bp), lastModifier(modifier) {}
 			
@@ -65,7 +65,7 @@ namespace hid {
 				return *this;
 			}
 			
-			uint8_t& modifyer() {
+			uint8_t& modifier() noexcept {
 				return lastModifier;
 			}
 					
@@ -81,7 +81,7 @@ namespace hid {
 				return ret;
 			}
 			
-			write_result lastWriteResult() {
+			write_result lastWriteResult() const noexcept {
 				//todo fix me
 				return lastResult;  //what if now walid write happend
 			}

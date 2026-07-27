@@ -55,12 +55,12 @@ namespace hid {
 				
 				controlWriter(controlWriter&& other) = default;
 											
-				operator bool() {
+				operator bool() const {
 					return true;
 				}
 				
 				//todo change me to method modifiers
-				state_s* operator ->() {
+				state_s* operator ->() const {
 					return &owner.state;
 				}
 				
@@ -70,7 +70,7 @@ namespace hid {
 					return size;
 				}
 				
-				size_t copyTo(void* ptr, size_t size) {
+				size_t copyTo(void* ptr, size_t size) const {
 					size = std::min(size, sizeof(state));
 					memcpy(ptr, &owner.state, size);
 					return size;
@@ -79,7 +79,7 @@ namespace hid {
 		
 		protected:
 		
-			bool writeAxis(const int axisId, uint16_t value);
+			bool writeAxis(int axisId, uint16_t value);
 			
 			void writeAxis();
 		
@@ -129,15 +129,15 @@ namespace hid {
 				return installed() && mounted();
 			}
 			
-			inline uint32_t receivedCnt() {
+			inline uint32_t receivedCnt() const noexcept {
 				return commandCounter;
 			}
 			
-			inline uint32_t processedCnt() {
+			inline uint32_t processedCnt() const noexcept {
 				return commandCounter;
 			} 
 			
-			inline bool axis(const int axisId, uint16_t value) {
+			inline bool axis(const int axisId, const uint16_t value) {
 				auto guardian = std::unique_lock(m);
 				return writeAxis(axisId, value);
 			}
@@ -146,7 +146,7 @@ namespace hid {
 				return {*this, std::unique_lock(m)};
 			}
 			
-			bool custom(const int axisId, uint16_t value) {
+			bool custom(const int axisId, const uint16_t value) {
 				if (isControlAxis(axisId)) {
 					return false;
 				}
@@ -154,7 +154,7 @@ namespace hid {
 				return writeAxis(axisId, value);
 			}
 			
-			inline bool isControlAxis(const int axisId) {
+			inline bool isControlAxis(const int axisId) const noexcept {
 				if (axisId >= 0 && axisId <= (int)axis::THROTTLE) {
 					return true;
 				}

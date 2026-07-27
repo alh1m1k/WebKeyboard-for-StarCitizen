@@ -147,7 +147,7 @@ namespace hid {
 			}
 						
 			auto& symbol(const char symbol) {
-				uint8_t charCode = writer<BACK_PUSHER>::dictionay[(uint8_t)symbol][1];
+				uint8_t charCode = writer<BACK_PUSHER>::dictionary[(uint8_t)symbol][1];
 				write(charCode);
 				return *this;
 			}
@@ -162,11 +162,11 @@ namespace hid {
 				return *this;
 			}
 			
-			operator bool() {
+			operator bool() const noexcept {
 				return !!backend;
 			}
 			
-			write_result lastWriteResult() {
+			write_result lastWriteResult() const noexcept {
 				return flushResult;
 			}
 		

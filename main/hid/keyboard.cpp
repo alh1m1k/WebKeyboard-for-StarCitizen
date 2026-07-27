@@ -41,12 +41,13 @@ namespace hid {
 		
 	    debugIf(LOG_KEYBOARD,  "keyboard::install usb initialization done");
 		
-		return true;
+		return _installed = true;
 	}
 	
 	void keyboard::deinstall() {
 		task = nullptr;
 		UsbDevice->detach(this);
+		_installed = false;
 	}
 	
 	bool keyboard::mounted() const noexcept {

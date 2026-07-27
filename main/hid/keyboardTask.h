@@ -17,7 +17,7 @@
 #include "util.h"
 #include "../exception/bad_api_call.h"
 
-#define DEBUG_CYCLE
+//#define DEBUG_CYCLE
 
 namespace hid {
 	
@@ -90,7 +90,7 @@ namespace hid {
 		static constexpr uint8_t DOUBLETAP_SPACER 	= (uint8_t)task::pressType::INVALID + 2;
 		static constexpr uint8_t SHORT_SPACER 		= (uint8_t)task::pressType::INVALID + 3;
 		
-		static void dumbCombination(const char* msg, const report& combination){
+		static void dumbCombination(const char* msg, const report& combination) {
 			debugIf(LOG_KEYBOARD, msg, 
 				(uint)combination.data[0], 	" ", 
 				(uint)combination.data[1], 	" ",
@@ -103,7 +103,7 @@ namespace hid {
 			);
 		}
 		
-		static bool putKeyInReport(uint8_t charCode, report& combination) {
+		static bool putKeyInReport(uint8_t charCode, report& combination) noexcept {
 			if (!charCode) {
 				return false;
 			}
@@ -114,7 +114,7 @@ namespace hid {
 			return false;
 		}
 		
-		static int8_t findKeyInReport(uint8_t charCode, report& combination) {
+		static int8_t findKeyInReport(uint8_t charCode, report& combination) noexcept {
 			for (uint8_t i = 0; i < 6; i++) {
 				if (combination.data[i] == charCode) {
 					return i;
@@ -123,7 +123,7 @@ namespace hid {
 			return -1;
 		}
 		
-		static bool hasAnyInReport(report& combination) {
+		static bool hasAnyInReport(report& combination) noexcept {
 			for (uint8_t i = 0; i < 6; i++) {
 				if (combination.data[i] != 0) {
 					return true;
@@ -163,13 +163,13 @@ namespace hid {
 			return true;
 		}
 		
-		static bool reportsEqual(const report& first, const report& second) {
+		static bool reportsEqual(const report& first, const report& second) noexcept {
 			return (*(uint32_t*)&first.data[0] == *(uint32_t*)&second.data[0]) &&
 				   (*(uint16_t*)&first.data[4] == *(uint16_t*)&second.data[4]) &&
 				   (first.modifier == second.modifier) && (first.flags == second.flags);
 		}
 		
-		static bool reportsEqualKeys(const report& first, const report& second) {
+		static bool reportsEqualKeys(const report& first, const report& second) noexcept {
 			return (*(uint32_t*)&first.data[0] == *(uint32_t*)&second.data[0]) &&
 				   (*(uint16_t*)&first.data[4] == *(uint16_t*)&second.data[4]) &&
 				   (first.modifier == second.modifier);
@@ -225,7 +225,7 @@ namespace hid {
 			}
 		
 			
-			bool extractCombination(task kbKey, report& combination) {
+			bool extractCombination(task kbKey, report& combination) const {
 				auto flags = (uint8_t)kbKey.flags()&(~(uint8_t)task::flag::MASK);
 				switch (flags) {
 					case (uint8_t)task::suffix::FORMAT_KB_KEY: //{modifiers, key, press, flag}
@@ -252,13 +252,13 @@ namespace hid {
 
 			}
 			
-			inline uint32_t applyEntropy(const uint32_t value) {
+			inline uint32_t applyEntropy(const uint32_t value) const {
 				auto e = entropy() * (value * 0.20);
 				debugIf(LOG_KEYBOARD && LOG_ENTROPY, "delayGenerator", value, " ", e, " ", value + e);
 				return value + e;
 			}
 		
-			uint32_t generateDelay(uint8_t type) {
+			uint32_t generateDelay(uint8_t type) const {
 				switch (type) {
 					case (uint8_t)task::pressType::LONGPRESS:
 						return applyEntropy(timings.longpressMs);
@@ -498,11 +498,11 @@ namespace hid {
 				}
 			}
 			
-			inline uint32_t receivedCnt() {
+			inline uint32_t receivedCnt() const noexcept {
 				return receivedPacketCounter;
 			} 
 			
-			inline uint32_t processedCnt() {
+			inline uint32_t processedCnt() const noexcept {
 				return processedPacketCounter;
 			} 
 		
