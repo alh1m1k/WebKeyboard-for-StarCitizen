@@ -6,71 +6,50 @@
 #include "esp_err.h"
 #include "util.h"
 
-/*template<typename T, typename VARIANT_T>
-struct isVariantMember;
-
-template<typename T, typename... ALL_T>
-struct isVariantMember<T, std::variant<ALL_T...>> 
-  : public std::disjunction<std::is_same<T, ALL_T>...> {};*/
-
-
 template<typename ...ARG>
-class result: public std::variant<ARG..., esp_err_t> {
+class result final : public std::variant<ARG..., esp_err_t> {
 		
 	constexpr static auto size = sizeof...(ARG);
 	
 	public: 
-	
-/*		template<typename T>
-		result(T value): std::variant<ARG..., esp_err_t>(value) {};*/
-		
+
 		template<typename T>
-		result(const T& value): std::variant<ARG..., esp_err_t>(std::move(value)) {};
-		
+		result(T&& value): std::variant<ARG..., esp_err_t>(std::forward<std::conditional_t<std::is_scalar_v<T>, T, T&&>>(value)) {};
+
 		result(esp_err_t ecode): std::variant<ARG..., esp_err_t>(ecode) {};
+
+		template<typename T>
+		explicit result(T& value): std::variant<ARG..., esp_err_t>(value) {};
 				
-		~result(){} 
+		~result() = default;
 				
 		inline operator bool() const {
-			/*
-			*
-			if constexpr (index() != size) {
-				return true;
-			} else {
-				return std::get<size>(*this) == (esp_err_t)ESP_OK;
-			}
-			
-			*/
-			if (this->index() != size) {
-				return true;
-			} else {
-				return std::get<size>(*this) == (esp_err_t)ESP_OK;
-			}
+			return this->index() == size ? std::get<size>(*this) == (esp_err_t)ESP_OK : true;
 		}
-		
-		//todo how to not declare this??
-/*		inline constexpr size_t index() const {
-			return std::variant<ARG..., esp_err_t>::index();
-		}*/
-		
-		//there is member data() func because i don't now how effectively implement it for non trivial classes, except of just inline std::get
+
+		/**
+		 * trivial accessor awl if result variant only have one value and error types
+		 * also work: std::enable_if_t<RESTRICT == 1, int> = 0
+		 */
+		template <int RESTRICT = size, typename = std::enable_if_t<RESTRICT == 1>>
+		auto& data() const {
+			return !!*this ? std::get<0>(*this) : throw std::bad_variant_access();
+		}
+
+		//note there is no non-trivial accessor, for more than one *data type
+		//use std::get* instead
 				
 		inline esp_err_t code() const {
-			if (!*this) {
-				return std::get<size>(*this);
-			} else {
-				return ESP_OK;
-			}
+			return !*this ? std::get<size>(*this) : ESP_OK;
 		}
 };
 
-typedef result<> 						resultBoolean;
-typedef resultBoolean 					resBool;
+typedef result<>  resBool;
 
-const resBool ResBoolOK 	= (esp_err_t)ESP_OK;
-const resBool ResBoolFAIL 	= (esp_err_t)ESP_FAIL;
+const resBool ResBoolOK   = (esp_err_t)ESP_OK;
+const resBool ResBoolFAIL = (esp_err_t)ESP_FAIL;
 
-inline std::future<resBool> resolve(esp_err_t status) {
+inline std::future<resBool> resolve(const esp_err_t status) {
 	auto prm = std::promise<resBool>();
 	prm.set_value(status);
 	return prm.get_future();
