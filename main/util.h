@@ -23,7 +23,7 @@ inline size_t align32(size_t size) {
 
 
 template <typename  ...additional>
-inline void _log(additional&&... args) {
+inline void _log(const additional&... args) {
 	(std::cout << ... << args);
 }
 
@@ -34,21 +34,21 @@ inline void panic(const char* msg, esp_err_t code) {
 }
 
 template <typename  ...additional>
-inline void debug(const char* msg, additional&&... args) {
+inline void debug(const char* msg, const additional&... args) {
 	_log("[debug] ", msg, " -> ", args..., "\n");
 }
 
 #define debugIf(enable, msg, ...) if constexpr (enable) debug(msg __VA_OPT__(,) __VA_ARGS__)
 
 template <typename  ...additional>
-inline void info(const char* msg, additional&&... args) {
+inline void info(const char* msg, const additional&... args) {
 	_log("[info] ", msg, " -> ", args..., "\n");
 }
 
 #define infoIf(enable, msg, ...) if constexpr (enable) info(msg __VA_OPT__(,) __VA_ARGS__)
 
 template <typename  ...additional>
-inline void error(const char* msg, additional&&... args) {
+inline void error(const char* msg, const additional&... args) {
 	_log("[error] ", msg, " -> ", args..., "\n");
 }
 
