@@ -11,9 +11,11 @@ idf_component_register(
 						crypto/hash/sha256Engine.cpp
     					hid/usbDevice.cpp
     					hid/usbModuleAdapter.cpp
-    					hid/keyboard.cpp
-    					hid/joystick.cpp
-    					parsers/keyboard.cpp
+    					hid/composite.cpp
+    					parser/command.cpp
+						interpreter/keyboard.cpp
+						interpreter/mouse.cpp
+						interpreter/command.cpp
     					wifi/wifi.cpp
 						packers.cpp
 						sessionManager.cpp
@@ -30,7 +32,10 @@ idf_component_register(
     					./dns
     					./hid
     					./wifi
-    					./parsers
+    					./parser
+						./interpreter
+						./ipc
+						./task
 
 						compression
 

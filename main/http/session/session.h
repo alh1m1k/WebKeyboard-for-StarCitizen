@@ -4,8 +4,6 @@
 #include <atomic>
 #include <functional>
 
-#include "task.h"
-
 #include "http/session/interfaces/iSession.h"
 #include "http/session/interfaces/iSocksCntSession.h"
 #include "manager.h"

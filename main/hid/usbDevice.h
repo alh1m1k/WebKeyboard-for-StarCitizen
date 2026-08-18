@@ -73,7 +73,7 @@ namespace hid {
 		
 		public:
 		
-			usbDevice(){};
+			usbDevice() = default;
 		
 			virtual    ~usbDevice() = default;
 

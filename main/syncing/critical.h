@@ -1,6 +1,7 @@
 #pragma once
 
 #include "freertos/task.h"
+#include "portmacro.h"
 
 namespace syncing {
 

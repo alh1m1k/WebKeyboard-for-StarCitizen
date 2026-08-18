@@ -18,16 +18,17 @@
 #include "util.h"
 #include "result.h"
 
-#include "wifi/wifi.h"
+#include "driver/gpio.h"
+#include "hid/composite.h"
 #include "hid/usbDevice.h"
 #include "hid/usbDeviceImpl.h"
-#include "hid/keyboard.h"
-#include "hid/joystick.h"
-#include "driver/gpio.h"
 #include "hwrandom.h"
 #include "ledStatusChange.h"
+#include "wifi/wifi.h"
 
 #include "contentType.h"
+#include "reportPacker.h"
+#include "reportUnpacker.h"
 #if HTTP_USE_HTTPS
 #include "http/secure.h"
 #else
@@ -39,16 +40,16 @@
 #include "resource/file.h"
 #include "resource/shortcut.h"
 
+#include "cache.h"
 #include "ctrlmap.h"
+#include "filter.h"
 #include "make.h"
 #include "notification.h"
-#include "parsers/keyboard.h"
+#include "parser/command.h"
+#include "resourceChecksum.h"
 #include "scheduler.h"
 #include "storage.h"
 #include "wsproto.h"
-#include "cache.h"
-#include "filter.h"
-#include "resourceChecksum.h"
 
 #ifdef WIFI_AP_DNS
 #include "dns/server.h"
@@ -176,10 +177,7 @@ static_assert(EMBED_CERT, "Using https without cert make no sense. Embed cert by
 static_assert(RESOURCE_CHECKSUM, "Etag cache engine require checksum data. Embed checksum data by adding flag -DRESOURCE_CHECKSUM=ON or disable etag");
 #endif
 
-void app_main(void)
-{
-
-
+void app_main(void) {
 	debugIf(LOG_HTTPD_HEAP, "app_main ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	info("app init");
@@ -193,23 +191,23 @@ void app_main(void)
 	{
 
 		gpio_config_t trigger = {
-		    .pin_bit_mask 	 = (1ULL << RESET_TRIGGER_BTN),
-		    .mode 			 = GPIO_MODE_INPUT,
-		    .pull_up_en      = GPIO_PULLUP_ENABLE,
+			.pin_bit_mask 	 = (1ULL << RESET_TRIGGER_BTN),
+			.mode 			 = GPIO_MODE_INPUT,
+			.pull_up_en      = GPIO_PULLUP_ENABLE,
 			.pull_down_en    = GPIO_PULLDOWN_DISABLE,
 			.intr_type       = GPIO_INTR_DISABLE,
 		};
 		gpio_config(&trigger);
 
 		if (RESET_LED_INDICATOR != NO_LED) {
-		    gpio_config_t ledConfig = {
-			    .pin_bit_mask 	 = (1ULL << RESET_LED_INDICATOR),
-			    .mode 			 = GPIO_MODE_OUTPUT,
-			    .pull_up_en      = GPIO_PULLUP_DISABLE,
+			gpio_config_t ledConfig = {
+				.pin_bit_mask 	 = (1ULL << RESET_LED_INDICATOR),
+				.mode 			 = GPIO_MODE_OUTPUT,
+				.pull_up_en      = GPIO_PULLUP_DISABLE,
 				.pull_down_en    = GPIO_PULLDOWN_DISABLE,
 				.intr_type       = GPIO_INTR_DISABLE,
 			};
-	 		gpio_config(&ledConfig);
+			gpio_config(&ledConfig);
 		}
 
 
@@ -223,10 +221,10 @@ void app_main(void)
 				break;
 			}
 			vTaskDelay(pdMS_TO_TICKS(100));
-	  	}
+		}
 	}
 
-  	info("factory reset interval passed");
+	info("factory reset interval passed");
 
 	debugIf(LOG_HTTPD_HEAP, "app_main wifi", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
@@ -305,27 +303,18 @@ void app_main(void)
 
 	debugIf(LOG_HTTPD_HEAP, "app_main usb", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
-	std::cout << "starting usb Stack " << std::endl;
+	std::cout << "starting usb stack " << std::endl;
 	hid::UsbDevice = std::make_unique<hid::UsbDeviceImpl>();
 
 	debugIf(LOG_HTTPD_HEAP, "app_main kb", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
-	std::cout << "starting keyboard " << std::endl;
-	static auto kb = hid::keyboard();
+	std::cout << "starting usb composite device " << std::endl;
+	static auto kb = hid::composite();
 
 	if (!kb.install()) {
-		trap("fail 2 setup keyboard", ESP_FAIL);
+		trap("fail 2 setup usb composite", ESP_FAIL);
 	}
-	kb.entroySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
-
-	debugIf(LOG_HTTPD_HEAP, "app_main joy", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
-
-	std::cout << "starting joystick " << std::endl;
-	static auto joy = hid::joystick();
-
-	if (!joy.install()) {
-		trap("fail 2 setup joystick", ESP_FAIL);
-	}
+	kb.entropySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
 
 	debugIf(LOG_HTTPD_HEAP, "app_main driver", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
@@ -339,17 +328,17 @@ void app_main(void)
 
 	std::cout << "starting webServer " << std::endl;
 #if HTTP_USE_HTTPS
-	 static auto webServer = https::server{};
-	 webServer.attachSessions<sessionManager>(persistenceSign);
-	 if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
-		 trap("fail 2 setup webServer", status.code());
-	 }
+	static auto webServer = https::server{};
+	webServer.attachSessions<sessionManager>(persistenceSign);
+	if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
+		trap("fail 2 setup webServer", status.code());
+	}
 #else
-	 static auto webServer = http::server{};
-	 webServer.attachSessions<sessionManager>(persistenceSign);
-	 if (auto status = webServer.begin(HTTP_PORT); !status) {
-		 trap("fail 2 setup webServer", status.code());
-	 }
+	static auto webServer = http::server{};
+	webServer.attachSessions<sessionManager>(persistenceSign);
+	if (auto status = webServer.begin(HTTP_PORT); !status) {
+		trap("fail 2 setup webServer", status.code());
+	}
 #endif
 
 	resBool status = ESP_OK;
@@ -389,7 +378,7 @@ void app_main(void)
 	}
 
 #if (WIFI_AP_DNS_CAPTIVE && EMBED_CAPTIVE)
-		webServer.captiveHandler(captive_html_memory_file);
+	webServer.captiveHandler(captive_html_memory_file);
 #endif
 
 	if (status = webServer.addHandler("/leave", httpd_method_t::HTTP_POST,
@@ -399,7 +388,7 @@ void app_main(void)
 				return ESP_OK;
 			}
 		}
-	    return ESP_FAIL;
+		return ESP_FAIL;
 	}); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /leave", 	status.code());
@@ -411,39 +400,39 @@ void app_main(void)
 	  }); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /renew", 	status.code());
-	}
-
+	  }
 
 	debugIf(LOG_HTTPD_HEAP, "app_main proto", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
-    static auto  kbMessageParser    = typename wsproto::kb_parser_type();
+	static auto  cmdParser			= typename wsproto::command_parser_type();
+	static auto  cmdInterpreter		= typename wsproto::command_interpreter_type();
 	static auto  packetCounter 	 	= typename wsproto::packet_seq_generator_type();
 	static auto  ctrl               = typename wsproto::ctrl_map_type();
 	static auto  tailScheduler		= typename wsproto::scheduler_type();
 
-    //this is little ugly but save until we not close server forcely
-    auto& sessions     = *(sessionManager*)webServer.getSessions().get();
+	//this is little ugly but save until we not close server forcely
+	auto& sessions     = *(sessionManager*)webServer.getSessions().get();
 	static auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
 
 	if (status = webServer.addHandler("/socks", httpd_method_t::HTTP_GET, http::socket::handler(
-        wsproto(
-            kbMessageParser,
-            kb,
-            joy,
-            sessions,
-            notifications,
-            packetCounter,
-            ctrl,
-            tailScheduler,
-            randomCtx.generator,
-            persistenceSign,
-            bootingSign
-        )
-    )); !status) {
+		wsproto(
+			cmdParser,
+			cmdInterpreter,
+			kb,
+			sessions,
+			notifications,
+			packetCounter,
+			ctrl,
+			tailScheduler,
+			randomCtx.generator,
+			persistenceSign,
+			bootingSign
+		)
+	)); !status) {
 		webServer.end();
 		trap("fail 2 setup webServer path /socks", status.code());
 	}
-	
+
 	std::cout << "starting of webServer complete" << std::endl;
 
 	//kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter, tailOp));
@@ -451,14 +440,14 @@ void app_main(void)
 
 	debugIf(LOG_HTTPD_HEAP, "app_main scheduler.begin()", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
-    tailScheduler.begin();
+	tailScheduler.begin();
 
-    tailScheduler.schedule("server gc", []() -> void {
-        infoIf(LOG_SERVER_GC, "system gc start");
+	tailScheduler.schedule("server gc", []() -> void {
+		infoIf(LOG_SERVER_GC, "system gc start");
 		webServer.collect();
 		ctrl.collect();
 		infoIf(LOG_SERVER_GC, "system gc end");
-    }, 11000, -1);
+	}, 11000, -1);
 
 	if constexpr (SOCKET_KEEP_ALIVE_TIMEOUT > 0) {
 		tailScheduler.schedule("socket gc", []() -> void {
@@ -482,21 +471,27 @@ void app_main(void)
 		}, SOCKET_KEEP_ALIVE_TIMEOUT * 1000 / 3 - 1, -1);
 	}
 
-	
+	/*tailScheduler.schedule("joystick testing", []() -> void {
+		static uint32_t buttons = 0x01;
+		//joy.buttons(buttons = (buttons == 0x80000000 ? 0x01 : buttons << 1));
+		//ms.demo(buttons = buttons == 0x00 ? hid_mouse_button_bm_t::MOUSE_BUTTON_LEFT : 0x00);
+	}, 1000, -1);*/
+
+
 	//todo fix schedule faild before .begin
-/*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {
-		debug("scheduler joystick test", esp_timer_get_time() / 1000);
-		static int axis = 0;
-		if (axis > (int)hid::joystick::axis::THROTTLE) {
-			axis = 0;
-		}
-		joy.axis(axis++, std::min(std::max((uint16_t)(randomCtx.distribution(randomCtx.generator) * 1024 + 1024), (uint16_t)0), (uint16_t)2048));
-	}, 250, 1000);*/
+	/*	tailOp.schedule("test", [&joy, &randomCtx]() -> void {
+			debug("scheduler joystick test", esp_timer_get_time() / 1000);
+			static int axis = 0;
+			if (axis > (int)hid::joystick::axis::THROTTLE) {
+				axis = 0;
+			}
+			joy.axis(axis++, std::min(std::max((uint16_t)(randomCtx.distribution(randomCtx.generator) * 1024 + 1024), (uint16_t)0), (uint16_t)2048));
+		}, 250, 1000);*/
 
 	debugIf(LOG_HTTPD_HEAP, "app_main done", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
-	
+
 	info("setup done, app now operational");
-	
+
 	while (true) {
 		if (WIFI_MODE == wifi_mode_t::WIFI_MODE_STA && wifi::status() != wifi::status_e::CONNECTED) {
 			storage persistence = storage();

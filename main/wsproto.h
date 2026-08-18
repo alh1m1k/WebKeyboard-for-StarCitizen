@@ -2,36 +2,40 @@
 
 #include <string>
 
-#include "esp_http_server.h"
 
+#include "clients.h"
+#include "crypto/base64Helper.h"
+#include "crypto/hash/sha256Engine.h"
+#include "ctrlmap.h"
 #include "generated.h"
-#include "util.h"
-#include "http/socket/socket.h"
+#include "hid/composite.h"
 #include "http/socket/asyncSocket.h"
 #include "http/socket/context.h"
-#include "parsers/keyboard.h"
-#include "hid/keyboard.h"
-#include "hid/joystick.h"
-#include "clients.h"
+#include "http/socket/socket.h"
+#include "interpreter/command.h"
 #include "notification.h"
-#include "ctrlmap.h"
-#include "scheduler.h"
 #include "packers.h"
-#include "sessionManager.h"
+#include "parser/command.h"
+#include "scheduler.h"
 #include "session.h"
+#include "sessionManager.h"
 #include "storage.h"
-#include "crypto/hash/sha256Engine.h"
-#include "crypto/base64Helper.h"
+#include "util.h"
 
-hid::joystick::control_writer_type& operator<<(hid::joystick::control_writer_type& stream, const std::string_view& byteStream) {
-    stream.copyFrom(&byteStream[0], byteStream.size());
-    return stream;
+inline hid::composite::joystick_direct_guardian_type& operator<<(hid::composite::joystick_direct_guardian_type& devCtrl, const std::string_view& byteStream) {
+	memcpy(devCtrl.data(), byteStream.data(), std::min(devCtrl.size(), byteStream.size()));
+    return devCtrl;
 }
 
-#define IS(flags, entity)    ((flags&(entity))==(entity))
-#define SET(flags, entity)   (flags |= (entity))
-#define UNSET(flags, entity) (flags &= ~(entity))
-#define SWITCH(flags, entity) (flags ^= (entity))
+inline hid::composite::mouse_direct_guardian_type& operator<<(hid::composite::mouse_direct_guardian_type& devCtrl, const std::string_view& byteStream) {
+	memcpy(devCtrl.data(), byteStream.data(), std::min(devCtrl.size(), byteStream.size()));
+	return devCtrl;
+}
+
+inline std::string& operator<<(std::string& view, const hid::composite::joystick_direct_guardian_type& devCtrl) {
+	memcpy(view.data(), devCtrl.data(), std::min(view.size(), devCtrl.size()));
+	return view;
+}
 
 class wsproto {
 
@@ -46,9 +50,9 @@ class wsproto {
 
     public:
 
-        typedef parsers::keyboard 	                                                        kb_parser_type;
-        typedef hid::keyboard	                                                            keyboard_type;
-        typedef hid::joystick                                                               joystick_type;
+        typedef parser::command 	                                                        command_parser_type;
+		typedef interpreter::command 	                                                    command_interpreter_type;
+        typedef hid::composite	                                                            device_type;
         typedef sessionManager                                                              sessions_type;
         typedef notificationManager<sessions_type> 										    notifications_type;
         typedef generator<uint32_t, true> 													packet_seq_generator_type;
@@ -57,9 +61,9 @@ class wsproto {
         typedef hwrandom<uint32_t> 	  										                entropy_generator_type;
         typedef std::string	  										                        sing_type;
 
-        kb_parser_type& 			parser;
-        keyboard_type& 			    keyboard;
-        joystick_type&              joystick;
+        command_parser_type& 		parser;
+		command_interpreter_type& 	interpreter;
+        device_type& 			    dev;
         sessions_type&              sessions;
         notifications_type&	        notifications;
         packet_seq_generator_type&  packetCounter;
@@ -75,9 +79,9 @@ class wsproto {
 
 
         wsproto(
-                parsers::keyboard& 			    parser,
-                hid::keyboard& 			        keyboard,
-                hid::joystick&                  joystick,
+                parser::command& 			    parser,
+                interpreter::command&			interpreter,
+                hid::composite& 			    dev,
                 sessions_type&                  sessions,
                 notifications_type&	            notifications,
                 packet_seq_generator_type&      packetCounter,
@@ -88,8 +92,8 @@ class wsproto {
                 sing_type&                      bootingSign
         ) :
                 parser(parser),
-                keyboard(keyboard),
-                joystick(joystick),
+				interpreter(interpreter),
+                dev(dev),
                 sessions(sessions),
                 notifications(notifications),
                 packetCounter(packetCounter),
@@ -108,8 +112,8 @@ class wsproto {
 
         wsproto(const wsproto& copy) :
                 parser(copy.parser),
-                keyboard(copy.keyboard),
-                joystick(copy.joystick),
+				interpreter(copy.interpreter),
+                dev(copy.dev),
                 sessions(copy.sessions),
                 notifications(copy.notifications),
                 packetCounter(copy.packetCounter),
@@ -124,8 +128,8 @@ class wsproto {
 
         wsproto(wsproto&& move) noexcept :
             parser(move.parser),
-            keyboard(move.keyboard),
-            joystick(move.joystick),
+			interpreter(move.interpreter),
+            dev(move.dev),
             sessions(move.sessions),
             notifications(move.notifications),
             packetCounter(move.packetCounter),
@@ -234,9 +238,9 @@ class wsproto {
                     }
                 }
 
-                std::string joystickView = {};
-                joystickView.resize(20);
-                joystick.control().copyTo(joystickView.data(), joystickView.size());
+                std::string joystickView{};
+            	joystickView.resize(20);
+            	joystickView << dev.directJoystick(false);
                 notifications.notify(ctrNotify(packetCounter(), joystickView), clientId, true);
 
                 return ESP_OK;
@@ -299,7 +303,15 @@ class wsproto {
                     return ESP_FAIL;
                 }
                 if (pack.body.size() != 20) {
-                    error("ctrl axis packet has invalid size: ", rawMessage.c_str(), " ", rawMessage.size(), " ", (uint)pack.body[0], " ", (uint)pack.body[1], " ", (uint)pack.body[pack.body.size()-2], " ", (uint)pack.body[pack.body.size()-1], " ",  pack.body.size(), " ", 20);
+                    error("ctrl axis packet has invalid size: ",
+                    	rawMessage.c_str(), " ",
+                    	rawMessage.size(), " ",
+                    	(uint)pack.body[0], " ",
+                    	(uint)pack.body[1], " ",
+                    	(uint)pack.body[pack.body.size()-2], " ",
+                    	(uint)pack.body[pack.body.size()-1], " ",
+                    	pack.body.size(), " ", 20
+                    );
                     return ESP_FAIL;
                 }
 /*			if (auto taskId = packetIdFromView(pack.taskId); !taskId) {
@@ -315,22 +327,24 @@ class wsproto {
 				}
 			}*/
 
-                auto controlStream = joystick.control();
-                controlStream << pack.body;
+            	if (auto controlStream = dev.directJoystick(true); controlStream) {
+            		controlStream << pack.body;
+            		if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
+            			error("unable send notifications (ctr)", ret.code());
+            		}
+            		++joystickCounter;
+            		if (auto time = esp_timer_get_time(); (time - joystickFlushAt >= 1000000) && joystickCounter > 1) {
+            			//that probably not thread safe, add spinlock
+            			info("client activity", "from: ", joystickFlushAt,  " to `now` processed: ", joystickCounter, " joystick event(s)");
+            			joystickCounter = 0;
+            			joystickFlushAt = time;
+            		}
+            		return ESP_OK; //no respond
+            	} else {
+            		socket.write(resultMsg("ctr", pack.taskId, false));
+            		return ESP_OK;
+            	}
 
-                if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
-                    error("unable send notifications (ctr)", ret.code());
-                }
-
-				++joystickCounter;
-				if (auto time = esp_timer_get_time(); (time - joystickFlushAt >= 1000000) && joystickCounter > 1) {
-					//that probably not thread safe, add spinlock
-					info("client activity", "from: ", joystickFlushAt,  " to `now` processed: ", joystickCounter, " joystick event(s)");
-					joystickCounter = 0;
-					joystickFlushAt = time;
-				}
-
-                return ESP_OK; //no respond
             }
 
 			info("client activity", "id: ", pSession->index(), " name: ", clientName.c_str());
@@ -346,13 +360,13 @@ class wsproto {
                     if (!parser.parse(kbPack.input)) {
                         socket.write(resultMsg("kb", pack.taskId, false));
                     } else {
-                        auto kbResult = parser.writeTo(keyboard);
+                        /*auto kbResult =*/ interpreter.executeOn(dev, parser.tokens());
                         socket.write(resultMsg("kb", pack.taskId, true));
-                        if (kbResult) {
+                        /*if (kbResult) {
                             debugIf(LOG_MESSAGES, "kb schedule ok", std::get<uint32_t>(kbResult));
                         } else {
                             error("kb schedule fail", kbResult.code());
-                        }
+                        }*/
                     }
                 } else {
                     socket.write(resultMsg("kb", pack.taskId, true)); //case to update of switchoff state to controls
@@ -478,11 +492,12 @@ class wsproto {
                 std::string combination(repeatTask.pack.input);
 
                 if (repeatTask.pack.actionType == "switched-on") {
-                    status = tailScheduler.schedule(taskId, [this, combination]() -> void {
+                    status = tailScheduler.schedule(taskId, [&, this, combination]() -> void {
                         info("schedule delayed kb press", combination, " ", heartbeat());
-                        auto kbParser = parsers::keyboard();
-                        if (kbParser.parse(std::string_view(combination))) {
-                            auto kbResult = kbParser.writeTo(keyboard);
+                        auto onceParser = parser::command();
+                    	auto onceInterpreter = interpreter::command();
+                        if (onceParser.parse(std::string_view(combination))) {
+                            /*auto kbResult =*/ onceInterpreter.executeOn(dev, onceParser.tokens());
                         } else {
                             error("unable process repeat", combination);
                         }

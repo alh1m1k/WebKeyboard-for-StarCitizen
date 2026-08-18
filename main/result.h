@@ -2,24 +2,51 @@
 
 #include <variant>
 #include <future>
+#include <concepts>
 
 #include "esp_err.h"
 #include "util.h"
+
+template <typename T, typename U>
+concept TConstructibleFrom = requires(std::initializer_list<U> il) { T(il); };
 
 template<typename ...ARG>
 class result final : public std::variant<ARG..., esp_err_t> {
 		
 	constexpr static auto size = sizeof...(ARG);
-	
-	public: 
+
+	using base_type = std::variant<ARG..., esp_err_t>;
+
+	template <typename U>
+	static base_type makeFromInitializerList(std::initializer_list<U> il) {
+		base_type result;
+		bool constructed = false;
+
+		//unfold ARG
+		([&]<typename T>() {
+			if constexpr (TConstructibleFrom<T, U>) {
+				if (!constructed) {
+					result.template emplace<T>(il);
+					constructed = true;
+				}
+			}
+		}.template operator()<ARG>(), ...);
+
+		return result;
+	}
+
+	public:
 
 		template<typename T>
-		result(T&& value): std::variant<ARG..., esp_err_t>(std::forward<std::conditional_t<std::is_scalar_v<T>, T, T&&>>(value)) {};
+		result(T&& value): base_type(std::forward<std::conditional_t<std::is_scalar_v<T>, T, T&&>>(value)) {};
 
-		result(esp_err_t ecode): std::variant<ARG..., esp_err_t>(ecode) {};
+		template <typename U> requires (TConstructibleFrom<ARG, U> || ...)
+		result(std::initializer_list<U> il): base_type(makeFromInitializerList<U>(il)) {}
+
+		result(esp_err_t code): base_type(code) {};
 
 		template<typename T>
-		explicit result(T& value): std::variant<ARG..., esp_err_t>(value) {};
+		explicit result(T& value): base_type(value) {};
 				
 		~result() = default;
 				
@@ -28,12 +55,12 @@ class result final : public std::variant<ARG..., esp_err_t> {
 		}
 
 		/**
-		 * trivial accessor awl if result variant only have one value and error types
-		 * also work: std::enable_if_t<RESTRICT == 1, int> = 0
+		 * trivial accessor awl if result variant only have one value and error
+		 * types also work: std::enable_if_t<RESTRICT == 1, int> = 0
 		 */
 		template <int RESTRICT = size, typename = std::enable_if_t<RESTRICT == 1>>
 		auto& data() const {
-			return !!*this ? std::get<0>(*this) : throw std::bad_variant_access();
+			return std::get<0>(*this);
 		}
 
 		//note there is no non-trivial accessor, for more than one *data type

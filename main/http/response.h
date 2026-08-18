@@ -89,7 +89,7 @@ namespace http {
 			}
 			
 			inline resBool encoding(const codes code) {
-				throw not_impleneted();
+				throw not_implemented();
 			}
 
             headers& getHeaders();

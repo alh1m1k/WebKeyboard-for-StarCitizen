@@ -42,7 +42,7 @@ namespace http {
 	}
 
 	std::string headers::get(const char* headerId) {
-		throw not_impleneted("response headers read");
+		throw not_implemented("response headers read");
 	}
 
 	resBool headers::c_set(const char* headerId, const char* str) noexcept {

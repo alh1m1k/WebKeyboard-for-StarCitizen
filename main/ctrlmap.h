@@ -6,8 +6,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "bad_api_call.h"
-#include "not_found.h"
 #include "not_implemented.h"
 #include "util.h"
 
@@ -79,7 +77,7 @@ class ctrlmap {
 			* but value in that address will   
 			*/
 			pointer operator->() const {
-				return not_impleneted();
+				return not_implemented();
 			} 
 	        auto operator++() {
 				++it;
@@ -114,7 +112,7 @@ class ctrlmap {
 			rwLock.unlock_shared();
 		}
 		
-		auto sharedGuardian() const { // why auto&& produce: warning: returning reference to temporary [-Wreturn-local-addr]
+		auto sharedGuardian() const {
 			return std::shared_lock(rwLock);
 		}
 				
@@ -170,7 +168,6 @@ class ctrlmap {
                 } else if (size < (collectThreshold - collectThresholdSteep)) {
                     collectThreshold -= collectThresholdSteep;
                 }
-
             }
         }
 

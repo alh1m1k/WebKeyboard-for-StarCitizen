@@ -1,65 +1,61 @@
-#include "keyboard.h"
+#include "composite.h"
 
 #include "class/hid/hid_device.h"
-	
+
+#include "compositeWriter.h"
+#include "deviceDescriptor.h"
 #include "generated.h"
 #include "usbDevice.h"
-#include "deviceDescriptor.h"
 #include "util.h"
-#include "writer.h"
 
 #include <cstring>
 #include <sys/_stdint.h>
-
-
-//todo remove me
-/*#include "usbDevice.cpp"*/
 
 
 namespace hid {
 	
 	using namespace std::literals;
 					
-	keyboard::keyboard(): writer<task_type>(task, 0){
+	composite::composite(): compositeWriter<task_type>(task, 0){
 		debugIf(LOG_KEYBOARD, "hid::keyboard::keyboard");
 	}
 	
 	
-	keyboard::~keyboard() {
+	composite::~composite() {
 		debugIf(LOG_KEYBOARD, "hid::keyboard::~keyboard");
 		if (_installed) {
 			deinstall();
 		}
 	}
 	
-	bool keyboard::install() {	
+	bool composite::install() {	
 		
 		debugIf(LOG_KEYBOARD, "keyboard::install usb initialization");
 		
 		UsbDevice->attach(this);
-		task = std::make_unique<keyboardTask>();
+		task = std::make_unique<compositeTask>();
 		
 	    debugIf(LOG_KEYBOARD,  "keyboard::install usb initialization done");
 		
 		return _installed = true;
 	}
 	
-	void keyboard::deinstall() {
+	void composite::deinstall() {
 		task = nullptr;
 		UsbDevice->detach(this);
 		_installed = false;
 	}
 	
-	bool keyboard::mounted() const noexcept {
-#ifdef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
-        return _installed;
-#else
-        return _installed && tud_mounted();
-#endif
+	bool composite::mounted() const noexcept {
+		if constexpr (!DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC) {
+			return _installed && tud_mounted();
+		} else {
+			return _installed;
+		}
 	}
 	
-	bool keyboard::setReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
-		if (report_type == hid_report_type_t::HID_REPORT_TYPE_OUTPUT && report_id == 1) {
+	bool composite::setReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
+		if (report_type == hid_report_type_t::HID_REPORT_TYPE_OUTPUT && report_id == HID_ITF_PROTOCOL_KEYBOARD) {
 			if (bufsize == 1) {
 				if (leds != *buffer) {
 					uint8_t oldLeds = leds;
@@ -77,7 +73,8 @@ namespace hid {
 		return false;
 	}
 
-	uint16_t keyboard::getReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
+	uint16_t composite::getReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
 		return 0;
-	}	
+	}
+
 }

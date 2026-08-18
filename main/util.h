@@ -12,6 +12,17 @@
 #include "esp_err.h"
 #include "result.h"
 
+#define IS(flags, entity) (((flags)&(entity))==(entity))
+#define SET(flags, entity) ((flags) |= (entity))
+#define IS_AND_SET(flags, entity) ({ \
+auto _old = (flags);          \
+(flags) |= (entity);          \
+((flags)&(entity))==(entity); \
+})
+#define EXCEPT(flags, entity) (((flags)&~(entity)))
+#define ANY_EXCEPT(flags, entity) (((flags)&~(entity)) > 0)
+#define UNSET(flags, entity) ((flags) &= ~(entity))
+#define SWITCH(flags, entity) ((flags) ^= (entity))
 
 inline size_t align32(size_t size) {
 	if (size % 4 == 0) {
@@ -20,7 +31,6 @@ inline size_t align32(size_t size) {
 		return ((size / 4) + 1) * 4;
 	}
 }
-
 
 template <typename  ...additional>
 inline void _log(const additional&... args) {

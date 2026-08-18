@@ -512,7 +512,7 @@ namespace http {
          * but all this is not important since in reality we do not turn off handlers
          */
 
-        throw not_impleneted();
+        throw not_implemented();
 
         return httpd_unregister_uri_handler(handler, url, mode);
 	}

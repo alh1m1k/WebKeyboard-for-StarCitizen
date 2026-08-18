@@ -82,6 +82,7 @@ namespace http {
             }
             return buffer;
         } else {
+        	error("backend error", status, " ", (int)errno);
             throw std::logic_error("unable retrieve data from backend");
         }
     }
