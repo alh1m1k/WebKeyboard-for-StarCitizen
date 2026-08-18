@@ -784,7 +784,7 @@
         Long tap to clear stored.
         Tap to select stored.
         #activate#1#/settings/Vehicles - Targeting/Pin Index 1 - Lock/Unlock Pinned Target#
-        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 1 - Lock/Unlock Pinned Target#
+        #set/clear#lAlt+1#/settings/Vehicles - Targeting/Pin Index 1 - Lock/Unlock Pinned Target#
         #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
       </div>
     </div>
@@ -801,7 +801,7 @@
         Long tap to clear stored.
         Tap to select stored.
         #activate#1#/settings/Vehicles - Targeting/Pin Index 2 - Lock/Unlock Pinned Target#
-        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 2 - Lock/Unlock Pinned Target#
+        #set/clear#lAlt+1#/settings/Vehicles - Targeting/Pin Index 2 - Lock/Unlock Pinned Target#
         #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
       </div>
     </div>
@@ -818,7 +818,7 @@
         Long tap to clear stored.
         Tap to select stored.
         #activate#1#/settings/Vehicles - Targeting/Pin Index 3 - Lock/Unlock Pinned Target#
-        #set/clear#lalt+1#/settings/Vehicles - Targeting/Pin Index 3 - Lock/Unlock Pinned Target#
+        #set/clear#lAlt+1#/settings/Vehicles - Targeting/Pin Index 3 - Lock/Unlock Pinned Target#
         #clear all#O#/settings/Vehicles - Targeting/Remove All Pinned Targets#
       </div>
     </div>
@@ -865,22 +865,20 @@
       <p class="full-size">Next Type</p>
       <p class="compact">Next T.</p>
       <span></span>
-      <kbd></kbd>
+      <kbd>+mouse-wheel(1)+</kbd>
       <div class="description">
         Select next missile type control.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
-        #activate#Mouse wheel down#/settings/Vehicles - Missiles/Cycle Next Missile Type#
+        #activate#MouseWheelDown#/settings/Vehicles - Missiles/Cycle Next Missile Type#
       </div>
     </div>
     <div class="control" data-control-id="missile-pack-prev-type" data-control-type="oneshot" data-control-groups="missile-pack">
       <p class="full-size">Prev Type</p>
       <p class="compact">Prev T.</p>
       <span></span>
-      <kbd></kbd>
+      <kbd>+mouse-wheel(-1)+</kbd>
       <div class="description">
         Select prev missile type control.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
-        #activate#Mouse wheel up#/settings/Vehicles - Missiles/Cycle Previous Missile Type#
+        #activate#MouseWheelUp#/settings/Vehicles - Missiles/Cycle Previous Missile Type#
       </div>
     </div>
     <div class="control" data-control-id="missile-pack-launch" data-control-type="oneshot" data-control-groups="missile-pack,removeme">
@@ -1027,20 +1025,18 @@
     <div class="control" data-control-id="mine-laser-pwr-inc" data-control-type="oneshot" data-control-groups="ming-op">
       <p class="full-size">Laser Power Inc.</p>
       <p class="compact">LP+</p>
-      <span></span><kbd></kbd>
+      <span></span><kbd>mouse-wheel(1)</kbd>
       <div class="description">
         Increase mine laser pwr.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
         #activate#MouseWheel#/settings/Vehicles - Mining/Increase Mining Laser Power#
       </div>
     </div>
     <div class="control" data-control-id="mine-laser-pwr-decr" data-control-type="oneshot" data-control-groups="ming-op">
       <p class="full-size">Laser Power Decr.</p>
       <p class="compact">LP-</p>
-      <span></span><kbd></kbd>
+      <span></span><kbd>mouse-wheel(-1)</kbd>
       <div class="description">
         Decrease mine laser pwr.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
         #activate#MouseWheel#/settings/Vehicles - Mining/Decrease Mining Laser Power#
       </div>
     </div>
@@ -1048,11 +1044,10 @@
     <div class="control" data-control-id="laser-switch" data-control-type="oneshot" data-control-groups="ming-op">
       <p class="full-size">Switch Laser</p>
       <p class="compact">L. Sw.</p>
-      <span></span><kbd></kbd>
+      <span></span><kbd>+alt+mouse-b0+</kbd>
       <div class="description">
         Switch mining laser.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
-        #activate#lAlt+Mouse1#/settings/Vehicles - Mining/Switch Mining Laser (Toggle)#
+        #activate#lAlt+Mouse0#/settings/Vehicles - Mining/Switch Mining Laser (Toggle)#
       </div>
     </div>
     <div class="control" data-control-id="cargo-jettison" data-control-type="oneshot" data-control-groups="ming-op">
@@ -1170,11 +1165,10 @@
     <div class="control" data-control-id="salvage-switch-axis" data-control-type="oneshot" data-control-groups="">
       <p class="full-size">Switch Axis</p>
       <p class="compact">Axi Sw.</p>
-      <span></span><kbd></kbd>
+      <span></span><kbd>+alt+mouse-b1+</kbd>
       <div class="description">
         Switch Axis(salvage context).
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
-        #activate#lAlt+Mouse2#/settings/Vehicles/Salvage Beam Axis (Toggle)#
+        #activate#lAlt+Mouse1#/settings/Vehicles/Salvage Beam Axis (Toggle)#
       </div>
     </div>
 
@@ -1225,10 +1219,9 @@
       <p class="full-size">Ping angle Inc.</p>
       <p class="compact">Angl Inc.</p>
       <span></span>
-      <kbd></kbd>
+      <kbd>+mouse-wheel(-1)+</kbd>
       <div class="description">
         Increase scanning angle.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
         #activate#MouseWheelUp#/settings/Flight - Radar/Increase Scanning Angle#
       </div>
     </div>
@@ -1236,10 +1229,9 @@
       <p class="full-size">Ping angle Decr.</p>
       <p class="compact">Angl Decr.</p>
       <span></span>
-      <kbd></kbd>
+      <kbd>+mouse-wheel(1)+</kbd>
       <div class="description">
         Decrease scanning angle.
-        Note: By default this command using mouse what was not implemented by this app. Use other shortcut if possible.
         #activate#MouseWheelDown#/settings/Flight - Radar/Decrease Scanning Angle#
       </div>
     </div>
@@ -2791,6 +2783,12 @@
       <p>Pref-3</p>
       <span></span>
       <kbd></kbd>
+    </div>
+
+    <div class="control" data-control-id="js0-b3" data-control-type="oneshot" data-control-groups="joystick">
+      <p>JB3</p>
+      <span></span>
+      <kbd>+js-b3+</kbd>
     </div>
 
     <!--  CTRL IN TESTING END -->
