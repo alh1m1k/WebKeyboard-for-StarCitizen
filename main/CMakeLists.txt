@@ -35,7 +35,7 @@ idf_component_register(
     					./parser
 						./interpreter
 						./ipc
-						./task
+						./tasking
 
 						compression
 

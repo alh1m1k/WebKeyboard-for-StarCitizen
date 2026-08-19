@@ -9,8 +9,6 @@
 #include "class/hid/hid_device.h"
 
 
-
-
 // Invoked when received GET_REPORT control request
 // Application must fill buffer report's content and return its length.
 // Return zero will cause the stack to STALL request

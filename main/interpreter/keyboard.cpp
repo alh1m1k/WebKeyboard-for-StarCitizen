@@ -81,52 +81,52 @@ namespace interpreter {
 
 		if (str == "keyboardKey-1"sv) {
 			//if (auto combination = combination.combination(conv(tock.press)); combination) {
-				debugIf(LOG_KEYBOARD, "keyboardKey-1 init");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-1 init");
 				combination.keyboardKey(HID_KEY_ALT_LEFT);
 				combination.keyboardKey('n');
-				debugIf(LOG_KEYBOARD, "keyboardKey-1 n");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-1 n");
 			//}
-			debugIf(LOG_KEYBOARD, "keyboardKey-1 out of scope");
+			debugIf(LOG_USB_DEVIVE, "keyboardKey-1 out of scope");
 			return true;
 		}
 
 		if (str == "keyboardKey-2"sv) {
 			//if (auto combination = combination.combination(conv(word_type::press_e::LONGPRESS)); combination) {
-				debugIf(LOG_KEYBOARD, "keyboardKey-2 init");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-2 init");
 				combination.keyboardKey(HID_KEY_ALT_LEFT);
 				combination.keyboardKey(HID_KEY_CONTROL_LEFT);
 				combination.keyboardKey(HID_KEY_DELETE);
-				debugIf(LOG_KEYBOARD, "keyboardKey-2 n");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-2 n");
 			//}
-			debugIf(LOG_KEYBOARD, "keyboardKey-2 out of scope");
+			debugIf(LOG_USB_DEVIVE, "keyboardKey-2 out of scope");
 			return true;
 		}
 
 		if (str == "keyboardKey-3"sv) {
 			//if (auto combination = combination.combination(conv(word_type::press_e::PRESS)); combination) {
-				debugIf(LOG_KEYBOARD, "keyboardKey-3 init");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-3 init");
 				combination.keyboardKey(HID_KEY_ALT_LEFT);
 				combination.keyboardKey('a');
 				combination.keyboardKey('b');
 				combination.keyboardKey('c');
-				debugIf(LOG_KEYBOARD, "keyboardKey-3 n");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-3 n");
 			//}
-			debugIf(LOG_KEYBOARD, "keyboardKey-3 out of scope");
+			debugIf(LOG_USB_DEVIVE, "keyboardKey-3 out of scope");
 			return true;
 		}
 
 		if (str == "keyboardKey-4"sv) {
 			//if (auto combination = combination.combination(conv(word_type::press_e::DOUBLETAP)); combination) {
-				debugIf(LOG_KEYBOARD, "keyboardKey-4 init");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-4 init");
 				combination.keyboardKey(HID_KEY_ALT_LEFT);
 				combination.keyboardKey('a');
 				combination.keyboardKey('b');
 				combination.keyboardKey('c');
 				combination.keyboardKey('d');
 				combination.keyboardKey('e');
-				debugIf(LOG_KEYBOARD, "keyboardKey-4 n");
+				debugIf(LOG_USB_DEVIVE, "keyboardKey-4 n");
 			//}
-			debugIf(LOG_KEYBOARD, "keyboardKey-3 out of scope");
+			debugIf(LOG_USB_DEVIVE, "keyboardKey-3 out of scope");
 			return true;
 		}
 
@@ -198,7 +198,7 @@ namespace interpreter {
 			//WARNING HID_KEY_KEYPAD_0 is on the end of HID_KEY_KEYPAD_SEQUENCE
 			//but ASCII 0 in on the top on numerical SEQUENCE
 			int i = (str[3] - '1');
-			debugIf(LOG_KEYBOARD, "num", i);
+			debugIf(LOG_USB_DEVIVE, "num", i);
 			combination.keyboardKey(uint8_t(HID_KEY_KEYPAD_1 + i));
 			return true;
 		}

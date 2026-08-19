@@ -27,7 +27,7 @@ namespace syncing {
  * do not use this lock inside critical section or inside other same lock
  * it's does not support nested lock for simplicity
  */
-#warning "experimental critical_shared syncing in use"
+//#warning "experimental critical_shared syncing in use"
 class critical_shared {
 
 	//this is reimplementation of freertos function taskENTER_CRITICAL ability to preserve

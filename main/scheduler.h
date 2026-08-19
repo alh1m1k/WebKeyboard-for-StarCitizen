@@ -2,15 +2,14 @@
 
 #include "generated.h"
 
+#include <sys/_stdint.h>
+#include <functional>
+
 #include "esp_timer.h"
 #include "generated.h"
-#include "projdefs.h"
 #include "util.h"
-#include <functional>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include <sys/_stdint.h>
-#include "../exception/bad_api_call.h"
 
 template<typename TAG, typename TASK = std::function<void()>>
 class scheduler {
@@ -18,33 +17,11 @@ class scheduler {
 	public: typedef TASK task_type;
 
     protected:
-        
-    	template<class CALLABLE>
-    	class threadHandler {
-			TaskHandle_t  hndl = NULL;
-			public:
-				threadHandler(CALLABLE* owner, const char* pcName, const configSTACK_DEPTH_TYPE usStackDepth = 4096, const UBaseType_t uxPriority = 10) {
-					debugIf(LOG_SCHEDULER, "threadHandler::threadHandler", pcName);
-					auto status = xTaskCreate([](void* o){
-						while (true) {
-							(*static_cast<CALLABLE*>(o))();
-						}
-					}, pcName, usStackDepth, (void*)owner, uxPriority, &hndl);
-					if (status != pdPASS) {
-						throw bad_api_call("threadHandler::threadHandler", ESP_FAIL);
-					}
-				}
-				~threadHandler() {
-					debugIf(LOG_SCHEDULER, "threadHandler::~threadHandler");
-					vTaskDelete(hndl);
-				}
-				threadHandler(threadHandler&) 				= delete;
-				threadHandler& operator=(threadHandler&) 	= delete;
-				inline TaskHandle_t handler() {
-					return hndl;
-				}
-		};
-	
+
+		[[noreturn]] static void loop(void* arg) {
+			while (true) { (*static_cast<scheduler*>(arg))(); }
+		}
+
 		struct unit {
 			int64_t     invoked;
 			task_type 	handler;
@@ -64,7 +41,7 @@ class scheduler {
 			typename 	std::vector<unit>::iterator it; 
 		};
 	
-		std::unique_ptr<threadHandler<scheduler>> thread = nullptr;
+		std::unique_ptr<tasking::task> task = nullptr;
 		std::vector<unit> units = {};
 		std::vector<unit> unitsShadow = {};
 		std::mutex mutex = {};
@@ -106,7 +83,7 @@ class scheduler {
 			
 			int64_t yeldInterval = std::max(interval - 500, (int64_t)0);
 			while (esp_timer_get_time() - prev < yeldInterval) {
-				taskYIELD();
+				tasking::task::this_yield();
 			}
 
 #pragma GCC diagnostic push
@@ -170,7 +147,7 @@ class scheduler {
 	
 		static const bool strictTimemanagment = false;
 	
-		scheduler()	{}
+		scheduler()	= default;
 		scheduler(scheduler &&) 			= default;
 		scheduler &operator=(scheduler &&) 	= default; 
 			
@@ -186,7 +163,7 @@ class scheduler {
 			
 			unitsShadow.emplace_back(esp_timer_get_time(), handler, repeat, intervalMs * 1000, tagId, false);
 			
-			xTaskNotify(thread->handler(), 0, eNoAction);
+			task->notify(0, eNoAction);
 			
 			return true;			
 		}
@@ -205,7 +182,7 @@ class scheduler {
 			//todo check TAG()
 			unitsShadow.emplace_back(esp_timer_get_time(), handler, repeat, intervalMs * 1000, TAG(), false);
 			
-			xTaskNotify(thread->handler(), 0, eNoAction);
+			task->notify(0, eNoAction);
 			
 			return true;
 			
@@ -237,11 +214,11 @@ class scheduler {
 		
 		
 		void begin() {
-			thread = std::make_unique<threadHandler<scheduler>>(this, "schedulerTask");
+			task = std::make_unique<tasking::task>(&loop, "schedulerTask", 3072, this, 10);
 		}
 		
 		void end() {
-			thread = nullptr;
+			task = nullptr;
 		}
 	
 };

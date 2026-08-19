@@ -17,12 +17,12 @@ namespace hid {
 	using namespace std::literals;
 					
 	composite::composite(): compositeWriter<task_type>(task, 0){
-		debugIf(LOG_KEYBOARD, "hid::keyboard::keyboard");
+		debugIf(LOG_USB_DEVIVE, "hid::keyboard::keyboard");
 	}
 	
 	
 	composite::~composite() {
-		debugIf(LOG_KEYBOARD, "hid::keyboard::~keyboard");
+		debugIf(LOG_USB_DEVIVE, "hid::keyboard::~keyboard");
 		if (_installed) {
 			deinstall();
 		}
@@ -30,12 +30,12 @@ namespace hid {
 	
 	bool composite::install() {	
 		
-		debugIf(LOG_KEYBOARD, "keyboard::install usb initialization");
+		debugIf(LOG_USB_DEVIVE, "keyboard::install usb initialization");
 		
 		UsbDevice->attach(this);
 		task = std::make_unique<compositeTask>();
 		
-	    debugIf(LOG_KEYBOARD,  "keyboard::install usb initialization done");
+	    debugIf(LOG_USB_DEVIVE,  "keyboard::install usb initialization done");
 		
 		return _installed = true;
 	}
@@ -64,7 +64,7 @@ namespace hid {
 						ledStatusChangeCallback(leds, oldLeds);
 					}
 				}
-				infoIf(LOG_KEYBOARD, "keyboard::setReport", (uint)*buffer);
+				infoIf(LOG_USB_DEVIVE, "keyboard::setReport", (uint)*buffer);
 			} else {
 				error("keyboard::setReport invalid buffer size for led request", bufsize);
 			}

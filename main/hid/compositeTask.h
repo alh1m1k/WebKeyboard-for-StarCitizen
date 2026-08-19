@@ -5,8 +5,6 @@
 
 #include <algorithm>
 #include <functional>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "class/hid/hid_device.h"
 #include "esp_err.h"
 #include <sys/_stdint.h>
@@ -16,11 +14,11 @@
 #include "../exception/bad_api_call.h"
 #include "asciiDictionary.h"
 #include "esp_timer.h"
-#include "generic.h"
-#include "queue.h"
+#include "ipc/queue.h"
 #include "reportUnpacker.h"
 #include "result.h"
-#include "scoped_lock.h"
+#include "syncing/scoped_lock.h"
+#include "tasking/task.h"
 
 // #define DEBUG_CYCLE
 
@@ -138,7 +136,7 @@ namespace hid {
 		command current;
 
 		::ipc::queue<report> queue;
-		::task::generic task;
+		::tasking::task task;
 
 		std::mutex flushMutex = {};
 
@@ -278,7 +276,7 @@ namespace hid {
 
 			[[nodiscard]] inline uint32_t applyEntropy(const uint32_t value) const {
 				const auto e = (int32_t)(entropy() * (value * 0.20));
-				debugIf(LOG_KEYBOARD && LOG_ENTROPY, "delayGenerator", value, " ", e, " ", value + e);
+				debugIf(LOG_USB_DEVIVE && LOG_ENTROPY, "delayGenerator", value, " ", e, " ", value + e);
 				return value + e;
 			}
 
@@ -357,7 +355,7 @@ namespace hid {
 			}
 
 			bool executeTyping(const std::string_view& text, const uint8_t flags, command buffer) {
-				debugIf(LOG_KEYBOARD, "type in use ", text);
+				debugIf(LOG_USB_DEVIVE, "type in use ", text);
 
 				buffer.flags = buffer.keyboard.reserved = flags;
 				buffer.pendingFlush = KEYBOARD;
@@ -375,7 +373,7 @@ namespace hid {
 					nextSpacerDelayMs = (uint8_t)flags == (uint8_t)pressType::SHORT ? timings.shortPressSpacerMs : timings.spacerMs;
 				}
 
-				debugIf(LOG_KEYBOARD, "type done");
+				debugIf(LOG_USB_DEVIVE, "type done");
 
 				return true;
 
@@ -487,7 +485,7 @@ namespace hid {
 
 			inline void throttleMs(const uint32_t throttle) {
 				if (const auto left = (esp_timer_get_time() - lastKeyPressUS) / 1000; left < throttle) {
-					debugIf(LOG_KEYBOARD, "throttleMs", throttle-left);
+					debugIf(LOG_USB_DEVIVE, "throttleMs", throttle-left);
 					waitMs(throttle-left);
 				}
 			}
@@ -508,12 +506,12 @@ namespace hid {
 			void waitMs(const uint32_t ms) {
 				int64_t startTime = esp_timer_get_time();
 				int64_t us 		  = std::max((int64_t)ms * 1000 - 500, (int64_t)0);
-				vTaskDelay(pdMS_TO_TICKS(ms));
+				tasking::task::this_sleep_for(ms);
 				//now we are in 1hz range of target time, by default it's 10ms
 				int64_t startYeld = esp_timer_get_time();
 				while (esp_timer_get_time() - startTime < us) { taskYIELD(); }
 				//now we are before time ~500us or after target time with some dT
-				debugIf(LOG_KEYBOARD, "waitMs us:", ms * 1000, " actual: ", esp_timer_get_time() - startTime, " yelding: ", esp_timer_get_time() - startYeld);
+				debugIf(LOG_USB_DEVIVE, "waitMs us:", ms * 1000, " actual: ", esp_timer_get_time() - startTime, " yelding: ", esp_timer_get_time() - startYeld);
 			}
 
 			template<typename... MUTEX>
@@ -611,6 +609,12 @@ namespace hid {
 				}
 			}
 
+			[[noreturn]] static void loop(void* arg) {
+				//if device not mounted wait for it once for 1s
+				if (!tud_mounted()) { ::tasking::task::this_sleep_for(1000); }
+				while (true) { (*static_cast<compositeTask*>(arg))(); }
+			}
+
 		public:
 
 			typedef std::function<float()> entropy_generator_type;
@@ -636,12 +640,6 @@ namespace hid {
 				uint16_t    shortPressMs        = 50;
 				uint16_t    shortPressSpacerMs  = 50;
 			} timings;
-
-			[[noreturn]] static void loop(void* arg) {
-				//if device not mounted wait for it once for 1s
-				if (!tud_mounted()) { vTaskDelay( pdMS_TO_TICKS(1000)); }
-				while (true) { (*static_cast<compositeTask*>(arg))(); }
-			}
 
 			compositeTask(): queue(25), task(&loop, "keyboardTask", 3072, this, 10) { };
 

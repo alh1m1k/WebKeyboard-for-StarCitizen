@@ -55,37 +55,42 @@
 #define WIFI_AP_DNS_DOMAIN  "wkb.local"
 #endif
 
-#if defined(DEVICE_KB_VENDORID) || defined(DEVICE_KB_PRODUCTID) 
-
-#define DEVICE_KB_DEVICE_DESC_OVERRIDED
-
+#ifndef DEVICE_KB_DEVICE_DESC_OVERRIDE
+#if defined(DEVICE_KB_VENDORID) || defined(DEVICE_KB_PRODUCTID)
+#define DEVICE_KB_DEVICE_DESC_OVERRIDE true
+#else
+#define DEVICE_KB_DEVICE_DESC_OVERRIDE false
+#endif
 #endif
 
+#ifndef DEVICE_KB_DEVICE_STR_DESC_OVERRIDE
 #if defined(DEVICE_KB_MANUFACTURER) || defined(DEVICE_KB_PRODUCT) || defined(DEVICE_KB_SERIALS) || defined(DEVICE_KB_HID)
-
-#define DEVICE_KB_DEVICE_STR_DESC_OVERRIDED
-
+#define DEVICE_KB_DEVICE_STR_DESC_OVERRIDE true
+#else
+#define DEVICE_KB_DEVICE_STR_DESC_OVERRIDE false
+#endif
 #endif
 
 #ifndef SESSION_MAX_CLIENT_COUNT
 #define SESSION_MAX_CLIENT_COUNT 10
 #endif
 
-///LOGS
-
-#ifndef LOG_JOYSTICK
-#define LOG_JOYSTICK 	false
+#ifndef DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
+#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC false
 #endif
 
-#ifndef LOG_KEYBOARD
-#define LOG_KEYBOARD 	false
+
+///LOGS
+
+#ifndef LOG_USB_DEVIVE
+#define LOG_USB_DEVIVE 	false
 #endif
 
 #ifndef LOG_ENTROPY
 #define LOG_ENTROPY 	false
 #endif
 
-// LOG_KEYBOARD + LOG_ENTROPY to log keyboard delays
+// LOG_USB_DEVIVE + LOG_ENTROPY to log keyboard delays
 
 #ifndef LOG_SOCKET
 #define LOG_SOCKET 		false

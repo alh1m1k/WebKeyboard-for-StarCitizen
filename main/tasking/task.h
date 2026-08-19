@@ -8,19 +8,27 @@
 #include "util.h"
 #include "bad_api_call.h"
 
-namespace task {
+namespace tasking {
 
-	class generic {
+	class task {
 
 		TaskHandle_t handle = nullptr;
 
-		explicit generic() = default;
+		explicit task() = default;
 
 		public:
 
-			static const generic terminated;
+			static const task terminated;
 
-			explicit generic(
+			static inline void this_sleep_for(const uint32_t delayMs) noexcept {
+				vTaskDelay(pdMS_TO_TICKS(delayMs));
+			}
+
+			static inline void this_yield() noexcept {
+				taskYIELD();
+			}
+
+			explicit task(
 				TaskFunction_t pxTaskCode,
 				const char * const pcName,
 				const size_t usStackDepth,
@@ -32,7 +40,7 @@ namespace task {
 				}
 			};
 
-			explicit generic(
+			explicit task(
 				TaskFunction_t pxTaskCode,
 				const char * const pcName,
 				const size_t usStackDepth,
@@ -45,23 +53,27 @@ namespace task {
 				}
 			};
 
-			virtual ~generic() noexcept {
+			virtual ~task() noexcept {
 				if (handle != nullptr) {
 					vTaskDelete(handle);
 					handle = nullptr;
 				}
 			};
 
-			generic(generic&) = delete;
+			task(task&) = delete;
 
-			generic& operator=(generic&) = delete;
+			task& operator=(task&) = delete;
 
-			inline bool operator==(const generic& other) const noexcept {
+			inline bool operator==(const task& other) const noexcept {
 				return handle == other.handle;
 			}
 
 			[[nodiscard]] inline TaskHandle_t native() const noexcept {
 				return handle;
+			}
+
+			inline void notify(const uint32_t ulValue, const eNotifyAction eAction) noexcept {
+				xTaskNotify(handle, ulValue, eAction);
 			}
 
 	};
