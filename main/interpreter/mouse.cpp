@@ -72,34 +72,34 @@ namespace interpreter {
 		const word_type& word
 	) {
 
-		if (word.view.starts_with("mouse-b")) {
-			if (const auto index = view2BtnIndex(word.view); index != -1) {
+		if (word.dataView.starts_with("mouse-b")) {
+			if (const auto index = view2BtnIndex(word.dataView); index != -1) {
 				combination.mouseButtons(1 << index);
 				return true;
 			}
-		} else if (word.view.starts_with("mouse-wheel(")) {
-			if (const auto speed = view2WheelSpeed(word.view); speed != -10000) {
+		} else if (word.dataView.starts_with("mouse-wheel(")) {
+			if (const auto speed = view2WheelSpeed(word.dataView); speed != -10000) {
 				combination.mouseScroll(0, (int8_t)speed);
 				return true;
 			}
-		} else if (word.view.starts_with("mouse-pos(")) {
-			if (const auto [x, y] = view2XYPosition(word.view); x != -1 && y != -1) {
+		} else if (word.dataView.starts_with("mouse-pos(")) {
+			if (const auto [x, y] = view2XYPosition(word.dataView); x != -1 && y != -1) {
 				combination.mousePosition(x, y);
 				return true;
 			}
-		} else if (word.view == "mouse-left"sv) {
+		} else if (word.dataView == "mouse-left"sv) {
 			combination.mouseButtons(MOUSE_BUTTON_LEFT);
 			return true;
-		} else if (word.view == "mouse-right"sv) {
+		} else if (word.dataView == "mouse-right"sv) {
 			combination.mouseButtons(MOUSE_BUTTON_RIGHT);
 			return true;
-		} else if (word.view == "mouse-middle"sv) {
+		} else if (word.dataView == "mouse-middle"sv) {
 			combination.mouseButtons(MOUSE_BUTTON_MIDDLE);
 			return true;
-		} else if (word.view == "mouse-backward"sv) {
+		} else if (word.dataView == "mouse-backward"sv) {
 			combination.mouseButtons(MOUSE_BUTTON_BACKWARD);
 			return true;
-		} else if (word.view == "mouse-forward"sv) {
+		} else if (word.dataView == "mouse-forward"sv) {
 			combination.mouseButtons(MOUSE_BUTTON_FORWARD);
 			return true;
 		}

@@ -296,7 +296,7 @@ namespace interpreter {
 		hid::composite::combination_writer_type& combination, const word_type& word
 	)  {
 		try {
-			return specialKey(combination, word.view, word);
+			return specialKey(combination, word.dataView, word);
 		} catch (std::exception& e) {
 			error("keyboard exception", e.what());
 			return false;

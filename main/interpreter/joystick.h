@@ -96,11 +96,11 @@ namespace interpreter {
 			bool executeOn(
 				hid::composite::combination_writer_type& combination, const word_type& word
 			) {
-				if (const auto [joystickId, btnIndex] = view2BtnIndex(word.view); btnIndex != -1) {
+				if (const auto [joystickId, btnIndex] = view2BtnIndex(word.dataView); btnIndex != -1) {
 					combination.joystickButtons(0x01 << btnIndex, joystickId);
 					return true;
 				}
-				if (const auto [joystickId, axisIndex, value] = view2AxisValue(word.view); value != -1) {
+				if (const auto [joystickId, axisIndex, value] = view2AxisValue(word.dataView); value != -1) {
 					combination.joystickAxis((uint8_t)axisIndex, (int16_t)value, (uint8_t)joystickId);
 					return true;
 				}

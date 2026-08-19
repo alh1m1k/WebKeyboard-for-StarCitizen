@@ -309,12 +309,12 @@ void app_main(void) {
 	debugIf(LOG_HTTPD_HEAP, "app_main kb", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
 	std::cout << "starting usb composite device " << std::endl;
-	static auto kb = hid::composite();
+	static auto dev = hid::composite();
 
-	if (!kb.install()) {
+	if (!dev.install()) {
 		trap("fail 2 setup usb composite", ESP_FAIL);
 	}
-	kb.entropySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
+	dev.entropySource([]() -> float { return randomCtx.distribution(randomCtx.generator); });
 
 	debugIf(LOG_HTTPD_HEAP, "app_main driver", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 
@@ -418,7 +418,7 @@ void app_main(void) {
 		wsproto(
 			cmdParser,
 			cmdInterpreter,
-			kb,
+			dev,
 			sessions,
 			notifications,
 			packetCounter,
@@ -436,7 +436,7 @@ void app_main(void) {
 	std::cout << "starting of webServer complete" << std::endl;
 
 	//kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter, tailOp));
-	kb.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter));
+	dev.onLedStatusChange(ledStatusChange(ctrl, notifications, packetCounter));
 
 	debugIf(LOG_HTTPD_HEAP, "app_main scheduler.begin()", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
 

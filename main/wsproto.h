@@ -360,14 +360,15 @@ class wsproto {
                     if (!parser.parse(kbPack.input)) {
                         socket.write(resultMsg("kb", pack.taskId, false));
                     } else {
-                        /*auto kbResult =*/ interpreter.executeOn(dev, parser.tokens());
+                        auto kbResult = interpreter.executeOn(dev, parser.tokens());
                         socket.write(resultMsg("kb", pack.taskId, true));
-                        /*if (kbResult) {
-                            debugIf(LOG_MESSAGES, "kb schedule ok", std::get<uint32_t>(kbResult));
+                        if (kbResult) {
+                            debugIf(LOG_MESSAGES, "kb schedule ok", kbResult.data());
                         } else {
                             error("kb schedule fail", kbResult.code());
-                        }*/
+                        }
                     }
+                	parser.cleanup();
                 } else {
                     socket.write(resultMsg("kb", pack.taskId, true)); //case to update of switchoff state to controls
                 }
@@ -497,7 +498,7 @@ class wsproto {
                         auto onceParser = parser::command();
                     	auto onceInterpreter = interpreter::command();
                         if (onceParser.parse(std::string_view(combination))) {
-                            /*auto kbResult =*/ onceInterpreter.executeOn(dev, onceParser.tokens());
+                            onceInterpreter.executeOn(dev, onceParser.tokens());
                         } else {
                             error("unable process repeat", combination);
                         }

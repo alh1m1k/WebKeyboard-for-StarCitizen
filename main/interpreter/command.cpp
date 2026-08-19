@@ -2,55 +2,91 @@
 
 namespace interpreter {
 
-	inline hid::pressType conv(parser::command::token_type::press_e in) noexcept {
-		if (in >= parser::command::token_type::press_e::INVALID) {
+	using namespace std::literals;
+
+	static hid::pressType conv(const std::string_view& candidate) noexcept {
+		if (candidate == "press"sv) {
 			return hid::pressType::PRESS;
 		}
-		return static_cast<hid::pressType>(in);
+		if (candidate == "long"sv) {
+			return hid::pressType::LONGPRESS;
+		}
+		if (candidate == "double"sv) {
+			return hid::pressType::DOUBLETAP;
+		}
+		if (candidate == "short"sv) {
+			return hid::pressType::SHORT;
+		}
+		if (candidate == "symbols-short"sv) {
+			return hid::pressType::SHORT;
+		}
+		if (candidate == "down"sv) {
+			return hid::pressType::DOWN;
+		}
+		if (candidate == "up"sv) {
+			return hid::pressType::UP;
+		}
+		return hid::pressType::PRESS;
 	}
 
 	command::command() noexcept = default;
 
 	command::exec_result_type command::executeOn(hid::composite& dev, const sentence_type& sentence) {
 		auto sequence = dev.sequence();
-		bool success = true;
+		bool success = true, keyContainText = false;
 
 		logIf(true, "[info] ", "performed tokens -> [");
 		const auto total = sentence.size();
 		for (auto i = 0; i < total && success; ++i) {
 			if (sentence[i].type == word_type::type_e::KEY) {
 				for (
-					auto combination = sequence.combination(conv(sentence[i].press));
-					i < total; ++i
+					auto combination = sequence.combination(conv(sentence[i].modifierView));
+					i < total && success; ++i
 				) {
-					/* case of +alt+f  +ctrl+z whe last symbol at end of sentence
-					*  was part of combination
-					*/
 					if (sentence[i].type == word_type::type_e::SYMBOL) {
-						if (i == total - 1 && sentence[i].view.size() == 1) {
-							success = delegate(combination, sentence[i]);
+						/* case of +alt+f +ctrl+z whe last symbol at end of sentence
+						 * was a part of combination
+						 */
+						if (i == total - 1 && sentence[i].dataView.size() == 1) {
+							success = pushTo(combination, sentence[i]);
+							logIf(true, "\"", sentence[i].dataView, ":", sentence[i].modifierView,
+								"\"k", !success ? "<-error" : "", total == i + 1 ? "" : ", "
+							);
 						} else {
 							break;
 						}
-					} else if (sentence[i].view == "$$" || sentence[i].view == ">>") {
-						logIf(true, "\"", sentence[i].view, ":", (int)sentence[i].press,
-							"\"k<-separator", total == i + 1 ? "" : ", "
-						);
+					} else if (
+						sentence[i].modifierView == "symbols"sv ||
+						sentence[i].modifierView == "symbols-press"sv ||
+						sentence[i].modifierView == "symbols-short"sv
+					) {
+						//this is text encoded as key ie:
+						//+enter+someLongCommandOrMessage:symbols+enter+
+						keyContainText = true;
+						break;
+					} else if (sentence[i].dataView == "$$" || sentence[i].dataView == ">>") {
+						//separator symbol, combination is complete now
 						break;
 					} else {
-						success = delegate(combination, sentence[i]);
+						success = pushTo(combination, sentence[i]);
+						logIf(true, "\"", sentence[i].dataView, ":", sentence[i].modifierView,
+							"\"k", !success ? "<-error" : "", total == i + 1 ? "" : ", "
+						);
 					}
-					logIf(true, "\"", sentence[i].view, ":", (int)sentence[i].press,
-						"\"k", !success ? "<-error" : "", total == i + 1 ? "" : ", "
-					);
 				}
 			}
-			if (sentence[i].type == word_type::type_e::SYMBOL) {
-				success = sequence.keyboardTyping(sentence[i].view, sentence[i].press == word_type::press_e::SHORT);
-				logIf(true, "\"", sentence[i].view, ":", (int)sentence[i].press,
-					"\"s", !success ? "<-error" : "", total == i + 1 ? "" : ", "
+			if (i >= total) { break; }
+			if (sentence[i].type == word_type::type_e::SYMBOL || keyContainText) {
+				success = sequence.keyboardTyping(
+					sentence[i].dataView,
+					conv(sentence[i].modifierView) == hid::pressType::SHORT
 				);
+				keyContainText = false;
 			}
+			logIf(true, "\"", sentence[i].dataView, ":", sentence[i].modifierView,
+				sentence[i].type == word_type::type_e::SYMBOL ? "\"s" : "\"k",
+				!success ? "<-error" : "", total == i + 1 ? "" : ", "
+			);
 		}
 		logIf(true, "]\n");
 
@@ -61,11 +97,11 @@ namespace interpreter {
 		}
 	}
 
-	bool command::delegate(hid::composite::combination_writer_type& combination, const parser::command::token_type& word) {
-		if (isJoystickPrefix(word.view)) {
+	bool command::pushTo(hid::composite::combination_writer_type& combination, const parser::command::token_type& word) {
+		if (isJoystickPrefix(word.dataView)) {
 			return joystickInterpreter.executeOn(combination, word);
 		}
-		if (isMousePrefix(word.view)) {
+		if (isMousePrefix(word.dataView)) {
 			return mouseInterpreter.executeOn(combination, word);
 		}
 		return keyboardInterpreter.executeOn(combination, word);
