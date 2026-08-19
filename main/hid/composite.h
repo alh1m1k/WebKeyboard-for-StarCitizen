@@ -44,6 +44,11 @@ namespace hid {
 			using mouse_direct_guardian_type = compositeTask::mouse_direct_guardian_type;
 			typedef std::function<void(uint8_t ledStatus, uint8_t ledStatusPrev)> onLedStatusChangeCallback;
 
+			using keyboard_included_type = compositeTask::keyboard_included_type;
+			using joystick0_included_type = compositeTask::joystick0_included_type;
+			using joystick1_included_type = compositeTask::joystick1_included_type;
+			using mouse_included_type = compositeTask::mouse_included_type;
+
 			using writer_type::keyboardSymbol;
 			using writer_type::keyboardKey;
 
@@ -117,9 +122,9 @@ namespace hid {
 				return task->directMouse(nowait);
 			}
 			
-			bool 			setReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) override;
+			bool setReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) override;
 
-			uint16_t 		getReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) override;
+			uint16_t getReport(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) override;
 			
 	};
 	

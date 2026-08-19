@@ -77,6 +77,8 @@ std::string connectedNotify(uint32_t packetId, const std::string& clientId, int 
 std::string renameNotify(uint32_t packetId, const std::string& clientName, const std::string& oldClientName);
 
 std::string signNotify(uint32_t packetId, const std::string& ns, const std::string& sign);
+
+std::string deviceNotify(uint32_t packetId, const std::string& ns, int deviceList);
 			
 std::string kbNotify(uint32_t packetId, std::string_view actionId, std::string_view actionType);
 

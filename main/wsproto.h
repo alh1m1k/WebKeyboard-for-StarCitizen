@@ -227,6 +227,16 @@ class wsproto {
                     error("unable send notifications (bootingSign)", ret.code());
                 }
 
+            	constexpr int deviceList = (
+            		(hid::composite::keyboard_included_type::value  ? 0x01	<< 0 : 0x00) |
+            		(hid::composite::mouse_included_type::value		? 0x01	<< 1 : 0x00) |
+            		(hid::composite::joystick0_included_type::value ? 0x01  << 2 : 0x00) |
+            		(hid::composite::joystick1_included_type::value ? 0x01  << 3 : 0x00)
+				);
+            	if (auto ret = notifications.notify(deviceNotify(packetCounter(), "deviceList", deviceList), clientId, true); !ret) {
+            		error("unable send notifications (deviceList)", ret.code());
+            	}
+
                 if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, isReconnect ? 2 : 1), clientId); !ret) {
                     error("unable send notifications (auth)", ret.code());
                 }
@@ -327,7 +337,9 @@ class wsproto {
 				}
 			}*/
 
-            	if (auto controlStream = dev.directJoystick(true); controlStream) {
+            	if (auto controlStream = dev.directJoystick(true);
+            		hid::composite::joystick0_included_type::value && controlStream
+            	) {
             		controlStream << pack.body;
             		if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
             			error("unable send notifications (ctr)", ret.code());
@@ -341,6 +353,7 @@ class wsproto {
             		}
             		return ESP_OK; //no respond
             	} else {
+            		error("skip joystick data due nowait/not included");
             		socket.write(resultMsg("ctr", pack.taskId, false));
             		return ESP_OK;
             	}

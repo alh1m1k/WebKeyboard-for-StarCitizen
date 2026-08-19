@@ -247,10 +247,7 @@ namespace hid {
 
 			bool removeDanglingKeys(const command& cmd) {
 				dumbCombination("removeDanglingKeys", cmd);
-				if (hasAnyDangling = !danglingCommands.empty(); !hasAnyDangling) {
-					return false;
-				}
-
+				if (!hasAnyDangling) { return false; }
 				if (const auto it = std::find_if(
 					danglingCommands.begin(),
 					danglingCommands.end(),
@@ -261,7 +258,7 @@ namespace hid {
 				} else {
 					eraseByReplace(danglingCommands, it);
 				}
-
+				hasAnyDangling = !danglingCommands.empty();
 				return true;
 			}
 
@@ -332,7 +329,7 @@ namespace hid {
 						break;
 					case (uint8_t)pressType::UP:
 						if (handled = removeDanglingKeys(cmd); handled) {
-							if (usingDanglingKeys ) {
+							if (usingDanglingKeys) {
 								if (hasAnyDangling) {
 									flushPush(getMergedDanglingCommand(danglingCommands));
 								} else {
@@ -355,6 +352,9 @@ namespace hid {
 			}
 
 			bool executeTyping(const std::string_view& text, const uint8_t flags, command buffer) {
+
+				if constexpr (!keyboard_included_type::value) { return true; }
+
 				debugIf(LOG_USB_DEVIVE, "type in use ", text);
 
 				buffer.flags = buffer.keyboard.reserved = flags;
@@ -385,32 +385,40 @@ namespace hid {
 					return;
 				}
 				auto guardian = std::unique_lock(flushMutex);
-				if (IS(cmd.pendingFlush, KEYBOARD)) {
-					//tud_hid_keyboard_report()
-					waitTransferCompletion();
-					tud_hid_keyboard_report(HID_ITF_PROTOCOL_KEYBOARD, cmd.keyboard.modifier, cmd.keyboard.keycode);
-					if (ANY_EXCEPT(cmd.pendingFlush, KEYBOARD)) {
-						//has any except keyboard itself
-						//apply small delay to improve combination reading from OS
-						waitMs(generateDelay(SHORT_SPACER));
+				if constexpr (keyboard_included_type::value) {
+					if (IS(cmd.pendingFlush, KEYBOARD)) {
+						//tud_hid_keyboard_report()
+						waitTransferCompletion();
+						tud_hid_keyboard_report(HID_ITF_PROTOCOL_KEYBOARD, cmd.keyboard.modifier, cmd.keyboard.keycode);
+						if (ANY_EXCEPT(cmd.pendingFlush, KEYBOARD)) {
+							//has any except keyboard itself
+							//apply small delay to improve combination reading from OS
+							waitMs(generateDelay(SHORT_SPACER));
+						}
 					}
 				}
-				if (IS(cmd.pendingFlush, MOUSE)) {
-					state.mouse.unsafe.pan = cmd.mouse.pan;
-					state.mouse.unsafe.wheel = cmd.mouse.wheel;
-					state.mouse.unsafe.buttons = cmd.mouse.buttons;
-					waitTransferCompletion();
-					tud_hid_report(HID_ITF_PROTOCOL_MOUSE,  &state.mouse.unsafe, sizeof(mouse_report_type));
+				if constexpr (mouse_included_type::value) {
+					if (IS(cmd.pendingFlush, MOUSE)) {
+						state.mouse.unsafe.pan = cmd.mouse.pan;
+						state.mouse.unsafe.wheel = cmd.mouse.wheel;
+						state.mouse.unsafe.buttons = cmd.mouse.buttons;
+						waitTransferCompletion();
+						tud_hid_report(HID_ITF_PROTOCOL_MOUSE,  &state.mouse.unsafe, sizeof(mouse_report_type));
+					}
 				}
-				if (IS(cmd.pendingFlush, JOYSTICK0)) {
-					state.joystick0.unsafe.buttons = cmd.joystick0.buttons;
-					waitTransferCompletion();
-					tud_hid_report(REPORT_ID_GAMEPAD0, &state.joystick0.unsafe, sizeof(joystick_report_type));
+				if constexpr (joystick0_included_type::value) {
+					if (IS(cmd.pendingFlush, JOYSTICK0)) {
+						state.joystick0.unsafe.buttons = cmd.joystick0.buttons;
+						waitTransferCompletion();
+						tud_hid_report(REPORT_ID_GAMEPAD0, &state.joystick0.unsafe, sizeof(joystick_report_type));
+					}
 				}
-				if (IS(cmd.pendingFlush, JOYSTICK1)) {
-					state.joystick1.unsafe.buttons = cmd.joystick1.buttons;
-					waitTransferCompletion();
-					tud_hid_report(REPORT_ID_GAMEPAD1, &state.joystick1.unsafe, sizeof(joystick_report_type));
+				if constexpr (joystick1_included_type::value) {
+					if (IS(cmd.pendingFlush, JOYSTICK1)) {
+						state.joystick1.unsafe.buttons = cmd.joystick1.buttons;
+						waitTransferCompletion();
+						tud_hid_report(REPORT_ID_GAMEPAD1, &state.joystick1.unsafe, sizeof(joystick_report_type));
+					}
 				}
 			}
 
@@ -420,31 +428,39 @@ namespace hid {
 					return;
 				}
 				auto guardian = std::unique_lock(flushMutex);
-				if (IS(cmd.pendingFlush, JOYSTICK0)) {
-					state.joystick0.unsafe.buttons = 0x00;
-					waitTransferCompletion();
-					tud_hid_report(REPORT_ID_GAMEPAD0, &state.joystick0.unsafe, sizeof(joystick_report_type));
-				}
-				if (IS(cmd.pendingFlush, JOYSTICK1)) {
-					state.joystick1.unsafe.buttons = 0x00;
-					waitTransferCompletion();
-					tud_hid_report(REPORT_ID_GAMEPAD1, &state.joystick1.unsafe, sizeof(joystick_report_type));
-				}
-				if (IS(cmd.pendingFlush, MOUSE)) {
-					state.mouse.unsafe.pan = state.mouse.unsafe.wheel = 0x00;
-					state.mouse.unsafe.buttons = 0x00;
-					waitTransferCompletion();
-					tud_hid_report(HID_ITF_PROTOCOL_MOUSE,  &state.mouse.unsafe, sizeof(mouse_report_type));
-				}
-				if (IS(cmd.pendingFlush, KEYBOARD)) {
-					if (ANY_EXCEPT(cmd.pendingFlush, KEYBOARD)) {
-						//has any except keyboard itself
-						//apply small delay to improve combination reading from OS
-						waitMs(generateDelay(SHORT_SPACER));
+				if constexpr (joystick0_included_type::value) {
+					if (IS(cmd.pendingFlush, JOYSTICK0)) {
+						state.joystick0.unsafe.buttons = 0x00;
+						waitTransferCompletion();
+						tud_hid_report(REPORT_ID_GAMEPAD0, &state.joystick0.unsafe, sizeof(joystick_report_type));
 					}
-					waitTransferCompletion();
-					const keyboard_report_type emptyKb = {};
-					tud_hid_report(HID_ITF_PROTOCOL_KEYBOARD, &emptyKb, sizeof(keyboard_report_type));
+				}
+				if constexpr (joystick1_included_type::value) {
+					if (IS(cmd.pendingFlush, JOYSTICK1)) {
+						state.joystick1.unsafe.buttons = 0x00;
+						waitTransferCompletion();
+						tud_hid_report(REPORT_ID_GAMEPAD1, &state.joystick1.unsafe, sizeof(joystick_report_type));
+					}
+				}
+				if constexpr (mouse_included_type::value) {
+					if (IS(cmd.pendingFlush, MOUSE)) {
+						state.mouse.unsafe.pan = state.mouse.unsafe.wheel = 0x00;
+						state.mouse.unsafe.buttons = 0x00;
+						waitTransferCompletion();
+						tud_hid_report(HID_ITF_PROTOCOL_MOUSE,  &state.mouse.unsafe, sizeof(mouse_report_type));
+					}
+				}
+				if constexpr (keyboard_included_type::value) {
+					if (IS(cmd.pendingFlush, KEYBOARD)) {
+						if (ANY_EXCEPT(cmd.pendingFlush, KEYBOARD)) {
+							//has any except keyboard itself
+							//apply small delay to improve combination reading from OS
+							waitMs(generateDelay(SHORT_SPACER));
+						}
+						waitTransferCompletion();
+						const keyboard_report_type emptyKb = {};
+						tud_hid_report(HID_ITF_PROTOCOL_KEYBOARD, &emptyKb, sizeof(keyboard_report_type));
+					}
 				}
 			}
 
@@ -471,14 +487,20 @@ namespace hid {
 			}
 
 			void releaseDevLocks(local_context_type& ctx) {
-				if (IS(ctx.lockedDev, JOYSTICK0)) {
-					state.joystick0.mutex.unlock();
+				if constexpr (joystick0_included_type::value) {
+					if (IS(ctx.lockedDev, JOYSTICK0)) {
+						state.joystick0.mutex.unlock();
+					}
 				}
-				if (IS(ctx.lockedDev, JOYSTICK1)) {
-					state.joystick1.mutex.unlock();
+				if constexpr (joystick1_included_type::value) {
+					if (IS(ctx.lockedDev, JOYSTICK1)) {
+						state.joystick1.mutex.unlock();
+					}
 				}
-				if (IS(ctx.lockedDev, MOUSE)) {
-					state.mouse.mutex.unlock();
+				if constexpr (mouse_included_type::value) {
+					if (IS(ctx.lockedDev, MOUSE)) {
+						state.mouse.mutex.unlock();
+					}
 				}
 				ctx.lockedDev = 0;
 			}
@@ -515,7 +537,8 @@ namespace hid {
 			}
 
 			template<typename... MUTEX>
-			auto lockForDirectAccess(const bool nowait, MUTEX&... m) {
+			auto lockForDirectAccess(const bool nowait, const bool nolock, MUTEX&... m) {
+				if (nolock) { return syncing::scoped_lock(std::defer_lock, m...); }
 				return nowait ? (
 					backendReady() ?
 						syncing::scoped_lock(std::try_to_lock, m...) :
@@ -524,48 +547,63 @@ namespace hid {
 			}
 
 			int collect(const reportUnpacker::result_type& shard, command& cmd, local_context_type& ctx) {
-					switch (shard.type) {
-					case KB_BUTTONS:
-						memcpy(&cmd.keyboard.keycode, shard.report->keyboard_buttons.data, sizeof(keyboard_report_type::keycode));
+				switch (shard.type) {
+				case KB_BUTTONS:
+					if constexpr (keyboard_included_type::value) {
+						memcpy(
+							&cmd.keyboard.keycode,
+							shard.report->keyboard_buttons.data,
+							sizeof(keyboard_report_type::keycode)
+						);
 						cmd.keyboard.modifier = shard.report->keyboard_buttons.modifier;
 						cmd.keyboard.reserved = REPORT_UNMASK(shard.report->keyboard_buttons.flags);
 						SET(cmd.pendingFlush,  KEYBOARD);
-						break;
-					case JS0_AXIS0:
-					case JS0_AXIS1:
-					case JS0_AXIS2:
-					case JS0_AXIS3:
-					case JS0_AXIS4:
-					case JS0_AXIS5:
-					case JS0_AXIS6:
-					case JS0_AXIS7:
+					}
+					break;
+				case JS0_AXIS0:
+				case JS0_AXIS1:
+				case JS0_AXIS2:
+				case JS0_AXIS3:
+				case JS0_AXIS4:
+				case JS0_AXIS5:
+				case JS0_AXIS6:
+				case JS0_AXIS7:
+					if constexpr (joystick0_included_type::value) {
 						lockIfUnset(state.joystick0.mutex, ctx.lockedDev, JOYSTICK0);
 						( (int16_t*)&state.joystick0.unsafe )[shard.type-JS0_AXIS0] = shard.report->joystick_axis;
 						SET(cmd.pendingFlush,  JOYSTICK0);
-						break;
-					case JS1_AXIS0:
-					case JS1_AXIS1:
-					case JS1_AXIS2:
-					case JS1_AXIS3:
-					case JS1_AXIS4:
-					case JS1_AXIS5:
-					case JS1_AXIS6:
-					case JS1_AXIS7:
+					}
+					break;
+				case JS1_AXIS0:
+				case JS1_AXIS1:
+				case JS1_AXIS2:
+				case JS1_AXIS3:
+				case JS1_AXIS4:
+				case JS1_AXIS5:
+				case JS1_AXIS6:
+				case JS1_AXIS7:
+					if constexpr (joystick1_included_type::value) {
 						lockIfUnset(state.joystick1.mutex, ctx.lockedDev, JOYSTICK1);
 						( (int16_t*)&state.joystick1.unsafe )[shard.type-JS1_AXIS0] = shard.report->joystick_axis;
 						SET(cmd.pendingFlush, JOYSTICK1);
-						break;
-					case JS0_BUTTONS:
+					}
+					break;
+				case JS0_BUTTONS:
+					if constexpr (joystick0_included_type::value) {
 						cmd.joystick0.buttons = shard.report->joystick_buttons.buttons;
 						cmd.joystick0.flags = shard.report->joystick_buttons.flags;
 						SET(cmd.pendingFlush, JOYSTICK0);
-						break;
-					case JS1_BUTTONS:
+					}
+					break;
+				case JS1_BUTTONS:
+					if constexpr (joystick1_included_type::value) {
 						cmd.joystick1.buttons = shard.report->joystick_buttons.buttons;
 						cmd.joystick1.flags = shard.report->joystick_buttons.flags;
 						SET(cmd.pendingFlush, JOYSTICK1);
-						break;
-					case MS_AXES:
+					}
+					break;
+				case MS_AXES:
+					if constexpr (mouse_included_type::value) {
 						lockIfUnset(state.mouse.mutex, ctx.lockedDev, MOUSE);
 						if (
 							state.mouse.unsafe.x == shard.report->mouse_axis[0] &&
@@ -579,32 +617,37 @@ namespace hid {
 							state.mouse.unsafe.y = shard.report->mouse_axis[1];
 						}
 						SET(cmd.pendingFlush, MOUSE);
-						break;
-					case MS_SCROLLS:
+					}
+					break;
+				case MS_SCROLLS:
+					if constexpr (mouse_included_type::value) {
 						cmd.mouse.pan = shard.report->mouse_scroll[0];
 						cmd.mouse.wheel = -shard.report->mouse_scroll[1];
 						SET(cmd.pendingFlush, MOUSE);
-						break;
-					case MS_BUTTONS:
+					}
+					break;
+				case MS_BUTTONS:
+					if constexpr (mouse_included_type::value) {
 						cmd.mouse.buttons = shard.report->mouse_buttons.buttons;
 						cmd.mouse.flags = shard.report->mouse_buttons.flags;
 						SET(cmd.pendingFlush, MOUSE);
-						break;
-					default:
-						return ESP_FAIL;
 					}
+					break;
+				default:
+					return ESP_FAIL;
+				}
 				return ESP_OK;
 			}
 
 			static void evaluateCommandFlags(command& cmd) {
 				cmd.flags = 0x00;
-				if (IS(cmd.pendingFlush, KEYBOARD)) {
+				if (keyboard_included_type::value && IS(cmd.pendingFlush, KEYBOARD)) {
 					cmd.flags = cmd.keyboard.reserved;
-				} else if (IS(cmd.pendingFlush, JOYSTICK0)) {
+				} else if  (joystick0_included_type::value && IS(cmd.pendingFlush, JOYSTICK0)) {
 					cmd.flags = cmd.joystick0.flags;
-				} else if (IS(cmd.pendingFlush, JOYSTICK1)) {
+				} else if (joystick1_included_type::value && IS(cmd.pendingFlush, JOYSTICK1)) {
 					cmd.flags = cmd.joystick1.flags;
-				} else if (IS(cmd.pendingFlush, MOUSE)) {
+				} else if (mouse_included_type::value && IS(cmd.pendingFlush, MOUSE)) {
 					cmd.flags = cmd.mouse.flags;
 				}
 			}
@@ -622,6 +665,11 @@ namespace hid {
 			typedef guardianRestrictor<joystick_direct_type, syncing::scoped_lock<std::mutex, std::mutex>> joystick_direct_guardian_type;
 			typedef guardianRestrictor<mouse_direct_type, syncing::scoped_lock<std::mutex, std::mutex>> mouse_direct_guardian_type;
 			typedef uint16_t AXIS_TYPE;
+
+			using keyboard_included_type = std::bool_constant<INCLUDE_KEYBOARD>;
+			using joystick0_included_type = std::bool_constant<INCLUDE_JOYSTICK0>;
+			using joystick1_included_type = std::bool_constant<INCLUDE_JOYSTICK1>;
+			using mouse_included_type = std::bool_constant<INCLUDE_MOUSE>;
 
 			static constexpr auto MAX_DANGLING_REPORTS = 8;
 			static constexpr AXIS_TYPE AXIS_MIN 	= 0;
@@ -652,13 +700,17 @@ namespace hid {
 			joystick_direct_guardian_type directJoystick(const bool nowait = true, const uint8_t joystickId = 0) {
 				assert(joystickId == 0 || joystickId == 1);
 				auto& js = joystickId == 0 ? state.joystick0 : state.joystick1;
-				const int reportId = joystickId == 0 ? REPORT_ID_GAMEPAD0 : REPORT_ID_GAMEPAD1;
+				const bool wasDisabled = joystickId == 0 ? !joystick0_included_type::value : !joystick1_included_type::value;
+				const int reportId = wasDisabled ? -1 : (joystickId == 0 ? REPORT_ID_GAMEPAD0 : REPORT_ID_GAMEPAD1);
 				return {
 					(joystick_direct_type*)&js.unsafe,
-					lockForDirectAccess(nowait, js.mutex, flushMutex),
+					lockForDirectAccess(nowait, wasDisabled,  js.mutex, flushMutex),
 					[&, reportId] {
+						//SBO probably for 3 int, we use only 2
 						if constexpr (!DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC) {
-							tud_hid_report(reportId, &js.unsafe, sizeof(joystick_report_type));
+							if (reportId != -1) {
+								tud_hid_report(reportId, &js.unsafe, sizeof(joystick_report_type));
+							}
 						}
 					}
 				};
@@ -667,9 +719,9 @@ namespace hid {
 			mouse_direct_guardian_type directMouse(const bool nowait = true) {
 				return {
 					(mouse_direct_type*)&state.mouse.unsafe.x,
-					lockForDirectAccess(nowait, state.mouse.mutex, flushMutex),
+					lockForDirectAccess(nowait, !mouse_included_type::value, state.mouse.mutex, flushMutex),
 					[&] {
-						if constexpr (!DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC) {
+						if constexpr (mouse_included_type::value && !DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC) {
 							tud_hid_report(HID_ITF_PROTOCOL_MOUSE, &state.mouse.unsafe, sizeof(mouse_report_type));
 						}
 					}

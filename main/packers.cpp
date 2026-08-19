@@ -420,6 +420,22 @@ std::string signNotify(const uint32_t packetId, const std::string& ns, const std
 
 	return buffer;
 }
+
+std::string deviceNotify(const uint32_t packetId, const std::string& ns, const int deviceList) {
+
+	std::string buffer;
+	buffer.resize(ns.size() + maxPacketIdSize + sizeof(int) + 2);
+
+	buffer += ns;
+	buffer += ":";
+	buffer += std::to_string(packetId);
+	buffer += ":";
+	buffer += std::string_view((const char*)&deviceList, sizeof(int));
+
+	buffer.shrink_to_fit();
+
+	return buffer;
+}
 			
 std::string kbNotify(const uint32_t packetId, const std::string_view actionId, const std::string_view actionType) {
 

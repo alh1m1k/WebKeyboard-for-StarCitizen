@@ -15,6 +15,21 @@ namespace interpreter {
 			int value;
 		};
 
+		static int validateJoystickId(const int joystickId) {
+			if constexpr (
+				hid::composite::joystick0_included_type::value &&
+				hid::composite::joystick1_included_type::value
+			) {
+				return joystickId >= 0 && joystickId <= 1 ? joystickId : -1;
+			} else if constexpr (hid::composite::joystick0_included_type::value) {
+				return joystickId == 0 ? joystickId : -1;
+			} else if constexpr (hid::composite::joystick1_included_type::value) {
+				return joystickId == 1 ? joystickId : -1;
+			} else {
+				return -1;
+			}
+		}
+
 		static result_type view2AxisValue(const std::string_view word) {
 			/**
 			 * axis values [0-+2048] constant low, high, middle [0, 2048, 1024]
@@ -29,9 +44,9 @@ namespace interpreter {
 			} else if (word.size() >= 8 && word.starts_with("js") && word.substr(3).starts_with("-axis")) {
 				substr = word.substr(8);
 				joystickId = word[2] - '0';
-				joystickId = joystickId >= 0 && joystickId <= 1 ? joystickId : -1;
 			}
 
+			joystickId = validateJoystickId(joystickId);
 			if (substr.size() >= 2 && substr[1] == '(') {
 				axisIndex = substr[0] - '0';
 				axisIndex = axisIndex >= 0 && axisIndex <= 7 ? axisIndex : -1;
@@ -78,6 +93,7 @@ namespace interpreter {
 				joystickId = joystickId >= 0 && joystickId <= 1 ? joystickId : -1;
 			}
 
+			joystickId = validateJoystickId(joystickId);
 			if (!substr.empty() && joystickId != -1) {
 				int index = 0;
 				if (std::from_chars(substr.begin(), substr.end(), index).ec == std::errc{}) {
