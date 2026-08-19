@@ -19,6 +19,7 @@ namespace interpreter {
 		static bool isMousePrefix(std::string_view word);
 
 		bool pushTo(hid::composite::combination_writer_type& combination, const parser::command::token_type& word);
+		bool typingTo(hid::composite::sequence_writer_type& sequence, const parser::command::token_type& word);
 
 		public:
 

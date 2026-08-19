@@ -50,7 +50,7 @@ namespace interpreter {
 						if (i == total - 1 && sentence[i].dataView.size() == 1) {
 							success = pushTo(combination, sentence[i]);
 							logIf(true, "\"", sentence[i].dataView, ":", sentence[i].modifierView,
-								"\"k", !success ? "<-error" : "", total == i + 1 ? "" : ", "
+								"\"s", !success ? "<-error" : "", total == i + 1 ? "" : ", "
 							);
 						} else {
 							break;
@@ -75,12 +75,9 @@ namespace interpreter {
 					}
 				}
 			}
-			if (i >= total) { break; }
+			if (i >= total || !success) { break; } //boundary guardian todo: try remove it
 			if (sentence[i].type == word_type::type_e::SYMBOL || keyContainText) {
-				success = sequence.keyboardTyping(
-					sentence[i].dataView,
-					conv(sentence[i].modifierView) == hid::pressType::SHORT
-				);
+				success = typingTo(sequence, sentence[i]);
 				keyContainText = false;
 			}
 			logIf(true, "\"", sentence[i].dataView, ":", sentence[i].modifierView,
@@ -88,7 +85,7 @@ namespace interpreter {
 				!success ? "<-error" : "", total == i + 1 ? "" : ", "
 			);
 		}
-		logIf(true, "]\n");
+		logIf(true, success ? "]\n" : " ...]\n");
 
 		if (success) {
 			return sequence.lastWriteResult();
@@ -99,12 +96,35 @@ namespace interpreter {
 
 	bool command::pushTo(hid::composite::combination_writer_type& combination, const parser::command::token_type& word) {
 		if (isJoystickPrefix(word.dataView)) {
-			return joystickInterpreter.executeOn(combination, word);
+			if constexpr (
+				hid::composite::joystick0_included_type::value ||
+				hid::composite::joystick1_included_type::value
+			) {
+				return joystickInterpreter.executeOn(combination, word);
+			} else {
+				return false;
+			}
 		}
 		if (isMousePrefix(word.dataView)) {
-			return mouseInterpreter.executeOn(combination, word);
+			if constexpr (hid::composite::mouse_included_type::value) {
+				return mouseInterpreter.executeOn(combination, word);
+			}
+			return false;
 		}
-		return keyboardInterpreter.executeOn(combination, word);
+		if constexpr (hid::composite::keyboard_included_type::value) {
+			return keyboardInterpreter.executeOn(combination, word);
+		}
+		return false;
+	}
+
+	bool command::typingTo(hid::composite::sequence_writer_type& sequence, const parser::command::token_type& word) {
+		if constexpr (hid::composite::keyboard_included_type::value) {
+			return sequence.keyboardTyping(
+				word.dataView,
+				conv(word.modifierView) == hid::pressType::SHORT
+			);
+		}
+		return false;
 	}
 
 	bool command::isJoystickPrefix(const std::string_view word) {

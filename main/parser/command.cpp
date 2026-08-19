@@ -14,6 +14,7 @@ namespace parser {
 	void command::tokenizer(T begin, T end, char prefix) {
 
 		_tokens = tokens_type(3);
+		_tokens.clear();
 		_errors.clear();
 
 		if (*begin != prefix || std::distance(begin, end) == 1) { //case of "bla bla" and "+"
