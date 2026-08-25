@@ -37,6 +37,15 @@ inline std::string& operator<<(std::string& view, const hid::composite::joystick
 	return view;
 }
 
+#define TIME_SUMMARY(expression, prevTime, flushInterval, intervalCount) ({		\
+	++(intervalCount);															\
+	if (auto now = esp_timer_get_time(); now - (prevTime) >= (flushInterval)) { \
+		expression;																\
+		(intervalCount) = 0;													\
+		(prevTime) = now;														\
+	}																			\
+})
+
 class wsproto {
 
 	//consume almost 500-600b of stack, most of theme is hash ctx + exceptions
@@ -306,58 +315,48 @@ class wsproto {
 				return ESP_OK;
 			}
 
-            if (rawMessage.starts_with("ctr:")) {
+            if (rawMessage.starts_with("ctr0:") || rawMessage.starts_with("ctr1:")) {
                 //control axis request must be fixed size: 8 axis(2byte each) + buttons(32 one bit each) = 20bytes
                 auto pack = unpackMsg(rawMessage);
                 if (!pack.success) {
                     return ESP_FAIL;
                 }
                 if (pack.body.size() != 20) {
-                    error("ctrl axis packet has invalid size: ",
-                    	rawMessage.c_str(), " ",
-                    	rawMessage.size(), " ",
-                    	(uint)pack.body[0], " ",
-                    	(uint)pack.body[1], " ",
-                    	(uint)pack.body[pack.body.size()-2], " ",
-                    	(uint)pack.body[pack.body.size()-1], " ",
-                    	pack.body.size(), " ", 20
-                    );
+                    error("ctrl axis packet has invalid size: ");
                     return ESP_FAIL;
                 }
-/*			if (auto taskId = packetIdFromView(pack.taskId); !taskId) {
-				error("rcv \"ctr\" packet is malformed", pack.taskId, " ", taskId.code());
-				return ESP_FAIL;
-			} else {
-				//ban OutOfOrder execution
-				if (auto uTaskId = std::get<uint32_t>(taskId); uTaskId < joystickPrevTaskId) {
-					error("rcv \"ctr\" packet outoforder", uTaskId, " ", joystickPrevTaskId);
-					return ESP_FAIL;
-				} else {
-					joystickPrevTaskId = uTaskId;
-				}
-			}*/
 
-            	if (auto controlStream = dev.directJoystick(true);
-            		hid::composite::joystick0_included_type::value && controlStream
+            	const int joystickId = rawMessage.starts_with("ctr0:") ? 0 : 1;
+            	static uint32_t joystick0Counter = 0, joystick1OrErrorCounter = 0;
+            	static auto joystick0FlushAt = esp_timer_get_time(), joystick1OrErrorFlushAt = joystick0FlushAt;
+
+            	if (
+            		(!hid::composite::joystick0_included_type::value && joystickId == 0) ||
+            		(!hid::composite::joystick1_included_type::value && joystickId == 1)
             	) {
-            		controlStream << pack.body;
-            		if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body), clientId, true); !ret) {
-            			error("unable send notifications (ctr)", ret.code());
-            		}
-            		++joystickCounter;
-            		if (auto time = esp_timer_get_time(); (time - joystickFlushAt >= 1000000) && joystickCounter > 1) {
-            			//that probably not thread safe, add spinlock
-            			info("client activity", "from: ", joystickFlushAt,  " to `now` processed: ", joystickCounter, " joystick event(s)");
-            			joystickCounter = 0;
-            			joystickFlushAt = time;
-            		}
-            		return ESP_OK; //no respond
-            	} else {
-            		error("skip joystick data due nowait/not included");
-            		socket.write(resultMsg("ctr", pack.taskId, false));
+            		TIME_SUMMARY(
+            			error("client activity", "from: ", joystick1OrErrorFlushAt,  " to `now` rejected: ", joystick1OrErrorCounter, " disabled joystick[s] event(s)"),
+            			joystick1OrErrorFlushAt, 1000000, joystick1OrErrorCounter
+            		);
             		return ESP_OK;
             	}
 
+            	if (auto controlStream = dev.directJoystick(true, joystickId); controlStream) {
+            		controlStream << pack.body;
+            		if (auto ret = notifications.notifyExcept(ctrNotify(packetCounter(), pack.body, joystickId), clientId, true); !ret) {
+            			error("unable send notifications (ctr)", ret.code());
+            		}
+            		auto& flush = joystickId == 0 ? joystick0FlushAt : joystick1OrErrorFlushAt;
+            		auto& count = joystickId == 0 ? joystick0Counter : joystick1OrErrorCounter;
+            		TIME_SUMMARY(
+            			info("client activity", "from: ", flush,  " to `now` processed: ", count, " joystick", joystickId, " event(s)"),
+            			flush, 1000000, count
+            		);
+            		return ESP_OK; //no respond
+            	} else {
+            		error("skip joystick data due device was locked", 0);
+            		return ESP_OK;
+            	}
             }
 
 			info("client activity", "id: ", pSession->index(), " name: ", clientName.c_str());

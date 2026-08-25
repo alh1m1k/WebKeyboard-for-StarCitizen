@@ -373,6 +373,10 @@ function wsocket(target) {
         lastError:              null,
         pendingSend:    new Map(),
         namespaces:     new Map(),
+        namespaceCtr0: undefined,
+        namespaceCtr1: undefined,
+        encoder: new TextEncoder(),
+        decoder: new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }),
         signal:         null,
         kaHandler:      undefined,
         onconnect:      null,
@@ -384,7 +388,7 @@ function wsocket(target) {
                 throw new Error("socket was not open");
             }
             if (binary) {
-                const prefix = (new TextEncoder()).encode(topic + ":" + privateCtx.taskId.toString() + ":");
+                const prefix = privateCtx.encoder.encode(topic + ":" + privateCtx.taskId.toString() + ":");
                 let msg = new Uint8Array(prefix.byteLength + buffer.byteLength);
                 msg.set(prefix, 0);
                 msg.set(new Uint8Array(buffer), prefix.byteLength);
@@ -424,7 +428,7 @@ function wsocket(target) {
             privateCtx.context.socket.onerror   = privateCtx.errorHandler;
             return privateCtx.context.opened;
         },
-        closeTask: () => {
+        closeTask: (code) => {
             if (privateCtx.context === null) {
                 console.error("attempt to close closed/not opened connection");
                 return Promise.resolve({wasClean: true, code: 0, reason: ""});
@@ -433,7 +437,7 @@ function wsocket(target) {
                 console.error("attempt to close already closed connection");
                 return privateCtx.context.closed;
             }
-            privateCtx.context.socket.close();
+            privateCtx.context.socket.close(code);
             return privateCtx.context.closed;
         },
         updateIdentityTask: (timeoutMs = 1000) => {
@@ -533,12 +537,8 @@ function wsocket(target) {
         },
         disconnectTask: () => {
             return privateCtx.connectionErrorHandler(null).catch(() => {
-                if (privateCtx.context.status !== SocketClose) {
-                    console.error("disconnectTask: incorrect socket state", privateCtx.context.status);
-                    privateCtx.context.flags |= SocketFlagError;
-                    privateCtx.context.status = SocketClose;
-                }
-                return Promise.resolve(privateCtx.context.status);
+                privateCtx.context.socket.close(1000); //SocketInit socket will not be closed after connectionErrorHandler
+                return privateCtx.context.closed.then(() => Promise.resolve(privateCtx.context.status));
             })
         },
         connectionErrorHandler: (reason) => {
@@ -583,7 +583,7 @@ function wsocket(target) {
                         privateCtx.context.flags |= SocketFlagClosedImmediately;
                     }
                 }
-                if (privateCtx.openingAttempts === 1 && !privateCtx.wasAuthorizeAt) {
+                if (privateCtx.openingAttempts === 1 && !privateCtx.wasAuthorizeAt && privateCtx.reconnect) {
                     //if we fail on our first attempt it's probably due server socket depletion after http's resource loading
                     //forgive this one error (do not call privateCtx.ondisconnect)
                     console.warn('ignoring first error on first connection attempt');
@@ -594,6 +594,37 @@ function wsocket(target) {
                 try { privateCtx.ondisconnect.call(publicCtx, reason); } catch (e) {}
             }
             return reason;
+        },
+        ctrNamespaceHandler: (textHeader, msg) => {
+            let index = textHeader.indexOf(":");
+            if (index !== -1) {
+                const dest = textHeader.substring(0, index);
+                index = textHeader.indexOf(":", index + 1);
+                if (index !== -1) {
+                    const taskId = textHeader.substring(dest.length+1, index);
+                    if (dest === "ctr0") {
+                        if ((privateCtx.namespaceCtr0 = privateCtx.namespaceCtr0 || privateCtx.namespaces.get("ctr0"))) {
+                            privateCtx.namespaceCtr0.callbacks.forEach(
+                                store => setTimeout(store.callback, 0, +taskId, msg.slice(-20), ...store.args)
+                            );
+                        }
+                    } else if (dest === "ctr1") {
+                        if ((privateCtx.namespaceCtr1 = privateCtx.namespaceCtr1 || privateCtx.namespaces.get("ctr1"))) {
+                            privateCtx.namespaceCtr1.callbacks.forEach(
+                                store => setTimeout(store.callback, 0, +taskId, msg.slice(-20), ...store.args)
+                            );
+                        }
+                    } else if (privateCtx.namespaces.has(dest)) {
+                        const nsHandler = privateCtx.namespaces.get(dest);
+                        nsHandler.callbacks.forEach(
+                            store => setTimeout(
+                                store.callback,0,
+                                +taskId, msg.slice(dest.length+taskId.length+2), ...store.args
+                            )
+                        );
+                    }
+                }
+            }
         },
         messageHandler: (evt, ...args) => {
 
@@ -611,19 +642,16 @@ function wsocket(target) {
 
             let namespace;
             if (msg instanceof Blob) {
-
-                if (privateCtx.namespaces.has("ctr")) {
-                    const nsHandler = privateCtx.namespaces.get("ctr");
-                    nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
-                }
-
+                console.warn("blob should not appear in message stream");
+                new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.addEventListener("load", resolve);
+                    reader.addEventListener("error", reject);
+                    reader.readAsText(msg);
+                }).then((reader) => privateCtx.ctrNamespaceHandler(reader.result, msg))
+                  .catch(console.error);
             } else if (msg instanceof ArrayBuffer) {
-
-                if (privateCtx.namespaces.has("ctr")) {
-                    const nsHandler = privateCtx.namespaces.get("ctr");
-                    nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, 0, msg, ...store.args));
-                }
-
+                privateCtx.ctrNamespaceHandler(privateCtx.decoder.decode(msg), msg);
             } else {
                 let index = -1;
                 if ((index = msg.indexOf(":")) !== -1) {
@@ -657,7 +685,7 @@ function wsocket(target) {
                         if (taskId && (index = taskId.indexOf(":")) !== -1) {
                             taskId = taskId.substring(index+1);
                         }
-                        nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, taskId, data, ...store.args));
+                        nsHandler.callbacks.forEach(store => setTimeout(store.callback, 0, +taskId, data, ...store.args));
                     }
                 }
             }
@@ -761,6 +789,10 @@ function wsocket(target) {
                         const indexOf = ctrl.callbacks.indexOf(callback);
                         if (indexOf !== -1) {
                             ctrl.callbacks.splice(indexOf, 1);
+                            if (ctrl.callbacks.length === 0) {
+                                privateCtx.namespaces.delete(namespace);
+                                privateCtx.namespaceCtr0 = privateCtx.namespaceCtr1 = undefined;
+                            }
                         }
                     },
                     has: (callback) => {

@@ -424,7 +424,7 @@ std::string signNotify(const uint32_t packetId, const std::string& ns, const std
 std::string deviceNotify(const uint32_t packetId, const std::string& ns, const int deviceList) {
 
 	std::string buffer;
-	buffer.resize(ns.size() + maxPacketIdSize + sizeof(int) + 2);
+	buffer.reserve(ns.size() + maxPacketIdSize + sizeof(int) + 2);
 
 	buffer += ns;
 	buffer += ":";
@@ -454,12 +454,16 @@ std::string kbNotify(const uint32_t packetId, const std::string_view actionId, c
 }
 
 
-std::string ctrNotify(const uint32_t packetId, const std::string_view byteStream) {
+std::string ctrNotify(const uint32_t packetId, const std::string_view byteStream, const uint8_t joystickId) {
 
 	std::string buffer;
 	buffer.reserve(10 + maxPacketIdSize + byteStream.size());
+
+	assert(joystickId <= 1);
 	
-	buffer  = "ctr:";
+	buffer  = "ctr";
+	buffer += std::to_string(joystickId);
+	buffer += ":";
 	buffer += std::to_string(packetId);
 	buffer += ":";
 	buffer += byteStream;

@@ -32,6 +32,109 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
     const defaultAxisParams = { step: 1, min: 0, max: 8 };
 
+    Joystick.defaults = {
+        refreshTime:    20, //50hz
+        axisCount:      8,
+        buttonsCount:   32,
+        topic:          "ctr0",
+    }
+
+    /**
+     * todo add joystickSign[4byte]: clientId[byte]joystickId[byte]sequenceId[byte,byte]
+     * where sequence in server? or client? ns
+     * @param socket
+     * @param config
+     * @constructor
+     */
+    function Joystick(socket, config = Joystick.defaults) {
+
+        this.config = Object.assign({}, Joystick.defaults, config);
+
+        this.state = new ArrayBuffer(this.config.axisCount * 2 + ~~((this.config.buttonsCount + 7) / 8));
+        this.view  = new DataView(this.state);
+        this.pendingOp  = undefined;
+        this.socket     = socket;
+        this.localData  = {
+            axisOwners: [],
+        };
+
+        this.localData.axisOwners.length = 8;
+
+        //console.info("Joystick data len", this.state.byteLength);
+
+        for (let axis = 0; axis < this.config.axisCount; axis++) {
+            this.view.setUint16(axis*2, 1024, true);
+        }
+        this.sendState = this.sendState.bind(this);
+
+        if (!EventDispatcherTrait.isInited(this)) {
+            EventDispatcherTrait.call(this);
+        }
+    }
+
+    mixin(Joystick, EventDispatcherTrait);
+
+    Joystick.prototype.setAxis = function(index, value) {
+        if (index < 0 || index > 8) {
+            throw new Error("bad axis index");
+        }
+        value = Math.max(Math.min(2048, value), 0);
+        this.view.setUint16(index*2, value, true);
+        console.info(this.config.topic, index, value)
+        if (!this.pendingOp) {
+            this.pendingOp = setTimeout(this.sendState, this.config.refreshTime);
+        }
+    }
+
+    Joystick.prototype.getAxis = function(index) {
+        if (index < 0 || index > 8) {
+            throw new Error("bad axis index");
+        }
+        return this.view.getUint16(index*2, true);
+    }
+
+    Joystick.prototype.fromString = function(string) {
+        console.warn("Joystick.prototype.fromString", string);
+        for (let i = 0; i < string.length && i < 20; i++) {
+            this.view.setUint8(i, string.charCodeAt(i));
+        }
+        for (let axis = 0; axis < this.localData.axisOwners.length; axis++) {
+            this.localData.axisOwners[axis] = null;
+        }
+        this.dispatchEvent("change", this, true); //remoteOne
+    }
+
+    Joystick.prototype.fromBuffer = function(buffer) {
+        console.warn("Joystick.prototype.fromBuffer", buffer);
+        this.state = buffer;
+        this.view  = new DataView(this.state);
+        for (let axis = 0; axis < this.localData.axisOwners.length; axis++) {
+            this.localData.axisOwners[axis] = null;
+        }
+        this.dispatchEvent("change", this, true); //remoteOne
+    }
+
+    Joystick.prototype.sendState = function() {
+        this.pendingOp = undefined; //keep in sync event if socket fail
+        try {
+            console.info(this.config.topic, this.state);
+            this.socket.sendBinary(this.config.topic, this.state);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            this.dispatchEvent("change", this, false); //local
+        }
+    }
+
+    Joystick.prototype.reset = function() {
+        this.state = new ArrayBuffer(this.config.axisCount * 2 + ~~((this.config.buttonsCount + 7) / 8));
+        this.view  = new DataView(this.state);
+        for (let axis = 0; axis < this.config.axisCount; axis++) {
+            this.view.setUint16(axis*2, 1024, true);
+        }
+        this.dispatchEvent("change", this, false); //local
+    }
+
     CanvasControlWidget._protectedDescriptor = Symbol("protected");
     function CanvasControlWidget(domTemplate, WidgetImpl = null) {
         Control.call(this, domTemplate);
@@ -528,7 +631,34 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 });
             }
         }
+    }
 
+    function joystickIdEnumAttribute(setter) {
+        return {
+            label: "joystick ID",
+            description: "joystick whose axes are being used",
+            type: Attribute.types.ENUM,
+            inheritable: false, //due to limitation of sync
+            params: { options: [
+                    { type: "option", label: "joystick0", value: "joystick0" },
+                    { type: "option", label: "joystick1", value: "joystick1" },
+                ]},
+            value: () => "joystick0",
+            apply: (value, oldValue, attributes) => {
+                switch (value) {
+                    case "joystick0":
+                        console.log("joystick0 set");
+                        setter(joystick0);
+                        break;
+                    case "joystick1":
+                        console.log("joystick1 set");
+                        setter(joystick1);
+                        break;
+                    default:
+                        console.error("incorrect value of joystick");
+                }
+            }
+        }
     }
 
     LimiterControlWidget[_protectedDescriptor] = {};
@@ -541,6 +671,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
             valueOwners:        [], //for netValues(local one), cancel positive feedback
             joystickInstalled:  false,
             syncRequest:        undefined,
+            joystick:           joystick0,
             widgetsSyncList:    [], //for fast access
             mustUpdateSyncList: false,
             //syncAnimating:    true;
@@ -568,6 +699,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
     LimiterControlWidget.prototype.widgetActivate = function(view, widget) {
         CanvasControlWidget.prototype.widgetActivate.call(this, view, widget);
         const protectedCtx = this[CanvasControlWidget._protectedDescriptor];
+        const joystick = protectedCtx.joystick;
         if (!protectedCtx.joystickInstalled) {
             protectedCtx.netValues.length = joystick.config.axisCount;
             for (let axis = 0; axis < joystick.config.axisCount; ++axis) {
@@ -580,9 +712,10 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
 
     LimiterControlWidget.prototype.widgetDeactivate = function(view, widget) {
+        const protectedCtx = this[CanvasControlWidget._protectedDescriptor];
+        const joystick = protectedCtx.joystick;
         joystick.localData.axisOwners.map(owner => owner === widget ? null : owner); //to prevent leak
         CanvasControlWidget.prototype.widgetDeactivate.call(this, view, widget);
-        const protectedCtx = this[CanvasControlWidget._protectedDescriptor];
         if (protectedCtx.joystickInstalled && protectedCtx.widgetsActivated === 0) {
             joystick.detachEvent("change", this.joystickChangeHandler);
             protectedCtx.joystickInstalled = false;
@@ -697,9 +830,26 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
     }
 
+    LimiterControlWidget.prototype.changeJoystick = function(newJoystick) {
+        const protectedCtx = this[CanvasControlWidget._protectedDescriptor];
+        const oldJoystick = protectedCtx.joystick;
+        protectedCtx.joystick = newJoystick;
+        if (protectedCtx.joystickInstalled) {
+            oldJoystick.detachEvent("change", this.joystickChangeHandler);
+            protectedCtx.netValues.length = newJoystick.config.axisCount;
+            for (let axis = 0; axis < newJoystick.config.axisCount; ++axis) {
+                protectedCtx.netValues[axis] = newJoystick.getAxis(axis);
+            }
+            newJoystick.attachEvent("change", this.joystickChangeHandler, this);
+            protectedCtx.valueOwners = []; //this is positive loop cancellation, it's probably safe to just reset
+            this.resync();
+        }
+    }
+
     LimiterControlWidget.prototype.initAttributes = function(dom, attributesDefaults = {}) {
         let ctx = this;
         return CanvasControlWidget.prototype.initAttributes.call(this, dom, attributesDefaults).merge(new Attributes({
+            "joystick-id": joystickIdEnumAttribute((j) => this.changeJoystick(j)),
             "kbd-speed-limit": {
                 label: "axis(limit speed)",
                 description: "axis that used to limit ship max speed",
@@ -901,6 +1051,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
         const normalized = this.normalizeWidgetScale(widget, value);
         const axisValue = this.fromWidgetScale(widget, value);
         const kbd = +view.attributes.get(`kbd-${widget.id}`);
+        const joystick = this[CanvasControlWidget._protectedDescriptor].joystick;
         try {
             const pattern = (1 - normalized) * 175 + 25;
             HapticResponse.defaultInstance.vibrate([50, pattern, 50, pattern, 50, pattern, 50, pattern], "joystick axis");
@@ -919,6 +1070,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
     SalvageLimiterControlWidget.prototype.initAttributes = function(dom, attributesDefaults = {}) {
         let ctx = this;
         return CanvasControlWidget.prototype.initAttributes.call(this, dom, attributesDefaults).merge(new Attributes({
+            "joystick-id": joystickIdEnumAttribute((j) => this.changeJoystick(j)),
             "kbd-salvage-space": {
                 label:          "axis(salvage spacing)",
                 description:    "axis that used to set salvage beam spacing",
@@ -1891,6 +2043,50 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
     window.storage = storage;
 
+    notificator.addNotification("Attempting connect...", "connection_info", "info", 0);
+    reportDeviceScreen();
+    if (REPORT_PIXEL_RATE) {
+        notificator.addNotification("device pixel ratio is: " + window.devicePixelRatio, "pixels", "info");
+    }
+    if (DISABLE_OVERLAY_WORKERS) {
+        notificator.addNotification("WebWorkers was disabled", "worker", "warning", 0);
+    }
+    if (DISABLE_SETTINGS_FETCH) {
+        notificator.addNotification("Settings fetch was disabled", "fetch", "warning", 0);
+    }
+    if (ENABLE_PAGE_CHECK) {
+        notificator.addNotification("Page validator enabled", "page-validator", "warning", 0);
+    }
+
+    let leds = {
+        "numlock": {
+            el: document.querySelector(".toolbar .btn.numlock"),
+            status: "switched-off"
+        },
+        "capslock": {
+            el: document.querySelector(".toolbar .btn.capslock"),
+            status: "switched-off"
+        },
+        /*        "scrolllock": {
+                    el: document.querySelector(".toolbar .btn.scrolllock"),
+                    status: "switched-off"
+                }*/
+    }
+    function applyKeyboardLedStatus() {
+        //do not use applyKeyboardLedStatus.arguments as it can be mixed with idleDeadline
+        for (const [id, led] of Object.entries(leds)) {
+            if (led.status === "switched-on" && !led.el.classList.contains("pressed")) {
+                led.el.classList.add("pressed");
+            } else if (led.status === "switched-off" && led.el.classList.contains("pressed")) {
+                led.el.classList.remove("pressed");
+            }
+        }
+    }
+
+    window.leds = leds;
+    window.applyKeyboardLedStatus = applyKeyboardLedStatus;
+
+
     let socket = wsocket("/socks");
     window.socket = socket;
 
@@ -1914,21 +2110,6 @@ const invertAspectRatio = 2/3.1; //@see CSS
     socket.signal = ab.signal;
     setTimeout(() => ab.abort("test"), 60000);
 */
-
-    notificator.addNotification("Attempting connect...", "connection_info", "info", 0);
-    reportDeviceScreen();
-    if (REPORT_PIXEL_RATE) {
-        notificator.addNotification("device pixel ratio is: " + window.devicePixelRatio, "pixels", "info");
-    }
-    if (DISABLE_OVERLAY_WORKERS) {
-        notificator.addNotification("WebWorkers was disabled", "worker", "warning", 0);
-    }
-    if (DISABLE_SETTINGS_FETCH) {
-        notificator.addNotification("Settings fetch was disabled", "fetch", "warning", 0);
-    }
-    if (ENABLE_PAGE_CHECK) {
-        notificator.addNotification("Page validator enabled", "page-validator", "warning", 0);
-    }
 
     let connectCount = 0;
     socket.ondisconnect = (reason) => {
@@ -1981,13 +2162,6 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     });
 
-    function resetClientState() {
-        Control.reset();
-        joystick.reset(); //this will reset any axis related controls
-    }
-
-    window.resetClientState = resetClientState;
-
     let bootingSign;
     socket.ns("bootingSign", (taskId, serverBootingSign) => {
         if (!bootingSign) {
@@ -2005,34 +2179,19 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     });
 
-    let leds = {
-        "numlock": {
-            el: document.querySelector(".toolbar .btn.numlock"),
-            status: "switched-off"
-        },
-        "capslock": {
-            el: document.querySelector(".toolbar .btn.capslock"),
-            status: "switched-off"
-        },
-/*        "scrolllock": {
-            el: document.querySelector(".toolbar .btn.scrolllock"),
-            status: "switched-off"
-        }*/
-    }
-    function applyKeyboardLedStatus() {
-        //do not use applyKeyboardLedStatus.arguments as it can be mixed with idleDeadline
-        for (const [id, led] of Object.entries(leds)) {
-            if (led.status === "switched-on" && !led.el.classList.contains("pressed")) {
-                led.el.classList.add("pressed");
-            } else if (led.status === "switched-off" && led.el.classList.contains("pressed")) {
-                led.el.classList.remove("pressed");
-            }
+    let deviceList;
+    socket.ns("deviceList", (taskId, msg) => {
+        if (msg && (msg.byteLength || msg.size) === 4) { //todo change me check for status end binary/text
+            deviceList = new DataView(msg).getInt32(msg.size-4);
+            console.info("deviceList", deviceList);
+            console.info("keyboard", deviceList&0x01 ? "enabled" : "disabled");
+            console.info("mouse", deviceList&(0x01<<1) ? "enabled" : "disabled");
+            console.info("joystick0", deviceList&(0x01<<2) ? "enabled" : "disabled");
+            console.info("joystick1", deviceList&(0x01<<3) ? "enabled" : "disabled");
+        } else {
+            console.warn("rcv malformed msg[deviceList] from server", taskId, msg);
         }
-
-    }
-
-    window.leds = leds;
-    window.applyKeyboardLedStatus = applyKeyboardLedStatus;
+    });
 
     socket.ns("kba", (taskId, msg) => {
         if (msg && msg.length) {
@@ -2051,14 +2210,32 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     });
 
-    socket.ns("ctr", (taskId, msg) => {
-        if (msg) {
-            console.info("ctr", taskId, msg, msg.size);
-            joystick.fromBuffer(msg.slice(-20));
+
+    let joystick0 = new Joystick(socket, { topic: "ctr0" });
+    window.joystick0 = joystick0;
+    socket.ns("ctr0", (taskId, msg) => {
+        console.info("ctr0", taskId, msg, msg.byteLength || msg.size);
+        if (msg && (msg.byteLength || msg.size) === 20) {
+            joystick0.fromBuffer(msg);
         } else {
-            console.warn("rcv malformed msg[ctr] from server", taskId, msg);
+            console.warn("rcv malformed msg[ctr0] from server", taskId, msg);
         }
     });
+
+    let joystick1 = new Joystick(socket, { topic: "ctr1" });
+    window.joystick1 = joystick1;
+    socket.ns("ctr1", (taskId, msg) => {
+        console.info("ctr1", taskId, msg, msg.byteLength || msg.size);
+        if (msg && (msg.byteLength || msg.size) === 20) {
+            joystick1.fromBuffer(msg);
+        } else {
+            console.warn("rcv malformed msg[ctr1] from server", taskId, msg);
+        }
+    });
+
+
+
+
 
 /*    window.addEventListener("unload", (e) => {
         let type, name;
@@ -2091,6 +2268,14 @@ const invertAspectRatio = 2/3.1; //@see CSS
             console.log("page is reloading");
         }
     });*/
+
+    function resetClientState() {
+        Control.reset();
+        joystick0.reset(); //this will reset any axis related controls
+        joystick1.reset();
+    }
+
+    window.resetClientState = resetClientState;
 
     Promise.any([
         new Promise(r => window.addEventListener("beforeunload", r, { once: true })),
@@ -2548,7 +2733,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                                                               //because of how non inheritable attrs work.
 
                             if (!DISABLE_OVF_CHECK) {
-                                reportOverflow([target], true).then(() => {
+                                reportOverflowOnce([target], true).then(() => {
                                     invalidateOverlay(currentPage);
                                     updateOverlay();
                                 });
@@ -3199,108 +3384,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
         }
     });
 
-    Joystick.defaults = {
-        refreshTime:    20, //50hz
-        axisCount:      8,
-        buttonsCount:   32,
-    }
 
-    /**
-     * todo add joystickSign[4byte]: clientId[byte]joystickId[byte]sequenceId[byte,byte]
-     * where sequence in server? or client? ns
-     * @param socket
-     * @param config
-     * @constructor
-     */
-    function Joystick(socket, config = Joystick.defaults) {
-
-        this.config = Object.assign({}, Joystick.defaults, config);
-
-        this.state = new ArrayBuffer(this.config.axisCount * 2 + ~~((this.config.buttonsCount + 7) / 8));
-        this.view  = new DataView(this.state);
-        this.pendingOp  = undefined;
-        this.socket     = socket;
-        this.localData  = {
-            axisOwners: [],
-        };
-
-        this.localData.axisOwners.length = 8;
-
-        //console.info("Joystick data len", this.state.byteLength);
-
-        for (let axis = 0; axis < this.config.axisCount; axis++) {
-            this.view.setUint16(axis*2, 1024, true);
-        }
-        this.sendState = this.sendState.bind(this);
-
-        if (!EventDispatcherTrait.isInited(this)) {
-            EventDispatcherTrait.call(this);
-        }
-    }
-
-    mixin(Joystick, EventDispatcherTrait);
-
-    Joystick.prototype.setAxis = function(index, value) {
-        if (index < 0 || index > 8) {
-            throw new Error("bad axis index");
-        }
-        value = Math.max(Math.min(2048, value), 0);
-        this.view.setUint16(index*2, value, true);
-        if (!this.pendingOp) {
-            this.pendingOp = setTimeout(this.sendState, this.config.refreshTime);
-        }
-    }
-
-    Joystick.prototype.getAxis = function(index) {
-        if (index < 0 || index > 8) {
-            throw new Error("bad axis index");
-        }
-        return this.view.getUint16(index*2, true);
-    }
-
-    Joystick.prototype.fromString = function(string) {
-        console.warn("Joystick.prototype.fromString", string);
-        for (let i = 0; i < string.length && i < 20; i++) {
-            this.view.setUint8(i, string.charCodeAt(i));
-        }
-        for (let axis = 0; axis < this.localData.axisOwners.length; axis++) {
-            this.localData.axisOwners[axis] = null;
-        }
-        this.dispatchEvent("change", this, true); //remoteOne
-    }
-
-    Joystick.prototype.fromBuffer = function(buffer) {
-        console.warn("Joystick.prototype.fromBuffer", buffer);
-        this.state = buffer;
-        this.view  = new DataView(this.state);
-        for (let axis = 0; axis < this.localData.axisOwners.length; axis++) {
-            this.localData.axisOwners[axis] = null;
-        }
-        this.dispatchEvent("change", this, true); //remoteOne
-    }
-
-    Joystick.prototype.sendState = function() {
-        this.pendingOp = undefined; //keep in sync event if socket fail
-        try {
-            this.socket.sendBinary("ctr", this.state);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            this.dispatchEvent("change", this, false); //local
-        }
-    }
-
-    Joystick.prototype.reset = function() {
-        this.state = new ArrayBuffer(this.config.axisCount * 2 + ~~((this.config.buttonsCount + 7) / 8));
-        this.view  = new DataView(this.state);
-        for (let axis = 0; axis < this.config.axisCount; axis++) {
-            this.view.setUint16(axis*2, 1024, true);
-        }
-        this.dispatchEvent("change", this, false); //local
-    }
-
-    let joystick = new Joystick(socket);
-    window.joystick = joystick;
 
 /*
     Group.registry.get("target").logic          = false;

@@ -82,7 +82,7 @@ std::string deviceNotify(uint32_t packetId, const std::string& ns, int deviceLis
 			
 std::string kbNotify(uint32_t packetId, std::string_view actionId, std::string_view actionType);
 
-std::string ctrNotify(uint32_t packetId, std::string_view byteStream);
+std::string ctrNotify(uint32_t packetId, std::string_view byteStream, uint8_t joystickId = 0);
 
 std::string settingsSetNotify(uint32_t packetId);
 
