@@ -3,6 +3,7 @@
 namespace hid {
 
 	enum class pressType: uint8_t {
+		UNSPECIFIED = 0x00, //special case for interpreter
 		PRESS = 0x01,
 		LONGPRESS,
 		DOUBLETAP,

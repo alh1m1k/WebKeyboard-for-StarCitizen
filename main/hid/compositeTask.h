@@ -43,8 +43,8 @@ namespace hid {
 			public:
 				guardianRestrictor(T* subject, LOCKER&& locker, const std::function<void()>& flusher)
 					: subject(subject), locker(std::move(locker)), flusher(flusher) {};
-				~guardianRestrictor() { flusher(); };
-				explicit operator bool() const noexcept { return !!locker; }
+				~guardianRestrictor() { flusher(); /*debug("release guardian");*/ };
+				explicit operator bool() const noexcept {/* debug("guardian lock", (int)!!locker);*/ return  !!locker; }
 				T* operator->() { return data(); }
 				const T* operator->() const { return data(); }
 				[[nodiscard]] void* data() { assert(!!locker);  return subject; }
@@ -229,7 +229,7 @@ namespace hid {
 		protected:
 
 			bool addDanglingCommand(const command& cmd) {
-				dumbCombination("addDanglingCommand", cmd);
+				//dumbCombination("addDanglingCommand", cmd);
 				if (danglingCommands.size() >= MAX_DANGLING_REPORTS || !hasAnyInCommand(cmd)) {
 					return false;
 				}
@@ -246,7 +246,7 @@ namespace hid {
 			}
 
 			bool removeDanglingKeys(const command& cmd) {
-				dumbCombination("removeDanglingKeys", cmd);
+				//dumbCombination("removeDanglingKeys", cmd);
 				if (!hasAnyDangling) { return false; }
 				if (const auto it = std::find_if(
 					danglingCommands.begin(),
@@ -267,7 +267,7 @@ namespace hid {
 				for (auto& source : list) {
 					mergeCommands(cmd, source);
 				}
-				dumbCombination("getMergedDanglingCommand", cmd);
+				//("getMergedDanglingCommand", cmd);
 				return cmd;
 			}
 
@@ -299,7 +299,7 @@ namespace hid {
 			bool executeCommand(const command& cmd) {
 				bool handled = false;
 				switch (cmd.flags) {
-					case 0:
+					case (uint8_t)pressType::UNSPECIFIED:
 						flushPush(cmd);
 						usingDanglingKeys = false;
 						handled = true;
@@ -333,7 +333,7 @@ namespace hid {
 								if (hasAnyDangling) {
 									flushPush(getMergedDanglingCommand(danglingCommands));
 								} else {
-									flushRelease(getMergedDanglingCommand(danglingCommands));
+									flushRelease(cmd);
 									usingDanglingKeys = false;
 								}
 							}
@@ -343,7 +343,6 @@ namespace hid {
 						break;
 					default:
 						error("keyboardTask::executeCommand undefined flags", (int)cmd.flags);
-
 				}
 
 				lastKeyPressUS = esp_timer_get_time();
@@ -472,6 +471,7 @@ namespace hid {
 
 			inline bool lockIfUnset(std::mutex& mutex, int& check, const int mask) const {
 				if (!IS(check, mask)) {
+					/*debug("perform lock", mask);*/
 					mutex.lock(); SET(check, mask);
 					return true;
 				}
@@ -489,16 +489,19 @@ namespace hid {
 			void releaseDevLocks(local_context_type& ctx) {
 				if constexpr (joystick0_included_type::value) {
 					if (IS(ctx.lockedDev, JOYSTICK0)) {
+						/*debug("release joy0");*/
 						state.joystick0.mutex.unlock();
 					}
 				}
 				if constexpr (joystick1_included_type::value) {
 					if (IS(ctx.lockedDev, JOYSTICK1)) {
+						/*debug("release joy1");*/
 						state.joystick1.mutex.unlock();
 					}
 				}
 				if constexpr (mouse_included_type::value) {
 					if (IS(ctx.lockedDev, MOUSE)) {
+						/*debug("release mouse");*/
 						state.mouse.mutex.unlock();
 					}
 				}
@@ -538,7 +541,8 @@ namespace hid {
 
 			template<typename... MUTEX>
 			auto lockForDirectAccess(const bool nowait, const bool nolock, MUTEX&... m) {
-				if (nolock) { return syncing::scoped_lock(std::defer_lock, m...); }
+				if (nolock) { /*debug("lockForDirectAccess", "nolock");*/ return  syncing::scoped_lock(std::defer_lock, m...); }
+				/*debug("lockForDirectAccess", nowait ? (backendReady() ? "trylock" : "defer") : "lock");*/
 				return nowait ? (
 					backendReady() ?
 						syncing::scoped_lock(std::try_to_lock, m...) :
@@ -569,6 +573,7 @@ namespace hid {
 				case JS0_AXIS6:
 				case JS0_AXIS7:
 					if constexpr (joystick0_included_type::value) {
+						/*debug("jo0 axi data", shard.type-JS0_AXIS0);*/
 						lockIfUnset(state.joystick0.mutex, ctx.lockedDev, JOYSTICK0);
 						( (int16_t*)&state.joystick0.unsafe )[shard.type-JS0_AXIS0] = shard.report->joystick_axis;
 						SET(cmd.pendingFlush,  JOYSTICK0);
@@ -583,6 +588,7 @@ namespace hid {
 				case JS1_AXIS6:
 				case JS1_AXIS7:
 					if constexpr (joystick1_included_type::value) {
+						/*debug("jo1axi data", shard.type-JS1_AXIS0);*/
 						lockIfUnset(state.joystick1.mutex, ctx.lockedDev, JOYSTICK1);
 						( (int16_t*)&state.joystick1.unsafe )[shard.type-JS1_AXIS0] = shard.report->joystick_axis;
 						SET(cmd.pendingFlush, JOYSTICK1);
@@ -740,7 +746,7 @@ namespace hid {
 						if (current.pendingFlush) {
 							evaluateCommandFlags(current);
 							if (!executeCommand(current)) {
-								dumbCombination("unable executeCommand", current);
+								//dumbCombination("unable executeCommand", current);
 							}
 							current = {};
 						}

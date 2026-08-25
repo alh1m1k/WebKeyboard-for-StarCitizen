@@ -110,7 +110,9 @@ namespace interpreter {
 			using sentence_type = parser::command::tokens_type;
 
 			bool executeOn(
-				hid::composite::combination_writer_type& combination, const word_type& word
+				hid::composite::combination_writer_type& combination,
+				const word_type& word,
+				context_type& ctx
 			) {
 				if (const auto [joystickId, btnIndex] = view2BtnIndex(word.dataView); btnIndex != -1) {
 					combination.joystickButtons(0x01 << btnIndex, joystickId);

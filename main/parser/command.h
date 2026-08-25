@@ -31,7 +31,8 @@ namespace parser {
 			using token_type = token;
 			typedef std::vector<token> tokens_type;
 
-			static constexpr auto DEFAULT_PRESS_TYPE = std::string_view("press");
+			//default is empty to embrace UNSPECIFIED mode
+			static constexpr auto DEFAULT_PRESS_TYPE = std::string_view("");
 								
 			command() = default;
 						

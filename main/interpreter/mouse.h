@@ -1,9 +1,8 @@
 #pragma once
 
+#include "context.h"
 #include "hid/composite.h"
 #include "parser/command.h"
-
-
 
 namespace interpreter {
 
@@ -16,7 +15,8 @@ namespace interpreter {
 
 			bool executeOn(
 				hid::composite::combination_writer_type& combination,
-				const word_type& word
+				const word_type& word,
+				context_type& ctx
 			);
 	};
 

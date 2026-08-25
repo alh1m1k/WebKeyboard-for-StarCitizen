@@ -43,9 +43,6 @@ namespace hid {
 			compositeSequenceWriter(compositeSequenceWriter&& other) = default;
 			
 			combination_writer_type combination(const pressType press = pressType::PRESS, const uint8_t modifiers = 0) {
-				if ((uint8_t)press == 0) {
-					error("sequenceWriter::combination invalid press type", (uint8_t)press, " ", (uint8_t)modifiers);
-				}
 				return compositeCombinationWriter(backend, press, modifiers);
 			}
 

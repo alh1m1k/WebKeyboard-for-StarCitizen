@@ -78,11 +78,15 @@ namespace hid {
 				);
 			}
 
-			template<typename T>
-			inline auto findKBSlot(T& array) {
+			/**
+			 * this function return first empty member (0x00)
+			 * or first entry of forKeycode (to keep array unique)
+			 */
+			template <typename T>
+			inline auto findKBSlot(T& array, const uint8_t forKeycode = 0x00) {
 				static_assert(std::is_array_v<T>, "must be array type");
 				for (auto i = 0; i < std::extent<T>::value; ++i) {
-					if (array[i] == 0x00) { return i; }
+					if (array[i] == 0x00 || array[i] == forKeycode) { return i; }
 				}
 				return -1;
 			}
@@ -97,7 +101,7 @@ namespace hid {
 				if (const auto mdf = extractModifier(keyCode); mdf != 0) {
 					ctrl->modifier |= mdf;
 				} else {
-					if (auto slot = findKBSlot(ctrl->data); slot != -1) {
+					if (auto slot = findKBSlot(ctrl->data, keyCode); slot != -1) {
 						ctrl->data[slot] = keyCode;
 					} else {
 						throw std::out_of_range("keyboard supports only 6 keys in combination");
@@ -241,30 +245,24 @@ namespace hid {
 
 			explicit compositeCombinationWriter(
 				BACK_PUSHER& backend,
-				const pressType press = pressType::PRESS,
-				const uint8_t modifier = 0,
-				write_result_type* const outResult = nullptr
-			) : backend(backend), pt(press)
+				const pressType pt = pressType::PRESS,
+				const uint8_t kbModifier = 0
+			) : backend(backend), pt(pt)
 			{
-				if (modifier != 0) {
-					keyboardModifier(modifier);
-				}
+				if (kbModifier != 0) { keyboardModifier(kbModifier); }
+				changePressType(pt);
 			}
 			
 			~compositeCombinationWriter() {
 				if (buffer.size()) { flush(); }
 			}
-			
-			auto& modify(const uint8_t mdf) {
-				return keyboardModifier(mdf);
-			}
-						
-			auto& symbol(const char symbol) {
-				return keyboardSymbol(symbol);
-			}
-		
-			auto& special(const uint8_t charCode) {
-				return keyboardKey(charCode);
+
+			auto& changePressType(const pressType press) {
+				if (press == pressType::INVALID || press == pressType::UNSPECIFIED) {
+					error("compositeCombinationWriter::changePressType invalid press type", (int)press);
+				}
+				pt = press;
+				return *this;
 			}
 
 			auto& keyboardModifier(const int code) {

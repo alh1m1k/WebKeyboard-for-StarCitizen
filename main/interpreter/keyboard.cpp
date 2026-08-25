@@ -4,7 +4,7 @@ namespace interpreter {
 
 	using namespace std::literals;
 
-	bool composite::specialKey(
+	bool keyboard::specialKey(
 		hid::composite::combination_writer_type& combination,
 		const std::string_view& str,
 		const word_type& tock
@@ -292,8 +292,10 @@ namespace interpreter {
 		return false;
 	}
 
-	bool composite::executeOn(
-		hid::composite::combination_writer_type& combination, const word_type& word
+	bool keyboard::executeOn(
+		hid::composite::combination_writer_type& combination,
+		const word_type& word,
+		context_type& ctx
 	)  {
 		try {
 			return specialKey(combination, word.dataView, word);

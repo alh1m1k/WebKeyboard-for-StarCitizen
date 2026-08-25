@@ -120,4 +120,44 @@ namespace syncing {
 			auto* mutex() const noexcept { return &mux; }
 	};
 
+	template <>
+	class scoped_lock<> {
+
+		bool owns;
+
+		public:
+
+			explicit scoped_lock(): owns(true) { }
+
+			scoped_lock(std::adopt_lock_t): owns(true) { }
+
+			scoped_lock(std::defer_lock_t): owns(false) { }
+
+			scoped_lock(std::try_to_lock_t): owns(true) { }
+
+			~scoped_lock() = default;
+
+			scoped_lock(const scoped_lock&) = delete;
+			scoped_lock& operator=(const scoped_lock&) = delete;
+
+			void swap(scoped_lock& other) noexcept {
+				std::swap(owns, other.owns);
+			}
+
+			scoped_lock(scoped_lock&& move) noexcept :owns(move.owns)
+			{
+				move.owns = false;
+			}
+
+			scoped_lock& operator=(scoped_lock&& move) noexcept
+			{
+				swap(move);
+				move.owns = false;
+				return *this;
+			}
+
+			[[nodiscard]] bool owns_lock() const noexcept { return owns; }
+			explicit operator bool() const noexcept { return owns_lock(); }
+	};
+
 }

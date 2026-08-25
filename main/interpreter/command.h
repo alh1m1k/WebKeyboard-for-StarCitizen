@@ -1,31 +1,43 @@
 #pragma once
 
-#include "hid/composite.h"
+#include "parser/command.h"
+#include "context.h"
 #include "joystick.h"
 #include "keyboard.h"
 #include "mouse.h"
-#include "parser/command.h"
+
 
 namespace interpreter {
 
 	class command {
 
-		composite keyboardInterpreter = {};
+		keyboard keyboardInterpreter = {};
 		joystick joystickInterpreter = {};
 		mouse mouseInterpreter = {};
+
 
 		static bool isJoystickPrefix(std::string_view word);
 
 		static bool isMousePrefix(std::string_view word);
 
-		bool pushTo(hid::composite::combination_writer_type& combination, const parser::command::token_type& word);
-		bool typingTo(hid::composite::sequence_writer_type& sequence, const parser::command::token_type& word);
+		bool pushTo(
+			hid::composite::combination_writer_type& combination,
+			const parser::command::token_type& word,
+			context_type& ctx
+		);
+
+		bool typingTo(
+			hid::composite::sequence_writer_type& sequence,
+			const parser::command::token_type& word,
+			context_type& ctx
+		);
+
 
 		public:
 
-			typedef hid::composite::sequence_writer_type::write_result_type exec_result_type;
-			typedef parser::command::token_type		word_type;
-			typedef parser::command::tokens_type	sentence_type;
+			using exec_result_type = hid::composite::sequence_writer_type::write_result_type;
+			using word_type = parser::command::token_type;
+			using sentence_type = parser::command::tokens_type;
 
 			explicit command() noexcept;
 

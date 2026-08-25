@@ -69,7 +69,8 @@ namespace interpreter {
 
 	bool mouse::executeOn(
 		hid::composite::combination_writer_type& combination,
-		const word_type& word
+		const word_type& word,
+		context_type& ctx
 	) {
 
 		if (word.dataView.starts_with("mouse-b")) {
