@@ -986,7 +986,7 @@ ul.pager {
 
 .window {
     display: none;
-    grid-template-rows: var(--header-height) 1fr 0px;
+    grid-template-rows: var(--header-height) 1fr 0;
 }
 
 .window.showing {
@@ -1463,6 +1463,9 @@ ul.pager {
     -webkit-backdrop-filter:    blur(.4rem);
     line-height:    110%;
     padding:        1rem;
+
+    /* bug fix of .window*/
+    grid-template-rows: var(--header-height) 1fr min-content;
 }
 
 .selector-control .content {

@@ -802,6 +802,7 @@ function wsocket(target) {
             }
         },
         available()  { return privateCtx.context.status === SocketAuthorize; },
+        shutdownInitiated()  { return !privateCtx.reconnect; },
         status(){ return privateCtx.context.status; },
         get disconnectReason() { return privateCtx.lastDisconnectReason; },
         get error() { return privateCtx.lastError },

@@ -2116,7 +2116,11 @@ const invertAspectRatio = 2/3.1; //@see CSS
         notificator.removeNotification("connection_info");
         switch (reason.code) {
             case WSCodesSessionClosed:
-                notificator.addNotification("Connection Closed (inactivity)", "connection_error", "error", 0);
+                if (!socket.shutdownInitiated()) {
+                    notificator.addNotification("Connection Closed (inactivity)", "connection_error", "error", 0);
+                } else {
+                    notificator.addNotification("Connection Closed", "connection_error", "error", 0);
+                }
                 break;
             default:
                 notificator.addNotification("Connection Lost", "connection_error", "error", 0);

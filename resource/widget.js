@@ -4470,7 +4470,12 @@ function Overlay(canvas, config) {
             privateCtx.reloadRequest = requestInterval(() => {
                 if (privateCtx.networkCheckCB === null || privateCtx.networkCheckCB()) {
                     cancelRequest(privateCtx.reloadRequest);
-                    privateCtx.loadWorker();
+                    try { privateCtx.loadWorker(); } catch (e) {
+                        if (privateCtx.port && privateCtx.port.terminate) {
+                            privateCtx.port.terminate();
+                        }
+                        privateCtx.reloadWorker();
+                    }
                 }
             }, 1000);
         }
@@ -4585,11 +4590,31 @@ function Overlay(canvas, config) {
 
         },
         evaluate(collection, config) {
+
             let pending = Promise.withResolvers();
             pending.config = config;
             privateCtx.pending.set(config.requestId = privateCtx.requestId(), pending);
 
-            if (privateCtx.failback) {
+            if (!privateCtx.failback) {
+                if (!privateCtx.port) {
+                    privateCtx.pending.delete(config.requestId);
+                    pending.reject([privateCtx.extract(collection), config]);
+                    return pending.promise;
+                }
+                privateCtx.port.postMessage([privateCtx.extract(collection), config]);
+                pending.timeout = setTimeout(() => pending.reject([new Error("timeout"), config]), 35000);
+                return pending.promise.then((pair) => {
+                    clearTimeout(pending.timeout);
+                    privateCtx.pending.delete(config.requestId);
+                    console.info("evaluate", "resolve")
+                    return pair;
+                }, (pair) => {
+                    clearTimeout(pending.timeout);
+                    privateCtx.pending.delete(config.requestId);
+                    console.info("evaluate", "reject", pair[0])
+                    return Promise.reject(pair);
+                });
+            } else {
                 //must respect invalidateAll (it must have way to call reject)
                 privateCtx.failbackLoadingPromise.then(() => {
                     try {
@@ -4606,23 +4631,8 @@ function Overlay(canvas, config) {
                         pending.reject([e, config]);
                     }
                 });
-
-                return pending.promise;
-            } else {
-                privateCtx.port.postMessage([privateCtx.extract(collection), config]);
-                pending.timeout = setTimeout(() => pending.reject([new Error("timeout"), config]), 35000);
-                return pending.promise.then((pair) => {
-                    clearTimeout(pending.timeout);
-                    privateCtx.pending.delete(config.requestId);
-                    console.info("evaluate", "resolve")
-                    return pair;
-                }, (pair) => {
-                    clearTimeout(pending.timeout);
-                    privateCtx.pending.delete(config.requestId);
-                    console.info("evaluate", "reject", pair[0])
-                    return Promise.reject(pair);
-                });
             }
+
         },
         draw(timeleft) {
 
