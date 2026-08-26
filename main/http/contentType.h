@@ -28,7 +28,7 @@ namespace http {
 			case contentType::SVG:				return "image/svg+xml";
 			case contentType::UNDEFINED:		return nullptr;
             default:
-                assert("contentType2Symbols no default value");
+                assert(false && "contentType2Symbols no default value");
                 return nullptr;
         }
 	}

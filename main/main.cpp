@@ -63,6 +63,14 @@ extern "C" {
 	void app_main(void);
 }
 
+#if FAVICON_COMPRESSION == 1
+static_assert(
+	RESOURCE_COMPRESSION,
+	"Using favicon compression without resource compression make no sense. "
+	"Enable resource compression by -DRESOURCE_COMPRESSION=ON or disable favicon compression by -DFAVICON_COMPRESSION=OFF"
+);
+#endif
+
 #if HTTP_CACHE_USE_ETAG
 	auto defaultCacheControl = eTagHandler;
 #else
@@ -70,22 +78,24 @@ extern "C" {
 #endif
 
 //http::resource::file will be created and stored in hello_js_memory_file
-decl_web_resource(widget_js, 	http::resource::endings::TEXT, 		"widget.js", 		http::contentType::JS, 		defaultCacheControl);
-decl_web_resource(overlay_js, 	http::resource::endings::TEXT, 		"overlay.js", 		http::contentType::JS,  	defaultCacheControl);
-decl_web_resource(lib_js, 		http::resource::endings::TEXT, 		"lib.js", 			http::contentType::JS,  	defaultCacheControl);
-decl_web_resource(index_html, 	http::resource::endings::TEXT, 		"index.html", 		http::contentType::HTML,  	defaultCacheControl);
-decl_web_resource(favicon_ico, 	http::resource::endings::BINARY, 	"favicon.ico", 		"image/x-icon"	,  			defaultCacheControl);
-decl_web_resource(index_js, 	http::resource::endings::TEXT, 		"index.js", 		http::contentType::JS,  	defaultCacheControl);
-decl_web_resource(index_css,	http::resource::endings::TEXT, 		"index.css", 		http::contentType::CSS,  	defaultCacheControl);
-decl_web_resource(symbols_svg,	http::resource::endings::TEXT, 		"symbols.svg", 		http::contentType::SVG,  	defaultCacheControl);
+decl_web_resource(widget_js, 	RESOURCE_COMPRESSION,  "widget.js", 	http::contentType::JS, 		defaultCacheControl);
+decl_web_resource(overlay_js, 	RESOURCE_COMPRESSION,  "overlay.js", 	http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(lib_js, 		RESOURCE_COMPRESSION,  "lib.js", 		http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(index_html, 	RESOURCE_COMPRESSION,  "index.html", 	http::contentType::HTML,  	defaultCacheControl);
+decl_web_resource(index_js, 	RESOURCE_COMPRESSION,  "index.js", 		http::contentType::JS,  	defaultCacheControl);
+decl_web_resource(index_css,	RESOURCE_COMPRESSION,  "index.css", 	http::contentType::CSS,  	defaultCacheControl);
+decl_web_resource(symbols_svg,	RESOURCE_COMPRESSION,  "symbols.svg", 	http::contentType::SVG,  	defaultCacheControl);
+//note that compressed_if predicate must be trivial literal[0,1], equation will not work
+decl_web_resource_compressed_if(FAVICON_COMPRESSION, favicon_ico, http::resource::TYPE_BINARY, "favicon.ico", "image/x-icon", defaultCacheControl);
+
 
 #if EMBED_CAPTIVE
 decl_web_resource(captive_html,	http::resource::endings::TEXT, 		"captive.html", 	http::contentType::HTML,    filterCaptiveAcceptHtmlHandler);
 #endif
 
 #if EMBED_CERT
-decl_memory_file(cert_pem, 	   http::resource::endings::TEXT);
-decl_memory_file(privkey_pem,  http::resource::endings::TEXT);
+decl_memory_file(cert_pem, http::resource::GENERIC_FILE);
+decl_memory_file(privkey_pem, http::resource::GENERIC_FILE);
 #elif HTTP_USE_HTTPS
 auto& cert_pem_memory_file 		= http::resource::nofile;
 auto& privkey_pem_memory_file 	= http::resource::nofile;
@@ -108,9 +118,9 @@ uint32_t delay = DELAY_INITAL;
 
 #define CHECK_FOR_FACTORY_RESET(pressedTime, success) { 								\
 	if (gpio_get_level(RESET_TRIGGER_BTN) == 0) {										\
-		if (pressedTime == 0) {															\
-			pressedTime = esp_timer_get_time();											\
-		} else if (esp_timer_get_time() - pressedTime > 3000000) {						\
+		if ((pressedTime) == 0) {														\
+			(pressedTime) = esp_timer_get_time();										\
+		} else if (esp_timer_get_time() - (pressedTime) > 3000000) {					\
 			info("trigger factory reset");												\
 			storage persistence = storage();											\
 			if (persistence.reset()) {													\
@@ -121,20 +131,20 @@ uint32_t delay = DELAY_INITAL;
 					vTaskDelay(pdMS_TO_TICKS(400));										\
 				}																		\
 				info("storage cleared");												\
-				success = true;														    \
+				(success) = true;														\
 			} else {																	\
 				error("while storage clear");											\
-				success = false;														\
+				(success) = false;														\
 			}																			\
 		}																				\
 	} else if (pressedTime) {															\
-		pressedTime = 0;																\
+		(pressedTime) = 0;																\
 		info("storage clear wd reset");													\
-		success = false;																\
+		(success) = false;																\
 	}																					\
 }
 
-void trap(const char* msg, esp_err_t code = ESP_FAIL) {
+void trap(const char* msg, const esp_err_t code = ESP_FAIL) {
 	int64_t 	pressedTime = 0;
 	uint32_t 	counter = 0;
 	bool        status = false;
@@ -176,6 +186,7 @@ static_assert(EMBED_CERT, "Using https without cert make no sense. Embed cert by
 #if HTTP_CACHE_USE_ETAG
 static_assert(RESOURCE_CHECKSUM, "Etag cache engine require checksum data. Embed checksum data by adding flag -DRESOURCE_CHECKSUM=ON or disable etag");
 #endif
+
 
 void app_main(void) {
 	debugIf(LOG_HTTPD_HEAP, "app_main ", esp_get_minimum_free_heap_size(), " ", esp_get_free_internal_heap_size());
@@ -284,7 +295,7 @@ void app_main(void) {
 
 #ifdef WIFI_AP_DNS
 	std::cout << "starting dns" << std::endl;
-	if (auto status = dns::server::begin(); !status) {
+	if (const auto status = dns::server::begin(); !status) {
 		trap("fail 2 setup dns", status.code());
 	}
 #endif
@@ -330,7 +341,12 @@ void app_main(void) {
 #if HTTP_USE_HTTPS
 	static auto webServer = https::server{};
 	webServer.attachSessions<sessionManager>(persistenceSign);
-	if (auto status = webServer.begin(HTTP_HTTPS_PORT, cert_pem_memory_file, privkey_pem_memory_file, cacert_pem_memory_file); !status) {
+	if (const auto status = webServer.begin(
+		HTTP_HTTPS_PORT,
+		cert_pem_memory_file,
+		privkey_pem_memory_file,
+		cacert_pem_memory_file
+	); !status) {
 		trap("fail 2 setup webServer", status.code());
 	}
 #else
@@ -346,35 +362,35 @@ void app_main(void) {
 
 	if (status = webServer.addHandler("/", httpd_method_t::HTTP_GET, index_html_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /", 				status.code());
+		trap("fail 2 setup webServer path /", status.code());
 	}
-	if (status = webServer.addHandler("/lib.js", 		httpd_method_t::HTTP_GET, lib_js_memory_file); !status) {
+	if (status = webServer.addHandler("/lib.js", httpd_method_t::HTTP_GET, lib_js_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /lib.js", 		status.code());
+		trap("fail 2 setup webServer path /lib.js", status.code());
 	}
-	if (status = webServer.addHandler("/widget.js", 	httpd_method_t::HTTP_GET, widget_js_memory_file); !status) {
+	if (status = webServer.addHandler("/widget.js", httpd_method_t::HTTP_GET, widget_js_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /widget.js", 	status.code());
+		trap("fail 2 setup webServer path /widget.js", status.code());
 	}
-	if (status = webServer.addHandler("/overlay.js", 	httpd_method_t::HTTP_GET, overlay_js_memory_file); !status) {
+	if (status = webServer.addHandler("/overlay.js", httpd_method_t::HTTP_GET, overlay_js_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /overlay.js", 	status.code());
+		trap("fail 2 setup webServer path /overlay.js", status.code());
 	}
 	if (status = webServer.addHandler("/favicon.ico", httpd_method_t::HTTP_GET, favicon_ico_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /favicon.ico", 	status.code());
+		trap("fail 2 setup webServer path /favicon.ico", status.code());
 	}
-	if (status = webServer.addHandler("/index.js", 	httpd_method_t::HTTP_GET, index_js_memory_file); !status) {
+	if (status = webServer.addHandler("/index.js", httpd_method_t::HTTP_GET, index_js_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /index.js", 		status.code());
+		trap("fail 2 setup webServer path /index.js", status.code());
 	}
-	if (status = webServer.addHandler("/index.css", 	httpd_method_t::HTTP_GET, index_css_memory_file); !status) {
+	if (status = webServer.addHandler("/index.css", httpd_method_t::HTTP_GET, index_css_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /index.css", 		status.code());
+		trap("fail 2 setup webServer path /index.css", status.code());
 	}
 	if (status = webServer.addHandler("/symbols.svg", httpd_method_t::HTTP_GET, symbols_svg_memory_file); !status) {
 		webServer.end();
-		trap("fail 2 setup webServer path /symbols.svg", 	status.code());
+		trap("fail 2 setup webServer path /symbols.svg", status.code());
 	}
 
 #if (WIFI_AP_DNS_CAPTIVE && EMBED_CAPTIVE)
@@ -410,7 +426,7 @@ void app_main(void) {
 	static auto  ctrl               = typename wsproto::ctrl_map_type();
 	static auto  tailScheduler		= typename wsproto::scheduler_type();
 
-	//this is little ugly but save until we not close server forcely
+	//this is little ugly but save until we not close server by force
 	auto& sessions     = *(sessionManager*)webServer.getSessions().get();
 	static auto notifications = typename wsproto::notifications_type(webServer.native(), sessions);
 

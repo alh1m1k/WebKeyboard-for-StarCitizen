@@ -5,19 +5,21 @@
 
 #include "codes.h"
 #include "contentType.h"
-#include "esp_err.h"
 
-#include "cache/iControl.h"
 #include "request.h"
 #include "response.h"
 #include "server.h"
 
 namespace http::resource {
-	
-	enum class endings {
-		BINARY,
-		TEXT
+
+	enum flag: int {
+		COMPRESSED = 0,
+		BINARY = 31
 	};
+
+	constexpr int GENERIC_FILE		= 0x00;
+	constexpr int ATTR_COMPRESSED	= 0x01 << COMPRESSED;
+	constexpr int TYPE_BINARY		= 0x01 << BINARY;
 
 	/*
 	 * We heroically fixed what shouldn't have been broken in the first place (c)
@@ -33,9 +35,9 @@ namespace http::resource {
 	*/
 	class file {
 
-		const int 	addressStart;
-		const int 	addressEnd;
-		const int 	ending;
+		const int addressStart;
+		const int addressEnd;
+		const int flags;
 		const char* const name;
 		const char* const contentType;
 
@@ -54,21 +56,21 @@ namespace http::resource {
 			file(
 				int addressStart,
 				int addressEnd,
-				endings end,
-				const char* const name				= nullptr,
-				const char* const contentType		= nullptr,
-				const char* const checksum 			= nullptr,
-				const callback_type& callback		= nullptr
+				int bitmask,
+				const char* name = nullptr,
+				const char* contentType	= nullptr,
+				const char* checksum = nullptr,
+				const callback_type& callback= nullptr
 			) noexcept;
 			
 			file(
 				int addressStart,
 				int addressEnd,
-				endings end,
-				const char * name					= nullptr,
-				enum contentType ct					= contentType::UNDEFINED,
-				const char* checksum 				= nullptr,
-				const callback_type& callback		= nullptr
+				int bitmask,
+				const char * name = nullptr,
+				enum contentType ct = contentType::UNDEFINED,
+				const char* checksum = nullptr,
+				const callback_type& callback = nullptr
 			) noexcept;
 
 			inline bool operator==(const file& other) const noexcept {
@@ -87,16 +89,14 @@ namespace http::resource {
 				return {(const uint8_t*)addressStart, (size_t)(addressEnd - addressStart)};
 			}
 
-			inline size_t size() const noexcept {
+			[[nodiscard]] inline size_t size() const noexcept {
 				return addressEnd - addressStart;
 			}
 
 			handler_res_type operator()(request& req, response& resp, server& serv) const noexcept;
 	};
-	
-	response& operator<<(response& stream, const std::string_view& str);
 
-	inline file nofile = {0, 0, endings::BINARY, nullptr, nullptr, nullptr};
+	inline file nofile = {0, 0, TYPE_BINARY, nullptr, nullptr, nullptr};
 
 }
 

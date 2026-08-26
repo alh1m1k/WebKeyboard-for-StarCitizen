@@ -7,9 +7,9 @@
 namespace http::resource {
 
 	file::file(
-		int addressStart,
-		int addressEnd,
-		endings end,
+		const int addressStart,
+		const int addressEnd,
+		const int bitmask,
 		const char* name,
 		const char* contentType,
 		const char* checksum,
@@ -17,7 +17,7 @@ namespace http::resource {
 	) noexcept :
 		addressStart(addressStart),
 		addressEnd(addressEnd),
-		ending((int)end),
+		flags(bitmask),
 		name(name),
 		contentType(contentType),
 		checksum(checksum),
@@ -25,17 +25,17 @@ namespace http::resource {
 	{};
 		
 	file::file(
-		int addressStart,
-		int addressEnd,
-		endings end,
+		const int addressStart,
+		const int addressEnd,
+		const int bitmask,
 		const char* name,
-		enum contentType ct,
+		const enum contentType ct,
 		const char* checksum,
 		const callback_type& callback
 	) noexcept :
 		addressStart(addressStart),
 		addressEnd(addressEnd),
-		ending((int)end),
+		flags(bitmask),
 		name(name),
 		contentType(contentType2Symbols(ct)),
 		checksum(checksum),
@@ -44,7 +44,6 @@ namespace http::resource {
 
 	file::handler_res_type file::operator()(request& req, response& resp, server& serv) const noexcept {
 		//headers
-
 		if (callback != nullptr) {
 			if (auto result = callback(req, resp, serv, *this); !result) {
 				return ESP_FAIL;
@@ -55,7 +54,7 @@ namespace http::resource {
 
 		resp.getHeaders().contentType(contentType);
 
-		if constexpr (RESOURCE_COMPRESSION) {
+		if (RESOURCE_COMPRESSION && IS(flags, ATTR_COMPRESSED)) {
 			if (req.getHeaders().acceptEncoding().contains("gzip")) {
 				resp.getHeaders().contentEncoding("gzip");
 			} else {
@@ -75,7 +74,7 @@ namespace http::resource {
 		//it seems esp.idf internal send_fn is implicit split buffer in to chunks(but not sure how), so much of socket.cpp
 		//is reimplemented by me, in future it must be dropped for cleaner code
 		//also Content-Length is internally set to appropriate value
-		//if this data is transferred in full or droped if transferred in chunks.
+		//if this data is transferred in full or dropped if transferred in chunks.
 		//HTTP/1.1 specification, RFC 2616, Section 4.4, Point 3
 
 /*
@@ -91,15 +90,15 @@ namespace http::resource {
 		return (esp_err_t)ESP_OK;
 	}
 
-	response& operator<<(response& stream, const file& f) {
+	response& operator<<(response& stream, const file& result) {
 
-		ssize_t size = f.addressEnd - f.addressStart;
-		info("dumping memory file:", f.name, " sizeof ", size);
+		const ssize_t size = result.addressEnd - result.addressStart;
+		info("dumping memory file:", result.name, " sizeof ", size);
 		
-		if (f.ending == (int)endings::TEXT) {
-			stream.write((const uint8_t*)f.addressStart, size - 1);
+		if (IS(result.flags, TYPE_BINARY)) {
+			stream.write((const uint8_t*)result.addressStart, result.addressEnd - result.addressStart);
 		} else {
-			stream.write((const uint8_t*)f.addressStart, f.addressEnd - f.addressStart);
+			stream.write((const uint8_t*)result.addressStart, size - 1);
 		}
 
 		return stream;

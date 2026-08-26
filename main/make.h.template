@@ -3,6 +3,7 @@
 //"@DISCLAIMER@"
 
 #cmakedefine01 RESOURCE_COMPRESSION
+#cmakedefine01 FAVICON_COMPRESSION
 #cmakedefine01 RESOURCE_CHECKSUM
 #cmakedefine01 EMBED_CAPTIVE
 #cmakedefine01 EMBED_CERT

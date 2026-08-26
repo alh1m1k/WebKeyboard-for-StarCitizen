@@ -6,6 +6,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(WebKeyboard)
 
 option(RESOURCE_COMPRESSION "Enable resource compression" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
+option(FAVICON_COMPRESSION  "Enable favicon compression" OFF) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(RESOURCE_CHECKSUM    "Checksum resources" ON) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 option(EMBED_CERT           "Include ssl certificate" OFF) #[[ changing default value does not affect cache so use full clean or delete ./build ]]
 
@@ -20,6 +21,10 @@ if(RESOURCE_COMPRESSION)
     file(MAKE_DIRECTORY "${WEB_ROOT_BIN}")
 endif ()
 
+if(NOT RESOURCE_COMPRESSION)
+    set(FAVICON_COMPRESSION OFF)
+endif()
+
 if (EMBED_CERT)
     target_add_binary_data(WebKeyboard.elf "${PROJECT_DIR}/cert/cert.pem"        TEXT)
     target_add_binary_data(WebKeyboard.elf "${PROJECT_DIR}/cert/privkey.pem"     TEXT)
@@ -30,6 +35,7 @@ if (EMBED_CERT)
 endif ()
 
 message("RESOURCE_COMPRESSION=${RESOURCE_COMPRESSION}")
+message("FAVICON_COMPRESSION=${FAVICON_COMPRESSION}")
 message("RESOURCE_CHECKSUM=${RESOURCE_CHECKSUM}")
 message("EMBED_CERT=${EMBED_CERT}")
 message("EMBED_CACERT=${EMBED_CACERT}")
@@ -53,8 +59,8 @@ endfunction()
 #there is problem when hierarchical fs structure collapse in to single directory
 #currently this is work, but later is must be changed to random prefixes or hierarchical subdirectories or optional new name parameter
 #it will continue to work until file name unique
-function(resource file type)
-    if (RESOURCE_COMPRESSION)
+function(resource file type compress)
+    if (${compress})
         get_filename_component(fileName ${file} NAME)
         set(embedFile "${WEB_ROOT_BIN}/${fileName}.gz")
         set(embedType BINARY)
