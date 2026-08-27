@@ -35,13 +35,13 @@ namespace interpreter {
 
 		public:
 
-			using exec_result_type = hid::composite::sequence_writer_type::write_result_type;
+			using result_type = hid::composite::sequence_writer_type::write_result_type;
 			using word_type = parser::command::token_type;
 			using sentence_type = parser::command::tokens_type;
 
 			explicit command() noexcept;
 
-			exec_result_type executeOn(hid::composite& dev, const sentence_type& sentence);
+			result_type executeOn(hid::composite& dev, const sentence_type& sentence);
 	};
 
 }

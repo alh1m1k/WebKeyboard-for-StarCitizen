@@ -2092,7 +2092,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
 
     socket.keepAlive = 5000;
 
-    socket.begin({
+    const socketBegin = () => socket.begin({
         identityCB: ((identV) => () => identV)(identity()),
         /**
          * ff52: credentials must be explicitly set, even if supposed to be defaulted to 'same-origin'
@@ -2100,6 +2100,15 @@ const invertAspectRatio = 2/3.1; //@see CSS
          */
         recoverCB:  () => fetch("/renew", { method: 'POST', credentials: 'same-origin' })
     });
+
+    new Promise((resolve) => {
+        //this is protection from situation where socket begin first and following overlay worker loading trigger connection reset
+        //it must be kept until server implement async `large file` processing
+        //note there is no matter how long will the request take to execute as server was single threaded, only the ordering matters
+        //Thread Instantiation (~40ms): The browser requires about 40ms to spawn a new OS-level thread, twice in for sure
+        //and little more for network startup 100ms seems reasonable and it very bellow 250ms responsive threshold
+        !!storage.rubric("settings").get("overlay", true) ? setTimeout(resolve, 100) : resolve()
+    }).then(socketBegin)
 
 /*
     socket termination opt

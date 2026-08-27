@@ -82,11 +82,6 @@ class wsproto {
         sing_type&                  persistenceSign;
         sing_type&                  bootingSign;
 
-		mutable std::atomic<uint32_t>       joystickCounter 	= 0;
-		mutable int64_t 					joystickFlushAt 	= 0;
-
-
-
         wsproto(
                 parser::command& 			    parser,
                 interpreter::command&			interpreter,
@@ -369,22 +364,20 @@ class wsproto {
                 auto kbPack = unpackKb(pack.body);
                 debugIf(LOG_MESSAGES, "kb payload", pack.body, " ", kbPack.hasAction, " ", kbPack.input, " ", kbPack.actionId, " ", kbPack.actionType);
                 if (kbPack.hasInput) {
-                    if (!parser.parse(kbPack.input)) {
-                        socket.write(resultMsg("kb", pack.taskId, false));
+					if (command_interpreter_type::result_type kbResult = (esp_err_t)ESP_FAIL;
+						parser.parse(kbPack.input) &&
+						((kbResult = interpreter.executeOn(dev, parser.tokens())))
+                    ) {
+                    	debugIf(LOG_MESSAGES, "kb schedule ok", kbResult.data());
+                    	socket.write(resultMsg("kb", pack.taskId, true));
                     } else {
-                        auto kbResult = interpreter.executeOn(dev, parser.tokens());
-                        socket.write(resultMsg("kb", pack.taskId, true));
-                        if (kbResult) {
-                            debugIf(LOG_MESSAGES, "kb schedule ok", kbResult.data());
-                        } else {
-                            error("kb schedule fail", kbResult.code());
-                        }
+                    	error("kb schedule fail", kbResult.code());
+                    	socket.write(resultMsg("kb", pack.taskId, false));
                     }
                 	parser.cleanup();
                 } else {
                     socket.write(resultMsg("kb", pack.taskId, true)); //case to update of switchoff state to controls
                 }
-
 
                 if (kbPack.hasAction) {
                     ctrl.nextState(std::string(kbPack.actionId), std::string(kbPack.actionType));
@@ -505,7 +498,7 @@ class wsproto {
                 std::string combination(repeatTask.pack.input);
 
                 if (repeatTask.pack.actionType == "switched-on") {
-                    status = tailScheduler.schedule(taskId, [&, this, combination]() -> void {
+                    status = tailScheduler.schedule(taskId, [&, combination]() -> void {
                         info("schedule delayed kb press", combination, " ", heartbeat());
                         auto onceParser = parser::command();
                     	auto onceInterpreter = interpreter::command();

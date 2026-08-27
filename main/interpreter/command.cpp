@@ -60,7 +60,7 @@ namespace interpreter {
 
 	command::command() noexcept = default;
 
-	command::exec_result_type command::executeOn(hid::composite& dev, const sentence_type& sentence) {
+	command::result_type command::executeOn(hid::composite& dev, const sentence_type& sentence) {
 		auto sequence = dev.sequence();
 		bool success = true, keyContainText = false;
 
