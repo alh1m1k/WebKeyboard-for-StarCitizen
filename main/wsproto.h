@@ -174,7 +174,7 @@ class wsproto {
 				pSession->write()->heartbeatAtMS = heartbeat();
 				auto pack = unpackMsg(rawMessage);
 				if (pack.success) {
-					socket.write(resultMsg("echo", pack.taskId, pack.success));
+					socket.write(resultMsg("ping", pack.taskId, pack.success));
 					return ESP_OK;
 				} else {
 					return ESP_FAIL;

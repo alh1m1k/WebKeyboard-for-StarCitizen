@@ -378,7 +378,8 @@ function wsocket(target) {
         encoder: new TextEncoder(),
         decoder: new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }),
         signal:         null,
-        kaHandler:      undefined,
+        kaDescriptor:   null,
+        kaLastMsgAt:    null,
         onconnect:      null,
         ondisconnect:   null,
         onauthorized:   null,
@@ -455,6 +456,7 @@ function wsocket(target) {
                     privateCtx.context.flags |= SocketFlagWasAuthorized;
                     privateCtx.wasAuthorizeAt = new Date();
                     privateCtx.sessionErrors  = 0;
+                    privateCtx.kaSync();
                     if (isCallable(privateCtx.onauthorized)) {
                         try { privateCtx.onauthorized.call(publicCtx, authData); } catch (e) {}
                     }
@@ -524,6 +526,15 @@ function wsocket(target) {
                         }
                     })
                     break;
+                case WSCodesSocketTimeout:
+                    //device sleep detection
+                    if (privateCtx.kaDescriptor && privateCtx.kaLastMsgAt) {
+                        if (new Date() - privateCtx.kaLastMsgAt >= (privateCtx.kaDescriptor.interval * 2)) {
+                            console.info("valid server socket closing, connection will recover then timers start tick again", reason);
+                            break;
+                        }
+                    }
+                    //noinspection FallThroughInSwitchStatementJS
                 default:
                     privateCtx.connectTask();
                     privateCtx.context.closed.then(privateCtx.monitorHelper);
@@ -706,6 +717,33 @@ function wsocket(target) {
             privateCtx.reconnect = false;
             privateCtx.connectionErrorHandler(reason);
             //alert("aborted");
+        },
+        kaSync: () => {
+            const desc = privateCtx.kaDescriptor;
+            desc.clockSource.clearInterval(desc.identifier);
+            privateCtx.send("ping", "", false);
+            privateCtx.kaLastMsgAt = new Date();
+            desc.identifier = desc.clockSource.setInterval(privateCtx.kaHandler, desc.interval);
+        },
+        kaHandler: () => {
+            if (privateCtx.context) {
+                if (privateCtx.context.status === SocketAuthorize) {
+                    privateCtx.send("ping", "", false);
+                    privateCtx.kaLastMsgAt = new Date();
+                } else if (privateCtx.kaDescriptor && privateCtx.kaLastMsgAt) {
+                    //device sleep recovery
+                    if (new Date() - privateCtx.kaLastMsgAt > (privateCtx.kaDescriptor.interval * 2)) {
+                        privateCtx.kaLastMsgAt = null;
+                        privateCtx.disconnectTask().then(() => {
+                            const task = privateCtx.connectTask();
+                            if (privateCtx.reconnect) {
+                                privateCtx.monitor();
+                            }
+                            return task;
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -804,6 +842,21 @@ function wsocket(target) {
         available()  { return privateCtx.context.status === SocketAuthorize; },
         shutdownInitiated()  { return !privateCtx.reconnect; },
         status(){ return privateCtx.context.status; },
+        keepAlive(ms, clockSource = null) {
+            console.info("setting keepAlive", ms, clockSource);
+            if (privateCtx.kaDescriptor) {
+                privateCtx.kaDescriptor.clockSource.clearInterval(privateCtx.kaDescriptor.identifier);
+                privateCtx.kaDescriptor = null;
+            }
+            if (ms) {
+                clockSource = clockSource || self;
+                privateCtx.kaDescriptor = {
+                    identifier: clockSource.setInterval(privateCtx.kaHandler, ms),
+                    clockSource,
+                    interval: ms
+                }
+            }
+        },
         get disconnectReason() { return privateCtx.lastDisconnectReason; },
         get error() { return privateCtx.lastError },
         set onconnect(callback) { privateCtx.onconnect = callback },
@@ -825,25 +878,84 @@ function wsocket(target) {
             }
         },
         get signal() { return privateCtx.signal },
-        set keepAlive(ms) {
-            console.info("setting keepAlive", ms);
-            if (privateCtx.kaHandler) {
-                clearInterval(privateCtx.kaHandler);
-                privateCtx.kaHandler = undefined;
-            }
-            if (ms) {
-                privateCtx.kaHandler = setInterval(() => {
-                    if (privateCtx.context) {
-                        if (privateCtx.context.status === SocketAuthorize) {
-                            privateCtx.send("ping", "", false);
-                        }
-                    }
-                }, ms);
-            }
-        },
         get priv() {  return privateCtx }
     }
 }
+
+function Clock() {
+    const workerCode = `
+      self.postMessage(true);
+      const handlers = new Map();
+      self.onmessage = function(e) {
+         const [op, id, timeout = 0] = e.data;
+         switch(op) {
+            case 1: 
+                handlers[id] = setInterval(() => self.postMessage(id), timeout);
+                break;
+            case 2: 
+                handlers[id] = setTimeout(() => self.postMessage(id), timeout);
+                break;
+           case 3: 
+                clearInterval(handlers[id]); delete handlers[id];
+                break;
+           case 4: 
+                clearTimeout(handlers[id]); delete handlers[id];
+                break;
+           default:
+                console.error("clock thread invalid op");
+         }
+      };
+    `;
+
+    const blobURL = URL.createObjectURL(new Blob([workerCode], { type: 'application/javascript' }));
+    const privateCtx = {
+        port: new Worker( blobURL ),
+        host: [],
+        identifier: 0
+    }
+
+    privateCtx.port.onmessage = function(e) {
+        console.log('clock thread inited');
+        URL.revokeObjectURL(blobURL);
+        privateCtx.port.onmessage = function (e) {
+            const data = privateCtx.host[e.data];
+            if (data) {
+                if (data[3]) { privateCtx.host[e.data] = undefined; }
+                data[0].apply(window, data[1]);
+            }
+        }
+    };
+
+    return {
+        terminate: function () {
+            if (privateCtx.port.terminate) {
+                privateCtx.port.terminate()
+                privateCtx.port = null;
+            }
+        },
+        setInterval: function (handler, timeout, ...other) {
+            const slot = ++privateCtx.identifier;
+            privateCtx.host[slot] = [handler, [...other], true];
+            privateCtx.port.postMessage([1, slot, timeout]);
+            return slot;
+        },
+        setTimeout: function (handler, timeout, ...other) {
+            const slot = ++privateCtx.identifier;
+            privateCtx.host[slot] = [handler, [...other], false];
+            privateCtx.port.postMessage([2, slot, timeout]);
+            return slot;
+        },
+        clearInterval: function (intervalId) {
+            if (privateCtx.host[intervalId]) { privateCtx.host[intervalId] = undefined; }
+            privateCtx.port.postMessage([3, intervalId]);
+        },
+        clearTimeout: function (timeoutId) {
+            if (privateCtx.host[timeoutId]) { privateCtx.host[timeoutId] = undefined; }
+            privateCtx.port.postMessage([4, timeoutId]);
+        }
+    }
+}
+
 
 function Registry() {
 

@@ -2090,7 +2090,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
     let socket = wsocket("/socks");
     window.socket = socket;
 
-    socket.keepAlive = 5000;
+    socket.keepAlive(5000);
 
     const socketBegin = () => socket.begin({
         identityCB: ((identV) => () => identV)(identity()),
@@ -2109,6 +2109,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
         //and little more for network startup 100ms seems reasonable and it very bellow 250ms responsive threshold
         !!storage.rubric("settings").get("overlay", true) ? setTimeout(resolve, 100) : resolve()
     }).then(socketBegin)
+
 
 /*
     socket termination opt
