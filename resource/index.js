@@ -2106,8 +2106,8 @@ const invertAspectRatio = 2/3.1; //@see CSS
         //it must be kept until server implement async `large file` processing
         //note there is no matter how long will the request take to execute as server was single threaded, only the ordering matters
         //Thread Instantiation (~40ms): The browser requires about 40ms to spawn a new OS-level thread, twice in for sure
-        //and little more for network startup 100ms seems reasonable and it very bellow 250ms responsive threshold
-        !!storage.rubric("settings").get("overlay", true) ? setTimeout(resolve, 100) : resolve()
+        //and little more for network startup 100ms seems reasonable but in fact even 250 not work properly
+        !!storage.rubric("settings").get("overlay", true) ? setTimeout(resolve, 250) : resolve()
     }).then(socketBegin)
 
 
