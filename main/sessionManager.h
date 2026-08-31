@@ -60,6 +60,8 @@ class sessionManager: public http::session::manager<class session> {
 
         result_type open(const std::string &sid, const http::request *context = nullptr) override;
 
+		result_type renew(session_ptr_type& sess, const http::request* context = nullptr) override;
+
         void* neighbour(uint32_t traitId) override;
 
         void* downcast() override;

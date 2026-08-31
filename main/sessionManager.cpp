@@ -55,6 +55,10 @@ void sessionManager::invalidateSessionPtr(session_ptr_type& sessionPtr, int reas
 }
 
 sessionManager::result_type sessionManager::open(const http::request *context)  {
+	if (context == nullptr || !context->getRemote().valid()) {
+		error("malformed context");
+		return (esp_err_t)ESP_FAIL;
+	}
     if (auto r = base::open(context); r) {
         if (notification != nullptr) {
             note_open_type details = {
@@ -70,6 +74,10 @@ sessionManager::result_type sessionManager::open(const http::request *context)  
 }
 
 sessionManager::result_type sessionManager::open(const std::string &sid, const http::request *context)  {
+	if (context == nullptr || !context->getRemote().valid()) {
+		error("malformed context");
+		return (esp_err_t)ESP_FAIL;
+	}
     if (auto r = base::open(sid, context); r) {
         if (notification != nullptr) {
             note_open_type details = {
@@ -86,7 +94,15 @@ sessionManager::result_type sessionManager::open(const std::string &sid, const h
     }
 }
 
-void* sessionManager::neighbour(uint32_t traitId)  {
+sessionManager::result_type sessionManager::renew(session_ptr_type& sess, const http::request* context) {
+	if (context == nullptr || !context->getRemote().valid()) {
+		error("malformed context");
+		return (esp_err_t)ESP_FAIL;
+	}
+	return base::renew(sess, context);
+}
+
+void* sessionManager::neighbour(const uint32_t traitId)  {
     switch (traitId) {
         case sessionManager::TRAIT_ID:
             return static_cast<sessionManager*>(this);

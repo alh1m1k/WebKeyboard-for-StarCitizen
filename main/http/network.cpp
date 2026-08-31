@@ -57,7 +57,7 @@ namespace http {
     }
 #endif
 
-    static std::unique_ptr<uint8_t[]> populate(int handler, bool remote) {
+    static std::unique_ptr<uint8_t[]> populate(const int handler, const bool remote) {
 #ifdef CONFIG_LWIP_IPV6
         constexpr socklen_t struct_size = sizeof(struct sockaddr_in6);
 #elifdef CONFIG_LWIP_IPV4
@@ -68,23 +68,22 @@ namespace http {
         socklen_t size = struct_size;
         auto buffer = std::make_unique<uint8_t[]>(size);
 
-        auto indirection = remote ? &getpeername : &getsockname;
+    	//initially there was logic that was conservative
+    	//allocate minimum buffer size "sockaddr_in"
+    	//then reallocate to new updated _size, if buffer is not enough
+    	//but that was not work as _size not updated if it too small and error also not generated
+    	//that was probably getpeername bug
+    	//so just allocate "all the money"
 
-        if (auto status = indirection(handler, (struct sockaddr*)buffer.get(), &size); status == 0) {
-            if (struct_size < size) {
-                //initially there was logic that was conservative
-                //allocate minimum buffer size "sockaddr_in"
-                //then reallocate to new updated _size, if buffer is not enough
-                //but that was not work as _size not updated if it too small and error also not generated
-                //that was probably getpeername bug
-                //so just allocate "all the money"
-                throw std::logic_error("unexpected buffer size");
-            }
-            return buffer;
+		const auto indirection = remote ? &getpeername : &getsockname;
+        if (const auto status = indirection(handler, (struct sockaddr*)buffer.get(), &size); status == 0) {
+        	assert(struct_size >= size && "unexpected buffer size");
         } else {
+        	//null all bytes to make sa_family == AF_UNSPEC this will lead no normal error detection for caller code
+        	memset(buffer.get(), 0x00, size);
         	error("backend error", status, " ", (int)errno);
-            throw std::logic_error("unable retrieve data from backend");
         }
+		return buffer;
     }
 
     struct exec_netif_packet {
@@ -168,7 +167,11 @@ namespace http {
         }
     }
 
-    network::ipv4_address_type network::ipv4() const {
+	bool network::valid() const {
+	    return version() != -1;
+    }
+
+	network::ipv4_address_type network::ipv4() const {
 #ifdef CONFIG_LWIP_IPV4
         _POPULATE;
         if (family() == AF_INET) {

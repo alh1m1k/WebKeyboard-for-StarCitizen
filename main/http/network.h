@@ -42,6 +42,7 @@ namespace http {
 
             uint8_t             family()  const;
             int8_t              version() const;
+    		bool                valid()   const;
             ipv4_address_type   ipv4()    const;
             ipv6_address_type   ipv6()    const;
             uint16_t            port()    const;
