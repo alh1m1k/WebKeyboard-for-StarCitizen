@@ -72,7 +72,7 @@
       <div class="attribute" data-attribute-id="data.color">black</div>
     </div>
 
-    <div class="group" data-group-id="pleace-ignore">
+    <div class="group" data-group-id="please-ignore">
       <div class="attribute" data-attribute-id="info"></div>
     </div>
 
@@ -161,6 +161,11 @@
     </div>
 
     <div class="group" data-group-id="esp">
+      <div class="attribute" data-attribute-id="logic"></div>
+      <div class="attribute" data-attribute-id="data.color">#506400</div>
+    </div>
+
+    <div class="group" data-group-id="IFCS">
       <div class="attribute" data-attribute-id="logic"></div>
       <div class="attribute" data-attribute-id="data.color">#506400</div>
     </div>
@@ -295,6 +300,10 @@
       <div class="attribute" data-attribute-id="logic"></div>
     </div>
 
+    <div class="group" data-group-id="camera">
+      <div class="attribute" data-attribute-id="logic"></div>
+    </div>
+
   </div>
 
   <div style="display: none" class="controls-decl">
@@ -338,6 +347,16 @@
           #switch#rAlt+L#/settings/Vehicles - Seats and Operator Modes/Light Amplification Toggle#
           #on#not set#/settings/Vehicles - Seats and Operator Modes/Light Amplification On#
           #off#not set#/settings/Vehicles - Seats and Operator Modes/Light Amplification Off#
+      </span>
+    </div>
+    <div class="control" data-control-id="autoland" data-control-type="oneshot" data-control-groups="request">
+      <p class="full-size">Autoland</p>
+      <p class="compact">Land</p>
+      <span></span>
+      <kbd>n</kbd>
+      <span class="description">
+          Perform autolanding, if appropriate.
+          #activate#N##
       </span>
     </div>
     <div class="control" data-control-id="land-req" data-control-type="oneshot" data-control-groups="request">
@@ -415,13 +434,13 @@
           #activate#not exist##
       </span>
     </div>
-    <div class="control" data-control-id="repair" data-control-type="oneshot" data-control-groups="not-impl">
+    <div class="control" data-control-id="repair" data-control-type="oneshot" data-control-groups="request">
       <p>Repair</p>
       <span></span>
       <kbd></kbd>
       <span class="description">
-          Repair control. No longer available in the game.
-          #activate#not exist##
+          Self repair control. No confirmation that it actually work.
+          #activate#not set#/settings/Vehicles - Multi Function Displays (MFDs)/MDF - Quick Action - Self Repair All#
       </span>
     </div>
 
@@ -478,6 +497,39 @@
       <span class="description">
         Leave current station/ship.
         #activate#Y(long)#/settings/Social - General/Exit seat#
+      </span>
+    </div>
+
+    <div class="control" data-control-id="docking-camera" data-control-type="switch" data-control-groups="camera">
+      <p class="full-size">Docking Camera</p>
+      <p class="compact">DocCam</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>o</kbd>
+      <span class="description">
+          Enable docking camera. Separate on/off not available.
+          #activate#O#/settings/Flight - Docking/Toggle Docking Camera#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
+
+    <div class="control" data-control-id="track-push" data-control-type="oneshot" data-control-groups="gear,personal-gear">
+      <p>Tractor Push</p>
+      <span></span>
+      <kbd>+mouse-wheel(-1)+</kbd>
+      <span class="description">
+        Push tractor object further
+        #activate#MouseWheelUp(long)#/settings/On Foot - All/Tractor Beam - Increase Distance#
+      </span>
+    </div>
+
+    <div class="control" data-control-id="track-pull" data-control-type="oneshot" data-control-groups="gear,personal-gear">
+      <p>Tractor Pull</p>
+      <span></span>
+      <kbd>+mouse-wheel(1)+</kbd>
+      <span class="description">
+        Pull tractor object closer
+        #activate#MouseWheelDown(long)#/settings/On Foot - All/Tractor Beam - Decrease Distance#
       </span>
     </div>
 
@@ -761,6 +813,19 @@
 
       <!-- TARGET COUNTERMEASURES END -->
 
+    <div class="control" data-control-id="staggered-fire" data-control-type="switch" data-control-groups="gear">
+      <p class="full-size">Staggered Fire</p>
+      <p class="compact">StagFire</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        Staggered Fire switch.
+        #switch#not set#/settings/Vehicles - Weapons/Staggered Fire - Toggle On/Off#
+        #on#not set#/settings/Vehicles - Weapons/Staggered Fire - On#
+        #off#not set#/settings/Vehicles - Weapons/Staggered Fire - Off#
+      </div>
+    </div>
     <div class="control" data-control-id="gimbal" data-control-type="switch" data-control-groups="gear">
       <p>Gimbal</p>
       <span class="switched-on">unlocked</span>
@@ -944,7 +1009,18 @@
         #activate#n/a##
       </div>
     </div>
-
+    <div class="control" data-control-id="msl-track-camera" data-control-type="switch" data-control-groups="camera">
+      <p class="full-size">Tracking Camera</p>
+      <p class="compact">TrkCam</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>o</kbd>
+      <span class="description">
+          Enable missile tracking camera. Separate on/off not available.
+          #activate#O#/settings/Vehicles - Missiles/Enable Cinematic Camera (Toggle)#
+      </span>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
 
 
     <!-- HOSTILITY END -->
@@ -1182,11 +1258,24 @@
       <kbd>+ +</kbd>
       <div class="description">
         Activate Horn. This one for ground (There is no sound in space (с)).
-
         #activate#Spacebar#/settings/Ground Vehicle - General/Horn#
       </div>
     </div>
-
+    <div class="control" data-control-id="decouple" data-control-type="switch" data-control-groups="modes">
+      <p class="full-size">Decouple</p>
+      <p class="compact">Dcpl</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd>c</kbd>
+      <div class="description">
+        Activate decouple mode. Separates your ship's facing direction from its direction of travel.
+        Use game settings to configure separate on and off, then do same for this control
+        #switch#C#/settings/Flight - Movement/Enable/Disable decoupled mode#
+        #on#not set#/settings/Flight - Movement/Enable decoupled mode#
+        #off#not set#/settings/Flight - Movement/Disable decoupled mode#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
+    </div>
     <div class="control" data-control-id="space-brake" data-control-type="switch" data-control-groups="gear">
       <p class="full-size">Space Brake</p>
       <p class="compact">Brake</p>
@@ -1197,9 +1286,7 @@
       <div class="description">
         Activate space break. This control (by default) will hold "space break" button when active and release it when deactivate.
         To work properly this control require that "switched-on" and "switched-off" attribute are in form: "button":up, "button":down respectively.
-
         Because of the way how the dangling keys are implemented, this control will be internally "switched-off" every time there is keyboard input (caused by another control) for the duration of the input.
-
         #hold#X#/settings/Flight - Movement/Spacebrake#
       </div>
     </div>
@@ -1209,9 +1296,7 @@
       <kbd>+tab+</kbd>
       <div class="description">
         Short scanner burst (ping).
-
         Tip: edit keybind in "ctrl scope", that allow to update switcher at any page at once.
-
         #activate#TAB#/settings/Flight - Radar/Activate Ping (Hold & Release)#
       </div>
     </div>
@@ -1308,6 +1393,20 @@
         Reset convergence point of the projectiles.
         #activate#not set#/settings/Vehicles - Weapons/Manual Convergence Distance - Reset#
       </div>
+    </div>
+    <div class="control" data-control-id="transform" data-control-type="switch" data-control-groups="gear">
+      <p class="full-size">Transform</p>
+      <p class="compact">Trnsfrm</p>
+      <span></span>
+      <kbd>+lalt+k</kbd>
+      <div class="description">
+        Changes the physical shape of the vessel, if appropriate.
+        Note: If there are multiple shapes, it is better to use the simplified mode.
+        #switch#lAlt+K#/settings/Flight - Movement/Cycle Configuration#
+        #on#not set#/settings/Flight - Movement/Expand Configuration#
+        #off#not set#/settings/Flight - Movement/Retract Configuration#
+      </div>
+      <div class="attribute" data-attribute-id="simple"></div>
     </div>
     <div class="control" data-control-id="emp" data-control-type="oneshot" data-control-groups="gear">
       <p>EMP</p>
@@ -1408,6 +1507,99 @@
         Ship ESP switcher. When active reduce ship control overshot.
         #activate#not set#/settings/Flight - Movement/E.S.P - Toggle On/Off (Press)#
         #temporary#not set#/settings/Flight - Movement/E.S.P - Enable Temporarily (Hold)#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="ifcs-gravity" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Gravity</p>
+      <p class="compact">iGrav</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS gravity compensation switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Gravity Compensation - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Gravity Compensation - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Gravity Compensation - Disable#
+      </div>
+    </div>
+    <div class="control" data-control-id="ifcs-wind" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Wind</p>
+      <p class="compact">iWind</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS wind compensation switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Wind Compensation - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Wind Compensation - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Wind Compensation - Disable#
+      </div>
+    </div>
+    <div class="control" data-control-id="ifcs-proximity" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Proximity</p>
+      <p class="compact">iProx</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS proximity assist switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Proximity Assist - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Proximity Assist - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Proximity Assist - Disable#
+      </div>
+    </div>
+    <div class="control" data-control-id="ifcs-stability" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Stability</p>
+      <p class="compact">iStab</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS stability switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Stability - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Stability - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Stability - Disable#
+      </div>
+    </div>
+    <div class="control" data-control-id="ifcs-command" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Command</p>
+      <p class="compact">iCmd</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS command behaviour switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Command Behaviour - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Command Behaviour - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Command Behaviour - Disable#
+      </div>
+    </div>
+    <div class="control" data-control-id="ifcs-core" data-control-type="switch" data-control-groups="IFCS">
+      <p class="full-size">IFCS Core</p>
+      <p class="compact">iCore</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        IFCS core switcher. No additional information.
+        #switch#not set#/settings/Flight - Movement/IFCS - Core - Toggle#
+        #on#not set#/settings/Flight - Movement/IFCS - Core - Enable#
+        #off#not set#/settings/Flight - Movement/IFCS - Core - Disable#
+      </div>
+    </div>
+
+    <div class="control" data-control-id="adv-hud" data-control-type="switch" data-control-groups="misc">
+      <p class="full-size">Advanced HUD</p>
+      <p class="compact">Adv. HUD</p>
+      <span class="switched-on">on</span>
+      <span class="switched-off">off</span>
+      <kbd></kbd>
+      <div class="description">
+        Advanced HUD switcher.
+        #switch#not set#/settings/Flight - Movement/Advanced HUD - Toggle#
+        #on#not set#/settings/Flight - Movement/Advanced HUD - Enable#
+        #off#not set#/settings/Flight - Movement/Advanced HUD - Disable#
       </div>
     </div>
 
@@ -1820,7 +2012,7 @@
 
     <!-- ON FOOT END -->
 
-    <!-- ON LINK BEGIN -->
+    <!-- LINK BEGIN -->
 
     <div class="control" data-control-id="move-on-foot" data-control-type="link" data-route="/on-foot" data-control-groups="on-foot">
       <p class="full-size">On Foot</p>
@@ -1894,7 +2086,7 @@
     </div>
 
 
-    <!-- ON LINK END -->
+    <!-- LINK END -->
 
     <!-- KEYBOARD BEGIN -->
 
