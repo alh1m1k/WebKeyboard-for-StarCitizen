@@ -265,6 +265,8 @@ namespace http {
 			std::cout << req.getRemote().ipv6();
 		} else if (req.getRemote().version() == 4) {
 			std::cout << req.getRemote().ipv4();
+		} else {
+			std::cout << "error";
 		}
 		std::cout << std::endl;
 	}
@@ -326,13 +328,6 @@ namespace http {
 						error("unable to \"write close\" unauthorized socket", httpd_req_to_sockfd(esp_req));
 					}
 					return ESP_FAIL;
-					//this version allow connection to happen to close it later via async server work
-					/*return serv->scheduleJob([hd = esp_req->handle, fd = httpd_req_to_sockfd(esp_req)] -> esp_err_t {
-						auto socket = socket::asyncSocket(hd, fd);
-						const uint16_t codeNetOrder = lwip_htons((uint16_t)socket::wscodes::UNAUTHORIZED);
-						socket.write((uint8_t*)&codeNetOrder, sizeof(codeNetOrder), httpd_ws_type_t::HTTPD_WS_TYPE_CLOSE);
-						return socket.terminate().code();
-					}).code();*/
 				} else {
 					serverError(req, resp, err2code(code));
 				}

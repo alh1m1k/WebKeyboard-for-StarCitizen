@@ -66,7 +66,7 @@ namespace http::socket {
 			
 	    } else {
 			error("socket::handle got packet with zero len");
-			return ResBoolFAIL;
+			return (esp_err_t)ESP_FAIL;
 		}
 	}
 	

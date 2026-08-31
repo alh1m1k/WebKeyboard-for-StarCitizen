@@ -560,15 +560,14 @@ class wsproto {
                 clientId    = r->index;
             	flags       = r->flags;
             }
-			//debug("handleEvents", type);
+
             switch (type) {
                 case (int)managerT::OPEN:
                     infoIf(LOG_SESSION_EVT, "evt session open", sess->sid().c_str(), " reason: ", ((sessionManager::note_open_type*)data)->reason);
                     break;
                 case (int)managerT::CLOSE:
-                    infoIf(true, "evt session close", flags);
+                    infoIf(LOG_SESSION_EVT, "evt session close", flags);
             		if (!IS(flags, (uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT)) {
-            			 infoIf(true,"sending notification");
             			if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
             				error("unable send notifications (ctr)", ret.code());
             			}
@@ -597,9 +596,8 @@ class wsproto {
                     infoIf(LOG_SESSION_EVT, "evt session ws change", sess->sid().c_str(), " name: ", sess->read()->clientName.c_str());
                     break;
                 case (int)sessionT::WS_CLOSE:
-                    infoIf(true, "evt session ws close", flags);
+                    infoIf(LOG_SESSION_EVT, "evt session ws close", flags);
             		if (!IS(flags, (uint32_t)sessionFlags::DISCONNECTED_NOTE_SENT)) {
-            			 infoIf(true, "sending notification");
             			if (auto ret = notifications.notifyExcept(connectedNotify(packetCounter(), clientName, 3), clientId); !ret) {
             				error("unable send notifications (ctr)", ret.code());
             			}

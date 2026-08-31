@@ -40,7 +40,6 @@ namespace ipc {
 		}
 
 		resBool push_back(const ITEM& value, const TickType_t waitTicks) noexcept {
-
 			return xQueueSendToBack(handle, &value, waitTicks) == pdPASS ? ResBoolOK : ResBoolFAIL;
 		}
 

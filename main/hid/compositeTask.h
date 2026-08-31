@@ -144,7 +144,7 @@ namespace hid {
 
 		int64_t lastKeyPressUS = 0;
 
-		uint32_t receivedPacketCounter = 0;
+		std::atomic<uint32_t> receivedPacketCounter = 0;
 		uint32_t processedPacketCounter = 0;
 
 		uint16_t nextSpacerDelayMs = 0;
@@ -779,7 +779,10 @@ namespace hid {
 			}
 								
 			push_result push_back(const report& report) {
-				return queue.push_back(report, 0);
+				if (const auto ret = queue.push_back(report, 0); !ret) {
+					return ret.code();
+				}
+				return receivedPacketCounter++;
 			}
 			
 			[[nodiscard]] inline uint32_t receivedCnt() const noexcept {

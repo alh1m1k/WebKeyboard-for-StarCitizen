@@ -1,7 +1,8 @@
 #include "headers.h"
-#include "generated.h"
 
+#include "generated.h"
 #include "not_implemented.h"
+#include "util.h"
 
 namespace http {
 

@@ -3,12 +3,15 @@
 #include <variant>
 #include <future>
 #include <concepts>
+#include <iostream>
 
 #include "esp_err.h"
-#include "util.h"
 
 template <typename T, typename U>
 concept TConstructibleFrom = requires(std::initializer_list<U> il) { T(il); };
+
+template <typename T, typename... Args>
+constexpr bool is_in_pack = (std::is_same_v<T, typename std::remove_const<Args>::type> || ...);
 
 template<typename ...ARG>
 class result final : public std::variant<ARG..., esp_err_t> {
@@ -37,20 +40,18 @@ class result final : public std::variant<ARG..., esp_err_t> {
 
 	public:
 
-		template<typename T>
-		result(T&& value): base_type(std::forward<std::conditional_t<std::is_scalar_v<T>, T, T&&>>(value)) {};
+		template<typename T> requires std::constructible_from<std::variant<ARG..., std::monostate>, T>
+		result(T&& value): base_type(std::forward<T>(value)) { };
 
 		template <typename U> requires (TConstructibleFrom<ARG, U> || ...)
 		result(std::initializer_list<U> il): base_type(makeFromInitializerList<U>(il)) {}
 
 		result(esp_err_t code): base_type(code) {};
 
-		template<typename T>
-		explicit result(T& value): base_type(value) {};
-				
 		~result() = default;
 				
 		inline operator bool() const {
+			//std::cout << "result index " << (int)this->index() << " " << (int)size << "\n";
 			return this->index() == size ? std::get<size>(*this) == (esp_err_t)ESP_OK : true;
 		}
 
