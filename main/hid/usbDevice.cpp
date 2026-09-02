@@ -20,7 +20,7 @@
 // Return zero will cause the stack to STALL request
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen)
 {
-	debugIf(LOG_USB_DEVIVE, "tud_hid_get_report_cb: ", instance);
+	debugIf(LOG_USB_DEVICE, "tud_hid_get_report_cb: ", instance);
     return hid::UsbDevice->getReport(instance, report_id, report_type, buffer, reqlen);
 }
 
@@ -28,7 +28,7 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
 void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize)
 {
-	debugIf(LOG_USB_DEVIVE, "tud_hid_set_report_cb instance: ", (uint)instance, " report: ", (uint)report_id, " type: ", (uint)report_type, " buffer: ", (uint)*buffer, " size: ",  (uint)bufsize);
+	debugIf(LOG_USB_DEVICE, "tud_hid_set_report_cb instance: ", (uint)instance, " report: ", (uint)report_id, " type: ", (uint)report_type, " buffer: ", (uint)*buffer, " size: ",  (uint)bufsize);
 	hid::UsbDevice->setReport(instance, report_id, report_type, buffer, bufsize);
 }
 
@@ -36,7 +36,7 @@ void tud_hid_set_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_
 // Application return pointer to descriptor, whose contents must exist long enough for transfer to complete
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) 
 {
-	debugIf(LOG_USB_DEVIVE, "tud_hid_descriptor_report_cb: ", instance);
+	debugIf(LOG_USB_DEVICE, "tud_hid_descriptor_report_cb: ", instance);
 	return hid::UsbDevice->descriptorReport(instance);
 }
 
@@ -208,7 +208,7 @@ namespace hid {
 	
 	tinyusb_config_t usbDevice::makeConfig() {
 		auto stringDecr = stringDescriptor();
-		debugIf(LOG_USB_DEVIVE, "usbDevice::makeConfig str cnt", (int)sizeof_string_desciptor_structure(stringDecr));
+		debugIf(LOG_USB_DEVICE, "usbDevice::makeConfig str cnt", (int)sizeof_string_desciptor_structure(stringDecr));
 		return {
 	        .device_descriptor = deviceDescriptor(),
 	        .string_descriptor = stringDecr,

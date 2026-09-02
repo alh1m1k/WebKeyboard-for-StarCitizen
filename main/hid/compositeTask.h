@@ -273,7 +273,7 @@ namespace hid {
 
 			[[nodiscard]] inline uint32_t applyEntropy(const uint32_t value) const {
 				const auto e = (int32_t)(entropy() * (value * 0.20));
-				debugIf(LOG_USB_DEVIVE && LOG_ENTROPY, "delayGenerator", value, " ", e, " ", value + e);
+				debugIf(LOG_USB_DEVICE && LOG_ENTROPY, "delayGenerator", value, " ", e, " ", value + e);
 				return value + e;
 			}
 
@@ -354,7 +354,7 @@ namespace hid {
 
 				if constexpr (!keyboard_included_type::value) { return true; }
 
-				debugIf(LOG_USB_DEVIVE, "type in use ", text);
+				debugIf(LOG_USB_DEVICE, "type in use ", text);
 
 				buffer.flags = buffer.keyboard.reserved = flags;
 				buffer.pendingFlush = KEYBOARD;
@@ -372,7 +372,7 @@ namespace hid {
 					nextSpacerDelayMs = (uint8_t)flags == (uint8_t)pressType::SHORT ? timings.shortPressSpacerMs : timings.spacerMs;
 				}
 
-				debugIf(LOG_USB_DEVIVE, "type done");
+				debugIf(LOG_USB_DEVICE, "type done");
 
 				return true;
 
@@ -510,7 +510,7 @@ namespace hid {
 
 			inline void throttleMs(const uint32_t throttle) {
 				if (const auto left = (esp_timer_get_time() - lastKeyPressUS) / 1000; left < throttle) {
-					debugIf(LOG_USB_DEVIVE, "throttleMs", throttle-left);
+					debugIf(LOG_USB_DEVICE, "throttleMs", throttle-left);
 					waitMs(throttle-left);
 				}
 			}
@@ -536,7 +536,7 @@ namespace hid {
 				int64_t startYeld = esp_timer_get_time();
 				while (esp_timer_get_time() - startTime < us) { taskYIELD(); }
 				//now we are before time ~500us or after target time with some dT
-				debugIf(LOG_USB_DEVIVE, "waitMs us:", ms * 1000, " actual: ", esp_timer_get_time() - startTime, " yelding: ", esp_timer_get_time() - startYeld);
+				debugIf(LOG_USB_DEVICE, "waitMs us:", ms * 1000, " actual: ", esp_timer_get_time() - startTime, " yelding: ", esp_timer_get_time() - startYeld);
 			}
 
 			template<typename... MUTEX>
