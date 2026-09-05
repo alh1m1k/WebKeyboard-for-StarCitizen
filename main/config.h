@@ -144,7 +144,7 @@
 //#define HTTP_HTTPS_PORT 	443
 
 
-//USB STUFF
+//USB related
 
 //this is override of default values,
 //comment string to use provided via menuconfig (idf.py menuconfig)
@@ -155,6 +155,10 @@
 #define DEVICE_KB_PRODUCT		"DSProbe"
 #define DEVICE_KB_HID 			"WebKeyboard for StarCitizen"
 
+#define INCLUDE_KEYBOARD true
+#define INCLUDE_JOYSTICK0 true
+#define INCLUDE_JOYSTICK1 false
+#define INCLUDE_MOUSE true
 
 
 //http version, it kill compilation is configuration invalid
@@ -174,14 +178,12 @@
 
 //uncomment to allow any non trivial JTAG debug, but this will entirely disable app USB stack
 //as CDC and JTAG are compete for resources
-//#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC
+//#define DEBUG_ALLOW_JTAG_VIA_SUPPRESSED_CDC false
 
 
 //different subsytem log
 
-//#define LOG_JOYSTICK 		false
-
-//#define LOG_KEYBOARD 		false
+//#define LOG_USB_DEVICE 	false
 
 //#define LOG_ENTROPY 		false
 
@@ -201,7 +203,7 @@
 
 //#define LOG_SESSION_EVT  	false
 
-//#define LOG_HEADERS false
+//#define LOG_HEADERS		false
 
 //#define LOG_COOKIES      	false
 

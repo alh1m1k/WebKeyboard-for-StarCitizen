@@ -8,11 +8,8 @@ scaner+com -> blue
 action -> purpure
 
 
-1 additional axis (probably not needed)
-3 additional joystick
 4 implement delta invalidate and redraw for header
 5 implement staticRenderer in buffer draw bypass for animating backgrounds(direct draw if possible)
-6 implement better handling of binary protocols on client
 7 full binary protocol for joystick + separate handler for joystick state
 8 handle multi client update of joystick (probably delta update with same base (sign))
 9 implement mapping between kb task and kb symbol stream (allowing to reject or confirm succession of task execution)
@@ -24,11 +21,19 @@ action -> purpure
 15 make main settings are joint element (icon + title are all clickable)
 18 reduce session sid size
 21 report/notreport mbedtls_base64_encode have buffer like interface but behave like c-string processing function
-    it want buffer of size (n+1) (probably for nil) and return error if buffer is (n) but it use only (n) bytes and return size of writed bytes as (n)
+    it want buffer of size (n+1) (probably for nil) and return error if buffer is (n) but it use only (n) bytes and return size of writen bytes as (n)
     mbedtls_base64_encode have 4 bytes align and requirements for (x*4)+1 buffer size is little unexpected.
 23 add compile time size for resource (compressed)
 24 move from global packet counter to session based
-27 globaly ctrl object move to overship semantic it seems "variable must be valid until sent" is refer to http_sent not socket sent
+27 global ctrl object move to ownership semantic it seems "variable must be valid until sent" is refer to http_sent not socket sent
+28 .window { grid-template-rows: var(--header-height) 1fr 0px } try to change to { grid-template-rows: var(--header-height) 1fr min-content } globaly (current local override used)
+30 non noff mode for switcher
+32 refactor animationFinish for prime route recheck animation after resolve, for failback add counting routine and change from logical AND to OR
+33 improve editmode transition speed (to many out of screen animation's) and optionally Control.disable
+34 concurrent access to joystick way lead to widget stuck
+35 fast rotation my broke layout on chromey
+36 implement fullscreen modemm
+37 in portrait mode some widget may fail
 
 notes:
 dropped memory decompression iml
@@ -38,12 +43,11 @@ socket call must be also refactored
 file checksum will change on every build because it's how cmake file compress work
 
 BUGS
-1 move element to trash broke overlay aligment
+1 move element to trash broke overlay alignment
 2 chrome57 fix worker startup crash(missing feature)
 3 change submit btn decouple size of button and line-height, set line-height = 2.5rem
 4 check that when multipixel line in use border clip work correctly, most likely it is not.
-5 check widget head at higth dpi
+5 check widget head at high dpi
 6 DHCP may fail after return success
-
 
 

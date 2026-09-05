@@ -23,15 +23,15 @@ static constexpr const char* MSG_CLIENT_RENAMED 		= "nt:%lu:Client %s is now %s"
 
 #define RESPONSE_MAX_UNCHUNKED_SIZE (1024 * 10)
 
-#define HTTPD_TASK_STACK_SIZE (4096+1024)
+#define HTTPD_TASK_STACK_SIZE (4096+1024*2)
 
 #define DEFAULT_WIFI_AP_DHCP_STATIC_IP	 "192.168.5.1"
 #define DEFAULT_WIFI_AP_DHCP_STATIC_MASK "255.255.255.0"
 #define DEFAULT_WIFI_AP_DNS_DOMAIN		 "wkb.local"
 
-#define PROTOCOL_VERSION 	"0.1"
+#define PROTOCOL_VERSION 	"0.2"
 #define STORAGE_VERSION  	"0.4"
-#define SERVER_VERSION 	 	"0.3"
-#define CLIENT_VERSION 	 	"0.2"
-#define INCREMENTAL_VERSION    3
+#define SERVER_VERSION 	 	"0.4"
+#define CLIENT_VERSION 	 	"0.3"
+#define INCREMENTAL_VERSION    4
 

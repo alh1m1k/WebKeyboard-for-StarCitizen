@@ -368,10 +368,10 @@ namespace http::session {
                             }
                         } else {
                             errorIf(LOG_SESSION, "invalid session", sess->sid().c_str());
-                            return INVALID_SESSION_ERROR;
+                            return (esp_err_t)INVALID_SESSION_ERROR;
                         }
                     } else {
-                        return ESP_ERR_NOT_FOUND;
+                        return (esp_err_t)ESP_ERR_NOT_FOUND;
                     }
                 }
                 //reach it only if session expired
@@ -381,7 +381,7 @@ namespace http::session {
                     invalidateSessionPtr(sess, (int)closeReason::EXPIRED);
                     infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
                 }
-                return ESP_ERR_NOT_FOUND;
+                return (esp_err_t)ESP_ERR_NOT_FOUND;
             }
 
             //thread safe
@@ -394,7 +394,7 @@ namespace http::session {
                         return sess;
                     }
                 }
-                return COLLISION_SESSION_ERROR;
+                return (esp_err_t)COLLISION_SESSION_ERROR;
             }
 
             //thread safe
@@ -403,10 +403,10 @@ namespace http::session {
                     if (auto sess = remove(sid, guard<rw_lock_type>()); sess != nullptr) {
                         //at this point no way to get another ptr to removed session, it no wat to prolong it
                         invalidateSessionPtr(sess, (int)closeReason::NORMAL_TERM);
-                        return ESP_OK;
+                        return (esp_err_t)ESP_OK;
                     }
                 }
-                return ESP_ERR_NOT_FOUND;
+                return (esp_err_t)ESP_ERR_NOT_FOUND;
             }
 
 
@@ -424,7 +424,7 @@ namespace http::session {
                             return sess;
                         }
                     } else {
-                        return ESP_ERR_NOT_FOUND;
+                        return (esp_err_t)ESP_ERR_NOT_FOUND;
                     }
                 }
                 //reach it only if session expired
@@ -435,7 +435,7 @@ namespace http::session {
                     infoIf(LOG_SESSION, "session expired", sess->sid().c_str());
 
                 }
-                return ESP_ERR_NOT_FOUND;
+                return (esp_err_t)ESP_ERR_NOT_FOUND;
             }
 
 			void walk(const walker_type& walker) final override {

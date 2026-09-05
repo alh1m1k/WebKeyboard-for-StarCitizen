@@ -71,6 +71,23 @@
 #endif
 #endif
 
+#ifndef INCLUDE_KEYBOARD
+#define INCLUDE_KEYBOARD true
+#endif
+
+#ifndef INCLUDE_JOYSTICK0
+#define INCLUDE_JOYSTICK0 true
+#endif
+
+#ifndef INCLUDE_JOYSTICK1
+#define INCLUDE_JOYSTICK1 false
+#endif
+
+#ifndef INCLUDE_MOUSE
+#define INCLUDE_MOUSE true
+#endif
+
+
 #ifndef SESSION_MAX_CLIENT_COUNT
 #define SESSION_MAX_CLIENT_COUNT 10
 #endif
@@ -82,15 +99,15 @@
 
 ///LOGS
 
-#ifndef LOG_USB_DEVIVE
-#define LOG_USB_DEVIVE 	false
+#ifndef LOG_USB_DEVICE
+#define LOG_USB_DEVICE 	false
 #endif
 
 #ifndef LOG_ENTROPY
 #define LOG_ENTROPY 	false
 #endif
 
-// LOG_USB_DEVIVE + LOG_ENTROPY to log keyboard delays
+// LOG_USB_DEVICE + LOG_ENTROPY to log keyboard delays
 
 #ifndef LOG_SOCKET
 #define LOG_SOCKET 		false

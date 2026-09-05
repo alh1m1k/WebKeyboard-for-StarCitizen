@@ -1440,10 +1440,13 @@ ShieldWidget.prototype.animate = function (animate = true) {
     }
 }
 
-ShieldWidget.prototype.initEvents = function() {
+ShieldWidget.prototype.initEvents = function(recalcEvtBoundaryRect = false) {
+
+    if (recalcEvtBoundaryRect) {
+        requestBoundingClientRect(this.canvas, this.clientRect);
+    }
     const handler = (e) => {
 
-        const rCtx = this.renderCtx;
         const unified = unify(e);
         //const rect = e.target.getBoundingClientRect(); //not work is scale apply
         const rect = this.clientRect;
@@ -1794,6 +1797,10 @@ ShieldWidget.prototype.refresh = function () {
 
     requestAnimationFrameTime(() => {
 
+        if (request.canceled) {
+            return;
+        }
+
         this.canvas.width  = 0;
         this.canvas.height = 0;
         this.canvas.style.width  = '0px';
@@ -1802,6 +1809,10 @@ ShieldWidget.prototype.refresh = function () {
 
         requestDocumentFlushTime(() => {
 
+            if (request.canceled) {
+                return;
+            }
+
             const rect          = boundingClientRect(this.dom); //for all avl size
             const computedStyle = getComputedStyle(this.dom);   //for possible padding
             //@see constructor
@@ -1809,6 +1820,10 @@ ShieldWidget.prototype.refresh = function () {
             const height    = this.dom.offsetHeight - boxStyleHeightModifier(computedStyle);
 
             requestAnimationFrameTime(() => {
+
+                if (request.canceled) {
+                    return;
+                }
 
                 this.canvas.width   = ~~(width  * window.devicePixelRatio);
                 this.canvas.height  = ~~(height * window.devicePixelRatio);
@@ -1821,6 +1836,10 @@ ShieldWidget.prototype.refresh = function () {
                 this.ctx.lineWidth  = ~~Math.max(window.devicePixelRatio, 1);
 
                 requestDocumentFlushTime(() => {
+
+                    if (request.canceled) {
+                        return;
+                    }
 
                     //requestBoundingClientRect(this.canvas, this.clientRect); //moved to animate
 
@@ -2563,10 +2582,18 @@ PDSWidgetHeadLineralThemeTrait.prototype.buildRenderCtx = function (config, boun
     const zeroLevel = config.zeroAt === PDSWidgetHead.zeroAt.CENTER ? ~~(actualPB.h / 2 + actualPB.y) : actualPB.y + actualPB.h; //if there 4 direction?*/
     const valueLabelFontMetric =  TextMetric.fitInBox(config.font, "100", ~~(selectorScale * 2 * 1.5), ~~(selectorScale * 1.5), 8, 35); //fixme
 
+    //this is temporal fix for high resolution displays, do not leave drawing board
+    let anchorStart = ~~(actualPB.x + selectorScale * 0.6);
+    let anchorEnd = ~~((actualPB.x + actualPB.w) - selectorScale * 0.6)
+    if (anchorStart - selectorScale <= boundingBox.x) {
+        anchorStart = boundingBox.x + 1 + selectorScale;
+        anchorEnd = boundingBox.x + boundingBox.w - 1 - selectorScale;
+    }
+
     return {
         selectorScale,
-        anchorStart:            ~~(actualPB.x + selectorScale * 0.6),
-        anchorEnd:              ~~((actualPB.x + actualPB.w) - selectorScale * 0.6),
+        anchorStart:            anchorStart,
+        anchorEnd:              anchorEnd,
         zeroLevel,
         fontFillStyleLow:       config.fontFillStyleLow  || config.fontFillStyle,
         fontFillStyleHigh:      config.fontFillStyleHigh || config.fontFillStyle,
@@ -2580,7 +2607,7 @@ PDSWidgetHeadLineralThemeTrait.prototype.buildRenderCtx = function (config, boun
             w: actualPB.w,
             h: ~~(selectorScale * 2 * config.collisionBodyScale),
         },
-
+        boundingBox
     };
 
 }
@@ -2589,11 +2616,13 @@ PDSWidgetHeadLineralThemeTrait.prototype.draw = function (canvas, timepass) {
 
     //todo move local var calculations to renderCtx
 
-    const ctx            = this.renderCtx;
+    const ctx = this.renderCtx;
     const value =  -this._renderValue;
     const yValue=  ~~(value * this.renderCtx.range);
-    const yPos           =  this.renderCtx.zeroLevel + yValue;
-
+    const yPos = ctx.zeroLevel + yValue;
+    const yPosTriangle = Math.min( Math.max(yPos, ctx.boundingBox.y + ~~(ctx.selectorScale / 2)),
+        ctx.boundingBox.y + ctx.boundingBox.h - ~~(ctx.selectorScale / 2)
+    );
     //console.warn("redraw", "PDSWidgetHeadLineralThemeTrait.prototype.draw", this.config.id, this.renderCtx);
 
     canvas.save();
@@ -2611,11 +2640,19 @@ PDSWidgetHeadLineralThemeTrait.prototype.draw = function (canvas, timepass) {
     performance.mark("pathStartFast")
     //faster
     canvas.save();
-    canvas.translate(this.renderCtx.anchorStart, yPos);
-    this.drawTriangle(canvas, -this.renderCtx.selectorScale);
+    canvas.translate(this.renderCtx.anchorStart, yPosTriangle);
+    if (yPos !== yPosTriangle) {
+        this.drawTriangleClip(canvas, -this.renderCtx.selectorScale, yPos < yPosTriangle);
+    } else {
+        this.drawTriangle(canvas, -this.renderCtx.selectorScale);
+    }
     canvas.restore();
-    canvas.translate(this.renderCtx.anchorEnd,   yPos);
-    this.drawTriangle(canvas, this.renderCtx.selectorScale);
+    canvas.translate(this.renderCtx.anchorEnd,   yPosTriangle);
+    if (yPos !== yPosTriangle) {
+        this.drawTriangleClip(canvas, this.renderCtx.selectorScale, yPos < yPosTriangle);
+    } else {
+        this.drawTriangle(canvas, this.renderCtx.selectorScale);
+    }
     canvas.restore();
     performance.measure("pathFast", "pathStartFast")
 
@@ -2630,10 +2667,9 @@ PDSWidgetHeadLineralThemeTrait.prototype.draw = function (canvas, timepass) {
     if (this.config.drawValue) {
         canvas.save();
         //todo move params to rctx
-        this.drawValue(canvas, timepass, yValue, yPos);
+        this.drawValue(canvas, timepass, yValue, yPosTriangle);
         canvas.restore();
     }
-
 
     if (this.config.DEBUG_DISPLAY_COLLISION_BODY) {
         canvas.fillRect(this.renderCtx.collisionBody.x, this.renderCtx.collisionBody.y, this.renderCtx.collisionBody.w, this.renderCtx.collisionBody.h);
@@ -2685,6 +2721,16 @@ PDSWidgetHeadLineralThemeTrait.prototype.drawTriangle = function(canvas, triangl
     canvas.moveTo(triangleEdge, 0);
     canvas.lineTo(triangleEdge, halfEdge);
     canvas.lineTo(0, 0);
+    canvas.fill();
+}
+
+PDSWidgetHeadLineralThemeTrait.prototype.drawTriangleClip = function(canvas, triangleEdge, rotate = false) {
+    const halfEdge = ~~(triangleEdge / 2);
+    const halfEdgeAbs = Math.abs(triangleEdge / 2) * (rotate ? -1 : 1);
+    canvas.beginPath()
+    canvas.moveTo(0, halfEdgeAbs);
+    canvas.lineTo(halfEdge*2, halfEdgeAbs);
+    canvas.lineTo(halfEdge*2, -halfEdgeAbs);
     canvas.fill();
 }
 
@@ -3215,7 +3261,6 @@ Object.defineProperties(PDSWidgetHead.prototype, {
 
 PDSWidgetBackgroundLineralThemeTrait.defaults = {
     padding:                    10,
-
     steps:              10,
     middleNotchRate:    5,
     notchFillStyle:    "silver",
@@ -4161,7 +4206,7 @@ PDSWidgetsPad.prototype.refresh = function() {
     this.animate(animating);
 }*/
 
-PDSWidgetsPad.prototype.initEvents = function() {
+PDSWidgetsPad.prototype.initEvents = function(recalcEvtBoundaryRect = false) {
 
     let touchToWidgetIndex = new Map();
 
@@ -4169,10 +4214,11 @@ PDSWidgetsPad.prototype.initEvents = function() {
     widgetActivationCount.length = this.widgets.length;
     widgetActivationCount.fill(0);
 
+    if (recalcEvtBoundaryRect) {
+        requestBoundingClientRect(this.canvas, this.clientRect);
+    }
+
     const singleTouchEventHandler = (unified, e, rect) => {
-
-
-        const rCtx = this.renderCtx;
 
         const normX = (unified.pageX - rect.left) * window.devicePixelRatio;
         const normY = (unified.pageY - rect.top)  * window.devicePixelRatio;
@@ -4194,12 +4240,10 @@ PDSWidgetsPad.prototype.initEvents = function() {
 
                 if (activeWidgetIndex !== i) {
 
-                    //console.log("initEvents", "send enter", i);
                     widget.applyEvent({ type: "enter", x: normX, y: normY, target: widget, identifier: touchIdentifier }, unified, e);
                     widgetActivationCount[i]++;
 
                     if (activeWidgetIndex !== undefined) {
-                        //console.log("initEvents", "send leave", activeWidgetIndex);
                         widget.applyEvent({ type: "leave", x: 0, y: 0, target: widget, identifier: touchIdentifier }, unified, e);
                         widgetActivationCount[activeWidgetIndex]--;
                     }
@@ -4216,7 +4260,6 @@ PDSWidgetsPad.prototype.initEvents = function() {
 
         if (activeWidgetIndex !== undefined) {
             if (!crossingAny || (e.type === "mouseup" || e.type === "mouseleave" || e.type === "touchend" || e.type === "touchcancel")) {
-                //console.log("initEvents", "send leave (not crossing or cancel)", activeWidgetIndex);
                 let widget = this.widgets[activeWidgetIndex];
                 widget.applyEvent({
                     type: "leave",
@@ -4251,7 +4294,6 @@ PDSWidgetsPad.prototype.initEvents = function() {
 
         for (let i = 0; i < this.widgets.length; i++) {
             if (widgetActivationCount[i] !== 0 && widgetActivationCount[i] !== 1) {
-                //console.log("initEvents", "widgetActivationCount[i]", widgetActivationCount[i])
             }
             if (widgetActivationCount[i]) {
                 if (!this.widgets[i].borderStrokeStyle) {

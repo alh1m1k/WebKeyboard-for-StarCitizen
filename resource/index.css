@@ -17,6 +17,7 @@ body, html {
 
     width:            100vw;
     height:           100vh;
+    /* height:           100lvh; for later release */
 }
 
 body {
@@ -855,6 +856,14 @@ ul.pager {
     max-width:  calc(90% - .3rem - .3rem); /* -.3rem is one side margin of .configurate-mode .control.disabled::before */
     height: auto !important; /* this one for canvas it sets its size in style (for scaling) */
     align-self: center;
+}
+
+.configurate-mode .control.disabled > .canvas-wrapper {
+    /* fix for canvas sizing problem */
+    transform: scale(.9) translateX(5.5%);
+    max-width: initial;
+    height: auto !important;
+    align-self: initial;
 }
 
 .configurate-mode .control.disabled::before {

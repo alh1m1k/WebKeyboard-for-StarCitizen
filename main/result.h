@@ -10,8 +10,6 @@
 template <typename T, typename U>
 concept TConstructibleFrom = requires(std::initializer_list<U> il) { T(il); };
 
-template <typename T, typename... Args>
-constexpr bool is_in_pack = (std::is_same_v<T, typename std::remove_const<Args>::type> || ...);
 
 template<typename ...ARG>
 class result final : public std::variant<ARG..., esp_err_t> {
@@ -40,13 +38,25 @@ class result final : public std::variant<ARG..., esp_err_t> {
 
 	public:
 
+		using error_index = std::in_place_index_t<size>;
+
+		//T constructor
 		template<typename T> requires std::constructible_from<std::variant<ARG..., std::monostate>, T>
-		result(T&& value): base_type(std::forward<T>(value)) { };
+		constexpr result(T&& value): base_type(std::forward<T>(value)) { };
 
+		//in place T are checked with std::constructible_from<base_type, ... instead of proxy type
+		//to allow using error_index{} for error placing
+		template<typename I, typename T> requires std::constructible_from<base_type, std::in_place_type_t<I>, T>
+		constexpr explicit result(std::in_place_type_t<I> in_place, T&& value):  base_type(in_place, std::forward<T>(value)) { };
+
+		template<std::size_t I, typename T> requires std::constructible_from<base_type, std::in_place_index_t<I>, T>
+		constexpr explicit result(std::in_place_index_t<I> in_place, T&& value): base_type(in_place, std::forward<T>(value)) { };
+
+		//T initialization list constructor
 		template <typename U> requires (TConstructibleFrom<ARG, U> || ...)
-		result(std::initializer_list<U> il): base_type(makeFromInitializerList<U>(il)) {}
+		constexpr result(std::initializer_list<U> il): base_type(makeFromInitializerList<U>(il)) {}
 
-		result(esp_err_t code): base_type(code) {};
+		constexpr result(esp_err_t code): base_type(std::in_place_index<size>, code) {};
 
 		~result() = default;
 				

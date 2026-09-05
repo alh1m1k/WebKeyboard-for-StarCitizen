@@ -95,7 +95,7 @@ namespace interpreter {
 						//combination is complete now
 						keyContainText = true;
 						break;
-					} else if (sentence[i].dataView == "$$" || sentence[i].dataView == ">>") {
+					} else if (sentence[i].dataView == "$$") {
 						//separator symbol, combination is complete now
 						break;
 					} else {
@@ -103,6 +103,7 @@ namespace interpreter {
 						success = pushTo(combination, sentence[i], ctx);
 						logWordIf(true, success, sentence[i], ctx);
 					}
+					if (!success) { combination.reset(); }
 				}
 			}
 			//at this point combination cursor was ended ant combination flushed to sequence

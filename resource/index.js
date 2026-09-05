@@ -11,12 +11,12 @@ const pageDefaultLayout = {
 }
 
 const versions = {
-    protocol: 0.1,
+    protocol: 0.2,
     storage:  0.4,
-    server:   0.3,
-    client:   0.2,
+    server:   0.4,
+    client:   0.3,
 
-    incremental: 3,
+    incremental: 4,
 };
 
 const timeouts = {
@@ -247,6 +247,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
 
     CanvasControlWidget.prototype.disableNodeTransition = function (dom, disable) {
+        Control.prototype.disableNodeTransition.call(this, dom, disable);
         const view = this.viewAt(dom);
         if (view) {
             const widgetProtectedCtx = view.data[CanvasControlWidget._protectedDescriptor];
@@ -255,12 +256,15 @@ const invertAspectRatio = 2/3.1; //@see CSS
                     if (disable) {
                         widget.freeEvents(true);
                     } else {
-                        widget.initEvents();
+                        //allow to Control.prototype.disableNodeTransition do stuff, then flush event rect box
+                        //if viewport rotate between calls and disable apply scale to control then event rect box be malformed
+                        //as it affected by scale, so on enable event box must be purged.
+                        //note that at this point any transition must be ended.
+                        requestDocumentFlushTime(() => widget.initEvents(true));
                     }
                 });
             }
         }
-        Control.prototype.disableNodeTransition.call(this, dom, disable);
     }
 
     CanvasControlWidget.prototype.initEvents = function(dom) {
@@ -1150,7 +1154,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 return window.crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(window.navigator.userAgent)).then(sha => {
                     const hashArray = Array.from(new Uint8Array(sha)); // convert buffer to byte array
                     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").substring(0, 10); // convert bytes to hex string
-                })
+                }).catch(e => Promise.resolve(simpleHash(window.navigator.userAgent))); //chrome57 may fail to access SHA-256 on http connection
             } else {
                 return Promise.resolve(simpleHash(window.navigator.userAgent));
             }
@@ -1285,7 +1289,6 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 reportOverflowOnce(document.querySelectorAll(".control")).catch(console.error);
             }
         }
-
         //requestDocumentFlushTime(() => screen.forEach((rp) => prefetchOverlay(rp.page)));
     }
 
@@ -1399,14 +1402,16 @@ const invertAspectRatio = 2/3.1; //@see CSS
     }
 
     let ww = window.innerWidth, wh = window.innerHeight, aspect = ww / wh, deviceScreenRequest = PendingRequest();
+    let orientationChange;
     //setTimeout( () =>  notificator.addNotification(`initial: ${ww}/${wh}`, "initial-size", "info"), 0);
     window.addEventListener("resize", () => {
+        clearTimeout(orientationChange);
         //notificator.addNotification(`resize: ${window.innerWidth}/${window.innerHeight}`, "resize-size", "info");
         const newWW = window.innerWidth;
         const newWH = window.innerHeight;
         const newAspect = newWW / newWH;
         const prevAspect = aspect;
-        //cation floating UI also trigger resize with NEW size!
+        //caution floating UI also trigger resize with NEW size!
         cancelRequest(deviceScreenRequest); deviceScreenRequest = requestDocumentFlushTime(() => {
             if (!deviceScreenRequest.canceled) {
                 if (Math.sign(prevAspect - 1.0) !== Math.sign(newAspect - 1.0)) {
@@ -1428,6 +1433,17 @@ const invertAspectRatio = 2/3.1; //@see CSS
         wh     = newWH;
         aspect = newAspect;
     });
+
+    const syntheticResize = () => window.dispatchEvent(new Event('resize'));
+    if (screen && screen.orientation) {
+        screen.orientation.addEventListener("change", () => {
+            clearTimeout(orientationChange); orientationChange = setTimeout(syntheticResize, 100);
+        });
+    } else {
+        window.addEventListener("orientationchange", () => {
+            clearTimeout(orientationChange); orientationChange = setTimeout(syntheticResize, 200);
+        });
+    }
 
     function transferPage(page, oldPage) {
         if (page === oldPage) {
@@ -2563,15 +2579,11 @@ const invertAspectRatio = 2/3.1; //@see CSS
             let candidate = items[0];
 
             if (candidate) {
-
                 items.forEach((el) => { el.classList.add("removed"); });
-
-
-                animationFinished(candidate, { deadline: 5000 }).then((reason) => {
+                animationFinished(candidate, { deadline: 5000, fallbackDeadline: 800 }).then((reason) => {
                     console.log("animationFinished", reason);
-                    items.forEach((el) => { el.remove(); });
+                    requestIdleTime(() => items.forEach((el) => { el.remove(); }), { timeout: 100 }, ~(40 * Math.random() + 40));
                 }).catch(console.error);
-
             }
 
             page.dom.classList.remove("editmode");
@@ -2705,7 +2717,7 @@ const invertAspectRatio = 2/3.1; //@see CSS
                 document.querySelector(".viewport").classList.add("configurate-mode");
 
                 (tbmPrivateCtx.configurate.externalEvtHandler = touchEventHelper(document, {
-                    decimator:  ({ target }) => !(target && (target.classList.contains("control") || target.closest(".control"))),
+                    decimator:  ({ target }) => !(target instanceof HTMLElement && (target.classList.contains("control") || target.closest(".control"))),
                 })).ontap = (e) => {
 
                     let target = e.target;
@@ -3261,35 +3273,23 @@ const invertAspectRatio = 2/3.1; //@see CSS
             });
 
             if (!mode) {
-
                 tbmPrivateCtx.editmode.externalEvtHandler.free();
-                locker.unlock("editmode");
-
                 let item = page.dom.querySelector(".control");
-                if (item && (overlay || tbmPrivateCtx.editmode.newCtrlAppended)) {
+                if (item) {
                     showOverlay(false);
-                    animationFinished(item, { deadline: 5000 }).then(() => {
-                        /*
-                         * new ctrl applyed with scale, make its internal size invalid
-                         * most easy way to fix it, trigger resize to recalculate size
-                         * but only after scale remove
-                         */
-                        if (tbmPrivateCtx.editmode.newCtrlAppended) {
-                            window.dispatchEvent(new Event('resize'));
-                            tbmPrivateCtx.editmode.newCtrlAppen = undefined;
-                        }
+                    //css transition value 500
+                    animationFinished(item, { deadline: 5000, fallbackDeadline: 800 }).then((reason) => {
+                        locker.unlock("editmode");
                         showOverlay(false);
-                        if (!DISABLE_OVF_CHECK) {
-                            //reportOverflowOnce is called in sync mode to try to prevent flickering
-                            reportOverflowOnce(page.dom.querySelectorAll(".control"), true).then(() => {
-                                invalidateOverlay(page);
-                                updateOverlay();
-                            });
-                        }
+                        console.log("animationFinished", "editmode", reason);
+                        Promise.resolve(
+                            !DISABLE_OVF_CHECK ? reportOverflowOnce(page.dom.querySelectorAll(".control"), true) : null
+                        ).then(() => {
+                            invalidateOverlay(page);
+                            updateOverlay();
+                        })
                     });
                 }
-
-
             }
 
         },

@@ -12,10 +12,6 @@ and joystick controllable by application web interface over wifi.
 My English is bad, sometimes I also use automatic translation. Edits are welcome. <br/>
 All technical details about build, flash or toolchain setup are simplified because it wasn't subject for this page.
 
-> [!TIP]
-Since 30.01.2026 lamp action added to the controls repository. No release was made, changes are available in upstream.
-lamp action can be found using [Placement mode/Select Control](#select-control) feature.
-
 - [Description](#description)<br/>
 - [Usage](#usage)<br/>
   - [Security](#security)
@@ -34,7 +30,6 @@ lamp action can be found using [Placement mode/Select Control](#select-control) 
 - [Software requirements](#software)<br/>
 - [Build](#build)<br/>
 - [Firmware Update](#firmware-update)<br/>
-- [Status](#status)<br/>
 - [Limitation](#limitation)<br/>
 - [Dependencies](#dependencies)<br/>
 
@@ -491,14 +486,6 @@ When after binary write is complete, it will be useful to check internal logs by
 > the layout or use the current one at their own risk.
 
 
-## Status
-
-The WKB in PREVIEW stage. <br/>
-Preview both to test app codebase and determine the need for such application. <br/>
-The app will have to compete with macro-keyboards, touch panels, voice-copilots, self-made cockpits and even some services.
-Given some limitations and the need for hardware, the question of the necessity of such an application is open.
-And I will leave it to its end users.
-
 ## Limitation
 
 - No way to sync game state and application state, if you switch master-mode by joystick or keyboard the wkb won't know about it.
@@ -525,3 +512,9 @@ And I will leave it to its end users.
 - idf >= 5.5.1
   - espressif/esp_tinyusb >= 0.19.0~2
 - main logo created with MockUPhone
+
+## Appeal to the community.
+Since patch 4.9, I can't play Star Citizen due to an outdated processor. While this may still be fixed by the CIG, it won't change the fact that the CPU isn't technically supported. Since I can't afford to upgrade my PC right now, I'll have to start a donation drive. This is completely voluntary; the app will remain free and open source.
+
+## Donations
+#### [Boosty.to](#https://boosty.to/alhimik.dev/donate)

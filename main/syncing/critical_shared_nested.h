@@ -30,7 +30,7 @@ class critical_shared_nested {
 
 	std::atomic<int> locker = 0;
 
-	inline void pushIntl() {
+	static inline void pushIntl() noexcept {
 		BaseType_t xOldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
 		BaseType_t coreID = xPortGetCoreID();
 		BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
@@ -41,7 +41,7 @@ class critical_shared_nested {
 		}
 	}
 
-	inline void popIntl() {
+	static inline void popIntl() noexcept {
 		BaseType_t coreID = xPortGetCoreID();
 		BaseType_t nesting = port_uxCriticalNesting[coreID];
 

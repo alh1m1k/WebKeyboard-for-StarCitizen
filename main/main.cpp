@@ -90,7 +90,7 @@ decl_web_resource_compressed_if(FAVICON_COMPRESSION, favicon_ico, http::resource
 
 
 #if EMBED_CAPTIVE
-decl_web_resource(captive_html,	http::resource::endings::TEXT, 		"captive.html", 	http::contentType::HTML,    filterCaptiveAcceptHtmlHandler);
+decl_web_resource_compressed_if(captive_html,	RESOURCE_COMPRESSION, "captive.html",	http::contentType::HTML,    filterCaptiveAcceptHtmlHandler);
 #endif
 
 #if EMBED_CERT

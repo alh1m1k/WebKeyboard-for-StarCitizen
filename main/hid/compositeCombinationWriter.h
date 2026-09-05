@@ -309,6 +309,10 @@ namespace hid {
 				flush();
 				return *this;
 			}
+
+			void reset() {
+				buffer.clear();
+			}
 			
 			operator bool() const noexcept {
 				return !!backend;

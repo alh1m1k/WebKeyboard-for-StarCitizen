@@ -185,22 +185,31 @@ function blur() {
     }
 }
 
-animationFinished.defaultOptions = {
-    deadline:           1000,
-    fallbackDeadline:   undefined,
-    deadlineReject:     false,
+function cssDuration(cssProperty) {
+    return cssProperty ? parseFloat(cssProperty) * 1000 : 0.0;
 }
+
+
+animationFinished.defaultOptions = {
+    deadline: 1000,
+    fallbackDeadline: undefined,
+    deadlineReject: false,
+    log: false
+}
+
+//subject to refactor
 function animationFinished(el, options = animationFinished.defaultOptions) {
 
     options = Object.assign({}, animationFinished.defaultOptions, options);
     let deadline;
     let awaitingAnimations;
+    let defer = [];
 
     if (isCallable(el.getAnimations)) {
-
-        awaitingAnimations =  el.getAnimations({ subtree: false }).map((animation) => animation.finished);
+        awaitingAnimations =  el.getAnimations({ subtree: false }).map(
+            (animation) => animation.finished
+        );
         deadline = options.deadline;
-
     } else {
 
         deadline = options.fallbackDeadline || options.deadline;
@@ -210,25 +219,35 @@ function animationFinished(el, options = animationFinished.defaultOptions) {
         //todo delay (need css values parser)
         const waitAnimation= (style.animationName && style.animationName !== "none") && style.animationPlayState === "running";
         //it seems we do not support "all" transition in failsafe mode
-        //!!style.transition not really work as transition initial value not determinated
+        //!!style.transition not really work as transition initial value not determined
         const waitTransition= style.transitionDuration !== '0s' && (style.transitionProperty !== "all" /*default value*/ && style.transitionProperty !== "none");
-        const opt = { once: true };
+        const opt = { once: false };
 
         if (waitAnimation) {
             awaitingAnimations.push(new Promise((resolve, reject) => {
-                const pendingResolve = (e) => resolve("animation");
+                const pendingResolve = e => resolve("animation");
                 //chrome57 does not support: el.onanimationend = el.onanimationcancel
-                el.addEventListener("animationend",    pendingResolve, opt);
+                el.addEventListener("animationend", pendingResolve, opt);
                 el.addEventListener("animationcancel", pendingResolve, opt);
+                defer.push(() => {
+                    el.removeEventListener("animationend", pendingResolve);
+                    el.removeEventListener("animationcancel", pendingResolve);
+                });
             }));
+
         }
 
         if (waitTransition) {
             awaitingAnimations.push(new Promise((resolve, reject) => {
-                const pendingResolve = (e) => resolve("transition");
+                const pendingResolve = e => resolve("transition");
                 //chrome57 does not support: el.ontransitionend = el.ontransitioncancel
-                el.addEventListener("transitionend",    pendingResolve, opt);
+
+                el.addEventListener("transitionend", pendingResolve, opt);
                 el.addEventListener("transitioncancel", pendingResolve, opt);
+                defer.push(() => {
+                    el.removeEventListener("transitionend", pendingResolve);
+                    el.removeEventListener("transitioncancel", pendingResolve);
+                });
             }));
         }
     }
@@ -239,13 +258,20 @@ function animationFinished(el, options = animationFinished.defaultOptions) {
 
     if (deadline) {
         return Promise.race([ Promise.all(awaitingAnimations), new Promise((resolve, reject) => {
-                setTimeout(options.deadlineReject ? () => reject("deadline") : () => resolve("deadline"), deadline);
+                setTimeout( () => {
+                    options.deadlineReject ? reject("deadline") : resolve("deadline");
+                }, deadline);
             })
-        ]);
+        ]).then(result => {
+            defer.map(df => df());
+            return result
+        });
     } else {
-        return Promise.all(awaitingAnimations);
+        return Promise.all(awaitingAnimations).then((result) => {
+            defer.map(df => df());
+            return result
+        });
     }
-
 }
 
 animationMonitor.symbol = Symbol("animationMonitor");
@@ -379,7 +405,8 @@ function wsocket(target) {
         decoder: new TextDecoder('utf-8', { fatal: false, ignoreBOM: true }),
         signal:         null,
         kaDescriptor:   null,
-        kaLastMsgAt:    null,
+        kaWakeAt:       null,
+        kaWakeStatus:   null,
         onconnect:      null,
         ondisconnect:   null,
         onauthorized:   null,
@@ -528,8 +555,8 @@ function wsocket(target) {
                     break;
                 case WSCodesSocketTimeout:
                     //device sleep detection
-                    if (privateCtx.kaDescriptor && privateCtx.kaLastMsgAt) {
-                        if (new Date() - privateCtx.kaLastMsgAt >= (privateCtx.kaDescriptor.interval * 2)) {
+                    if (privateCtx.kaDescriptor && privateCtx.kaWakeAt) {
+                        if (new Date() - privateCtx.kaWakeAt >= (privateCtx.kaDescriptor.interval * 2)) {
                             console.info("valid server socket closing, connection will recover then timers start tick again", reason);
                             break;
                         }
@@ -721,29 +748,29 @@ function wsocket(target) {
         kaSync: () => {
             const desc = privateCtx.kaDescriptor;
             desc.clockSource.clearInterval(desc.identifier);
-            privateCtx.send("ping", "", false);
-            privateCtx.kaLastMsgAt = new Date();
             desc.identifier = desc.clockSource.setInterval(privateCtx.kaHandler, desc.interval);
+            privateCtx.kaHandler();
         },
         kaHandler: () => {
-            if (privateCtx.context) {
-                if (privateCtx.context.status === SocketAuthorize) {
-                    privateCtx.send("ping", "", false);
-                    privateCtx.kaLastMsgAt = new Date();
-                } else if (privateCtx.kaDescriptor && privateCtx.kaLastMsgAt) {
-                    //device sleep recovery
-                    if (new Date() - privateCtx.kaLastMsgAt > (privateCtx.kaDescriptor.interval * 2)) {
-                        privateCtx.kaLastMsgAt = null;
-                        privateCtx.disconnectTask().then(() => {
-                            const task = privateCtx.connectTask();
-                            if (privateCtx.reconnect) {
-                                privateCtx.monitor();
-                            }
-                            return task;
-                        });
-                    }
+            if (privateCtx.context.status === SocketAuthorize) {
+                privateCtx.send("ping", "", false);
+            } else if (
+                privateCtx.kaWakeStatus === SocketAuthorize &&
+                privateCtx.lastDisconnectReason && privateCtx.lastDisconnectReason.code === WSCodesSocketTimeout
+            ) {
+                //device sleep recovery
+                if (new Date() - privateCtx.kaWakeAt > (privateCtx.kaDescriptor.interval * 2)) {
+                    privateCtx.disconnectTask().then(() => {
+                        const task = privateCtx.connectTask();
+                        if (privateCtx.reconnect) {
+                            privateCtx.monitor();
+                        }
+                        return task;
+                    });
                 }
             }
+            privateCtx.kaWakeAt = new Date();
+            privateCtx.kaWakeStatus = privateCtx.context.status;
         }
     }
 
@@ -850,10 +877,9 @@ function wsocket(target) {
             }
             if (ms) {
                 clockSource = clockSource || self;
-                privateCtx.kaDescriptor = {
-                    identifier: clockSource.setInterval(privateCtx.kaHandler, ms),
-                    clockSource,
-                    interval: ms
+                privateCtx.kaDescriptor = { identifier: undefined, clockSource, interval: ms }
+                if (privateCtx.context) {
+                    privateCtx.kaDescriptor.identifier = setInterval(privateCtx.kaHandler, privateCtx.kaDescriptor.interval);
                 }
             }
         },
@@ -3335,7 +3361,7 @@ MemoControl.prototype.clear = function(context = Control.defaultContext) {
 
     if (!context.silent) {
         const attributes =  context.view ?  context.view.attributes : this[_protectedDescriptor].attributes;
-        let kbd = attributes.get("kbd-set");
+        let kbd = attributes.get("kbd-clear");
         this.dispatchKbd(kbd, "switched-off", context);
     }
 }
@@ -3345,11 +3371,12 @@ MemoControl.prototype.activate = function(context = Control.defaultContext) {
         throw new Error("Ctrl activation must not lead to recursion of any kind");
     }
 
-    this.notifyGroupMembers(context);
+    //activation of memo is not switch nor activate on it's recall
+    //this.notifyGroupMembers(context);
 
     if (!context.silent) {
         const attributes =  context.view ?  context.view.attributes : this[_protectedDescriptor].attributes;
-        let kbd = attributes.get("kbd-set");
+        let kbd = attributes.get("kbd");
         this.dispatchKbd(kbd, "click", context);
     }
 }
@@ -3387,6 +3414,13 @@ MemoControl.prototype.state = SwitchControl.prototype.state;
 
 MemoControl.prototype.stateTransition = SwitchControl.prototype.stateTransition;
 
+MemoControl.prototype.clickTransition = function () {
+    this[_protectedDescriptor].views.forEach(view => view.dom.classList.add("highlight"));
+    setTimeout(() => {
+        this[_protectedDescriptor].views.forEach(view => view.dom.classList.remove("highlight"));
+    }, 250);
+}
+
 MemoControl.prototype.reset = function(context = Control.defaultContext) {
     this.applyState("switched-off", context);
 }
@@ -3396,6 +3430,8 @@ MemoControl.prototype.applyState = function(state, context = Control.defaultCont
         this.set(context.next({ silent: true }));
     } else if (state === "switched-off") {
         this.clear(context.next({ silent: true }));
+    } else if (state === "click") {
+        this.clickTransition();
     } else {
         throw new Error("undefined state");
     }
