@@ -255,5 +255,5 @@ it won't change the fact that the CPU isn't technically supported. Since I can't
 I'll have to start a donation drive. This is completely voluntary; the app will remain free and open source.
 
 ## Donations
-#### [Boosty.to](#https://boosty.to/alhimik.dev/donate)
+#### [Boosty.to](https://boosty.to/alhimik.dev/donate)
 <br>

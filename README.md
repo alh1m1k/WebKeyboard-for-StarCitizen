@@ -517,4 +517,4 @@ When after binary write is complete, it will be useful to check internal logs by
 Since patch 4.9, I can't play Star Citizen due to an outdated processor. While this may still be fixed by the CIG, it won't change the fact that the CPU isn't technically supported. Since I can't afford to upgrade my PC right now, I'll have to start a donation drive. This is completely voluntary; the app will remain free and open source.
 
 ## Donations
-#### [Boosty.to](#https://boosty.to/alhimik.dev/donate)
+#### [Boosty.to](https://boosty.to/alhimik.dev/donate)
