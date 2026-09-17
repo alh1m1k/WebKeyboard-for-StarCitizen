@@ -2,11 +2,12 @@
 
 ![promo](./promo/res-2.png)
 
-The WebKeyboard (WKB) project utilize ESP32S series native USB (also mentions as OTG) interface to emulate custom keyboard 
-and joystick controllable by application web interface over wifi. 
+The WebKeyboard (WKB) project utilize ESP32S series native USB (also mentions as OTG) interface to emulate custom keyboard,
+mouse and joystick controllable by application web interface over wifi. 
 
 > [!NOTE]
-> This is an ***unofficial*** companion app for the Star Citizen.
+> This is an ***unofficial*** companion app for the Star Citizen. <br>
+> The latest release notes are [here](https://github.com/alh1m1k/WebKeyboard-for-StarCitizen/releases)
 
 > [!NOTE]
 My English is bad, sometimes I also use automatic translation. Edits are welcome. <br/>
@@ -63,9 +64,14 @@ Features included:
   - "long" "short" "double" key press
   - dangling keys
   - activation delegation
+  - mouse absolute transition
+  - mouse buttons
+  - joystick absolute transition
+  - joystick buttons
 - control actions are configurable
 - keypress timing randomization
 - virtual joystick with 8 axis and 32 buttons
+- virtual mouse with 5 buttons and wheel
 - color overlay for control/widget grouping
 - adaptive layout for small screen (to some limit)
 
@@ -92,11 +98,11 @@ The application control implement two major control archetype:
   *Example game action "landing gear"* <br/>
   *where additional binding are set for Deploy(`ralt+n`) and Retract(`alt+n`).*<br/>
 
-  | `game action` | `switch-on`| `switch-off` | `simplified` |
-  |---|---|---|---|
-  | `Landing System (Toggle)`  |   `n`   |    `n`    | yes |
-  | `Landing System (Deploy)`  |    *    | `ralt+n`  | no  |
-  | `Landing System (Retract)` | `alt+n` |     *     | no  |
+  | `game action`              | `switch-on` | `switch-off` | `simplified` |
+  |----------------------------|-------------|--------------|--------------|
+  | `Landing System (Toggle)`  | `n`         | `n`          | yes          |
+  | `Landing System (Deploy)`  | *           | `ralt+n`     | no           |
+  | `Landing System (Retract)` | `alt+n`     | *            | no           |
 
 > [!NOTE]
 > The controls type "switch" implement "simplified" mode: when its active and `switched-off` == `switched-on` it's behave like "oneshot" type.
@@ -142,10 +148,10 @@ device screen too small or incorrectly oriented,
 
 > [!WARNING]
 > Invalid ssid, password or wifi type may force host to fall in trap state.
-> "factory reset" is only solution, but it will not help it invalid data provided by `config.h`
+> "factory reset" is only solution, but it will not help if invalid data provided by `config.h`
 
 ### Security
-The WBK designed to be host for one or multiple client that behave like MFD for ONE user.
+The WBK designed as host for one or multiple client that behave like MFD for ONE user.
 So this is single user system. <br/> 
 Application have all it's resource build in, and do not require any kind of internet connection to work. <br/>
 It have optional ssl webserver with user defined certs, and encrypted wifi connection.<br/>
@@ -400,6 +406,7 @@ Examples: <br/>
 - `+~+Quit+enter+~+` -> open console type Quit press enter close console
 - `+x:down+`, `+b:long+` -> keydown key x, long press key b
 - `call:ping` -> when this control active, also activate control ping, any deep, but no recursion is allowed
+- `+alt+mouse0`
 
 At end of form two special attribute placed: <br/>
 
@@ -452,6 +459,7 @@ Windows and Linux machines with latest chrome and firefox but also with chrome57
 
 ## Build
  - binary files are available under [Release](https://github.com/alh1m1k/WebKeyboard-for-StarCitizen/releases/latest) section. They may lag behind the version in the repository.
+   - The files are provided as a reference. You will need to build the binary for your specific board.
  - docker builder(container) not available.
 
 For manual build you need ESP-IDF toolchain version at least 5.5.1 with some modules:
@@ -492,7 +500,7 @@ When after binary write is complete, it will be useful to check internal logs by
   This is why it is crucial to use `set`, `unset` game keybindings instead of `rotate|switch` in application configuration (in game you can use whatever you want).
 - Currently virtual joystick doest not support axis value merge from different clients simultaneously.
 - Currently host doest not provide information to client about requested key combination completion, or error in usb stack.
-- Dangling(always pressed) keys will be unpresed before any other combination executed and then after, pressed again (space brake will be released before deploy gear command send and then deployed again ).
+- Dangling(always pressed) keys will be unpressed before any other combination executed and then after, pressed again (space brake will be released before deploy gear command send and then deployed again ).
 - Currently only one virtual joystick with 8 axis and 32 buttons is implemented.
 - Most of social interaction require chat window is enable. As it by default use ```/dance``` style command.
 - Combination at maximum can contain 6 keys and 8 modificators, this not apply to textmode.
@@ -501,12 +509,13 @@ When after binary write is complete, it will be useful to check internal logs by
 - Virtual Joystick require calibration before use. 
 - Decoy deploy and other client repeat-with-delay control may repeat incorrect number of times.  This one is difficult, it include net delays, keyboard key press timing randomization, and how game handle specific action.
 - Key handling native and on WINE may perform differently, for specific combination, why it is mystery for me.
-- Currently widget may look creepy. It is initial implementation, it lacking some feature and have some bugs too.
+- Currently widget may look creepy. It is initial implementation, it's lacking some feature and have some bugs too.
 - You will not see "factory reset" led indication if you board use addressable led as generic indicator led.
 - Some bugs exist here and there. Caused by the static nature of the memory management inside the LWIP, rudimentary server implementation and legacy partially textual protocol of client-server communication. These are extreme cases (enabling all possible switches, extremely long names) and will remain at least until the next major refactoring of the server.
 - Currently client setting belong to that client. While there are probably cases where this is convenient, it most often results in strange behavior from clients with different settings. In the future, there will probably be an explicit or implicit way to synchronize settings.
 - Your device may not see or connect to the hotspot. This could be caused by an incorrect device name rules (typical for new devices)
   or an inability to operate in the required WPA (or its compatibility) mode. In last case, you need to change the ```WIFI_AP_AUTH``` parameter to the appropriate one for your device.
+- The multi-device command (Alt + Mouse5) will be executed in a predefined order, regardless of the order within the command itself.
 
 ## Dependencies 
 - idf >= 5.5.1
