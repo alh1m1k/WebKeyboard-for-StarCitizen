@@ -5,6 +5,9 @@
 The WebKeyboard (WKB) project utilize ESP32S series native USB (also mentions as OTG) interface to emulate custom keyboard,
 mouse and joystick controllable by application web interface over wifi. 
 
+> [!WARNING]
+> The recommended IDF version for building via EIM is now 5.5.2. The current project IDF version (5.5.1) in the EIM repository installs without the compiler and is, consequently, non-functional. The latest version in the 5.5 branch (5.5.5) generates a binary that fails to connect successfully to the WKB server. I have not tested versions between 5.5.2 and 5.5.5. If you have a working version 5.5.1, it is recommended to use that. This issue is reproducible on the latest Windows version of EIM; I do not yet have data regarding Linux.
+
 > [!NOTE]
 > This is an ***unofficial*** companion app for the Star Citizen. <br>
 > The latest release notes are [here](https://github.com/alh1m1k/WebKeyboard-for-StarCitizen/releases)
