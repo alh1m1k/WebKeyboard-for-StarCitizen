@@ -6,7 +6,7 @@ The WebKeyboard (WKB) project utilize ESP32S series native USB (also mentions as
 mouse and joystick controllable by application web interface over wifi. 
 
 > [!WARNING]
-> The recommended IDF version for building via EIM is now 5.5.2. The current project IDF version (5.5.1) in the EIM repository installs without the compiler and is, consequently, non-functional. The latest version in the 5.5 branch (5.5.5) generates a binary that fails to connect successfully to the WKB server. I have not tested versions between 5.5.2 and 5.5.5. If you have a working version 5.5.1, it is recommended to use that. This issue is reproducible on the latest Windows version of EIM; I do not yet have data regarding Linux.
+> The recommended IDF version for building via EIM is now 5.5.2 or 5.5.1(not eim). The current project IDF version (5.5.1) in the EIM repository installs without the compiler and is, consequently, non-functional. The latest version in the 5.5 branch (5.5.5) have significant changes in web-socket handshake that will break app (debug log will generate "general ws-session fail"). I have not tested versions between 5.5.2 and 5.5.5. If you have a working version 5.5.1, it is recommended to use that. This issue is reproducible on the latest Windows version of EIM; On Linux not EIM version of 5.5.1 work for me. 
 
 > [!NOTE]
 > This is an ***unofficial*** companion app for the Star Citizen. <br>
@@ -409,7 +409,7 @@ Examples: <br/>
 - `+~+Quit+enter+~+` -> open console type Quit press enter close console
 - `+x:down+`, `+b:long+` -> keydown key x, long press key b
 - `call:ping` -> when this control active, also activate control ping, any deep, but no recursion is allowed
-- `+alt+mouse0`
+- `+alt+mouse0+`
 
 At end of form two special attribute placed: <br/>
 
@@ -465,8 +465,10 @@ Windows and Linux machines with latest chrome and firefox but also with chrome57
    - The files are provided as a reference. You will need to build the binary for your specific board.
  - docker builder(container) not available.
 
-For manual build you need ESP-IDF toolchain version at least 5.5.1 with some modules:
+For manual build you need ESP-IDF toolchain version 5.5.1 or 5.5.2 (depending what will work for you) with some modules:
 - espressif/esp_tinyusb
+
+Please note that 5.5.5 will compile but wont work due to websocket handshake changes. Version 5.5.3 and 5.5.4 are not tested.
 
 But, eventually you need setup working environment to make `ifd.py` available at project root. Select target by `idf.py set-target esp32s3` or `esp32s2`<br/>
 Then, with internet available, just type:
@@ -504,7 +506,6 @@ When after binary write is complete, it will be useful to check internal logs by
 - Currently virtual joystick doest not support axis value merge from different clients simultaneously.
 - Currently host doest not provide information to client about requested key combination completion, or error in usb stack.
 - Dangling(always pressed) keys will be unpressed before any other combination executed and then after, pressed again (space brake will be released before deploy gear command send and then deployed again ).
-- Currently only one virtual joystick with 8 axis and 32 buttons is implemented.
 - Most of social interaction require chat window is enable. As it by default use ```/dance``` style command.
 - Combination at maximum can contain 6 keys and 8 modificators, this not apply to textmode.
 - Combination that require specific keyboard mode is set, like ```Num``` for ```Num+``` will not resolve automatically, even if it technically possible, you must handle it manualy.
@@ -521,7 +522,7 @@ When after binary write is complete, it will be useful to check internal logs by
 - The multi-device command (Alt + Mouse5) will be executed in a predefined order, regardless of the order within the command itself.
 
 ## Dependencies 
-- idf >= 5.5.1
+- idf 5.5.1, 5.5.2
   - espressif/esp_tinyusb >= 0.19.0~2
 - main logo created with MockUPhone
 
